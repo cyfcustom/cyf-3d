@@ -5,7 +5,6 @@ Sistema completo de personalización de productos con estado de carga, modal de 
 ## 🎨 Características Implementadas
 
 ### ✅ Modal de Éxito
-
 - **Ubicación**: Aparece después de hacer clic en "Finalizar y Pedir"
 - **Estilo**: Ventana emergente centrada con fondo blanco, bordes redondeados (24px) y sombra suave
 - **Contenido**:
@@ -17,7 +16,6 @@ Sistema completo de personalización de productos con estado de carga, modal de 
   - Texto secundario explicativo
 
 ### ⏳ Estado de Carga
-
 - **Contexto**: Mientras se sube imagen o genera screenshot 3D
 - **Diseño**: Overlay blanco con opacidad 90%
 - **Animación**: Spinner amarillo animado + barra de progreso
@@ -28,8 +26,7 @@ Sistema completo de personalización de productos con estado de carga, modal de 
   - "Creando magia..."
 
 ### 📱 Adaptación Móvil
-
-- **Layout Responsive**:
+- **Layout Responsive**: 
   - **Móvil** (< 1024px): Stack vertical - Canvas 3D (50% superior) + Panel de Herramientas (50% inferior)
   - **Desktop** (≥ 1024px): Split view horizontal - Canvas (70% izquierda) + Panel (30% derecha)
 - **Optimizaciones móviles**:
@@ -39,7 +36,6 @@ Sistema completo de personalización de productos con estado de carga, modal de 
   - Textos e iconos escalados apropiadamente
 
 ### 🔔 Sistema de Toasts
-
 - **Diseño**: Pill flotante negra (#0F172A) con texto blanco
 - **Posición**: Top-center (adaptable a mobile)
 - **Ejemplos**:
@@ -49,7 +45,6 @@ Sistema completo de personalización de productos con estado de carga, modal de 
 ## 🗂️ Arquitectura con Jotai
 
 ### Store Global (`/src/app/store/atoms.ts`)
-
 - `layersAtom`: Array de capas (imágenes subidas)
 - `selectedColorAtom`: Color base seleccionado
 - `selectedColorNameAtom`: Nombre del color
@@ -106,5 +101,5 @@ Sistema completo de personalización de productos con estado de carga, modal de 
 
 - Los estados de carga simulan delays con `setTimeout` (1.5s - 2s)
 - El preview del diseño usa una imagen mock (en producción, sería un screenshot del canvas 3D)
-- El número de WhatsApp configurado: `584124553107`
+- El número de WhatsApp es placeholder: `584121234567`
 - Todos los componentes están optimizados para touch interactions en mobile

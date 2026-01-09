@@ -9,9 +9,9 @@ export function SuccessModal() {
   const [productConfig] = useAtom(productConfigAtom);
 
   const handleWhatsAppOrder = () => {
-    const phoneNumber = '584124553107';
+    const phoneNumber = '584121234567'; // Replace with actual WhatsApp number
     const productName = productConfig.type === 'tshirt' ? 'Franela' : 'Producto';
-    const message = `Hola CYF Customs 👋\n\nQuiero realizar un pedido:\n- ${productName} — Talla ${productConfig.size}\n- Color: ${productConfig.baseColorName}\n\nAdjunto mi diseño personalizado. ¿Podrían indicarme el precio final y el tiempo de entrega? ¡Gracias!`;
+    const message = `¡Hola! Quiero hacer un pedido:\n\n${productName} - Talla ${productConfig.size}\nColor: ${productConfig.baseColorName}\n\nAdjunto mi diseño personalizado. ¿Cuál es el precio final y tiempo de entrega?`;
     
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     

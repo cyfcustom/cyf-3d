@@ -1,17 +1,8 @@
 import { Moon, Sun } from 'lucide-react';
-import { useAtom } from 'jotai';
-import { themeAtom } from '../store/atoms';
-import { useEffect } from 'react';
+import { useTheme } from 'next-themes';
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useAtom(themeAtom);
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+  const { theme, setTheme } = useTheme();
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');

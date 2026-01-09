@@ -2,7 +2,7 @@ import { Navbar } from '../components/Navbar';
 import { HeroSection } from '../components/HeroSection';
 import { ProductGrid } from '../components/ProductGrid';
 import { Footer } from '../components/Footer';
-import { MobileDemoButton } from '../components/MobileDemoButton';
+
 
 export function LandingPage() {
   return (
@@ -11,7 +11,7 @@ export function LandingPage() {
       <HeroSection />
       <ProductGrid />
       <Footer />
-      <MobileDemoButton />
+
     </div>
   );
 }

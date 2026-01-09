@@ -23,9 +23,6 @@ export interface LoadingState {
   message: string;
 }
 
-// Theme type
-export type Theme = 'light' | 'dark';
-
 // Atoms
 export const layersAtom = atom<Layer[]>([]);
 export const selectedColorAtom = atom<string>('#FFFFFF');
@@ -42,15 +39,3 @@ export const loadingStateAtom = atom<LoadingState>({
 });
 export const showSuccessModalAtom = atom<boolean>(false);
 export const designPreviewAtom = atom<string | null>(null);
-
-// Theme atom with localStorage persistence
-const getInitialTheme = (): Theme => {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('theme') as Theme | null;
-    if (stored) return stored;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-  return 'light';
-};
-
-export const themeAtom = atom<Theme>(getInitialTheme());
