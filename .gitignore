@@ -115,3 +115,6 @@ node_modules
 /dist
 /dist-ssr
 *.local
+
+# Project documentation and guides (exclude from git)
+guidelines/

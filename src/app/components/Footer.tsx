@@ -56,9 +56,9 @@ export function Footer() {
                 <Mail size={18} />
                 contacto@cyfcustoms.com
               </a>
-              <a href="tel:+584241234567" className="flex items-center gap-2 text-sm sm:text-base text-muted-foreground font-medium transition-colors hover:text-primary">
+              <a href="tel:+584124553107" className="flex items-center gap-2 text-sm sm:text-base text-muted-foreground font-medium transition-colors hover:text-primary">
                 <Phone size={18} />
-                +58 (424) 123-4567
+                +58 412-4553107
               </a>
             </div>
             

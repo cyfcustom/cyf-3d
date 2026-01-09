@@ -5,6 +5,8 @@ import { useEffect } from 'react';
 import { LandingPage } from './pages/LandingPage';
 import { ConfiguratorWorkspace } from './components/ConfiguratorWorkspace';
 import { MobileDemo } from './pages/MobileDemo';
+import { LegacyCalculatorPage } from './pages/LegacyCalculatorPage';
+import { CalculatorSuitePage } from './pages/CalculatorSuitePage';
 import { themeAtom } from './store/atoms';
 
 function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -37,6 +39,8 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/configurador" element={<ConfiguratorWorkspace />} />
           <Route path="/mobile-demo" element={<MobileDemo />} />
+          <Route path="/calculadora" element={<CalculatorSuitePage />} />
+          <Route path="/calculadora-legacy" element={<LegacyCalculatorPage />} />
         </Routes>
         
         {/* Global Toast Notifications */}
