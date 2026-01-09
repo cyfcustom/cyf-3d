@@ -1,4 +1,5 @@
 import { Menu } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { ThemeToggle } from './ThemeToggle';
 
 export function Navbar() {
@@ -21,12 +22,12 @@ export function Navbar() {
             >
               Mis Diseños
             </a>
-            <a
-              href="#calculadoras"
+            <Link
+              to="/calculadoras"
               className="text-foreground font-medium transition-colors hover:text-primary"
             >
               Calculadoras
-            </a>
+            </Link>
             <ThemeToggle />
             <button
               className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold transition-all hover:scale-105 hover:opacity-90"

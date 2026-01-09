@@ -4,6 +4,7 @@ import { Toaster } from './components/ui/sonner';
 import { LandingPage } from './pages/LandingPage';
 import { ConfiguratorWorkspace } from './components/ConfiguratorWorkspace';
 import { MobileDemo } from './pages/MobileDemo';
+import { CalculatorSuitePage } from './pages/CalculatorSuitePage';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/configurador" element={<ConfiguratorWorkspace />} />
+          <Route path="/calculadoras" element={<CalculatorSuitePage />} />
           <Route path="/mobile-demo" element={<MobileDemo />} />
         </Routes>
 
