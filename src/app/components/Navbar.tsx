@@ -1,5 +1,5 @@
 import { Menu } from 'lucide-react';
-import logo from 'figma:asset/595648dd92054184149aeef68dbcc3758518b8db.png';
+import logo from '@/assets/595648dd92054184149aeef68dbcc3758518b8db.png';
 import { ThemeToggle } from './ThemeToggle';
 
 export function Navbar() {
