@@ -1,6 +1,6 @@
 import { ArrowLeft, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import logo from 'figma:asset/595648dd92054184149aeef68dbcc3758518b8db.png';
+import logo from '@/assets/595648dd92054184149aeef68dbcc3758518b8db.png';
 import { ThemeToggle } from '../ThemeToggle';
 
 export function ConfiguratorHeader() {
