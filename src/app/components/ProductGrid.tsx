@@ -1,50 +1,55 @@
+import { useEffect, useState } from 'react';
 import { Palette, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { Database } from '../types/supabase';
 
-const PRODUCTS = [
-  {
-    id: 1,
-    name: 'Franelas',
-    description: 'Personaliza tu franela con diseños únicos',
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800',
-    price: 'Desde $12.00',
-  },
-  {
-    id: 2,
-    name: 'Tazas',
-    description: 'Tazas personalizadas para cada ocasión',
-    image: 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800',
-    price: 'Desde $8.00',
-  },
-  {
-    id: 3,
-    name: 'Bodys de Bebé',
-    description: 'Diseños adorables para los más pequeños',
-    image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=800',
-    price: 'Desde $10.00',
-  },
-  {
-    id: 4,
-    name: 'Termos',
-    description: 'Mantén tus bebidas a la temperatura perfecta',
-    image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800',
-    price: 'Desde $15.00',
-  },
-];
+type Product = Database['public']['Tables']['products']['Row'];
 
 export function ProductGrid() {
   const navigate = useNavigate();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('name');
+
+        if (error) throw error;
+        setProducts(data || []);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProducts();
+  }, []);
 
   const handleCustomize = () => {
     navigate('/configurador');
   };
+
+  if (loading) {
+    return (
+      <div className="py-20 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-4 text-muted-foreground">Cargando productos...</p>
+      </div>
+    );
+  }
 
   return (
     <section id="productos" className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-12 sm:mb-16">
-          <h2 
+          <h2
             className="text-3xl sm:text-4xl md:text-5xl mb-4 font-bold text-foreground"
           >
             Elige tu <span style={{ color: 'var(--vibrant-orange)' }}>base</span>
@@ -56,7 +61,7 @@ export function ProductGrid() {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {PRODUCTS.map((product) => (
+          {products.map((product) => (
             <div
               key={product.id}
               className="group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-border"
@@ -64,7 +69,7 @@ export function ProductGrid() {
               {/* Product Image */}
               <div className="relative h-64 overflow-hidden bg-muted">
                 <img
-                  src={product.image}
+                  src={product.image_url || ''}
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
@@ -81,7 +86,7 @@ export function ProductGrid() {
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold" style={{ color: 'var(--vibrant-orange)' }}>
-                    {product.price}
+                    Desde ${product.base_price.toFixed(2)}
                   </span>
                   <button
                     onClick={handleCustomize}
