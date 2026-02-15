@@ -16,18 +16,6 @@ export function Navbar() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-6">
-            <a
-              href="#mis-disenos"
-              className="text-foreground font-medium transition-colors hover:text-primary"
-            >
-              Mis Diseños
-            </a>
-            <Link
-              to="/calculadoras"
-              className="text-foreground font-medium transition-colors hover:text-primary"
-            >
-              Calculadoras
-            </Link>
             <ThemeToggle />
             <button
               className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold transition-all hover:scale-105 hover:opacity-90"

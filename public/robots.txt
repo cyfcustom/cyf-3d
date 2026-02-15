@@ -1,0 +1,30 @@
+# Robots.txt for CYF Customs
+# https://cyfcustoms.com/robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /cyf-admin-access
+Disallow: /api/private/
+
+# Allow public assets
+Allow: /assets/
+Allow: /images/
+Allow: /*.css$
+Allow: /*.js$
+
+# Sitemap
+Sitemap: https://cyfcustoms.com/sitemap.xml
+
+# Crawl delay (be polite)
+Crawl-delay: 1
+
+# Specific bots
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /

@@ -39,3 +39,14 @@ export const loadingStateAtom = atom<LoadingState>({
 });
 export const showSuccessModalAtom = atom<boolean>(false);
 export const designPreviewAtom = atom<string | null>(null);
+
+// Auth state
+export interface AuthUser {
+  id: string;
+  email: string;
+  role?: string;
+}
+
+export const authUserAtom = atom<AuthUser | null>(null);
+export const isAuthenticatedAtom = atom<boolean>(false);
+export const mfaRequiredAtom = atom<boolean>(false);
