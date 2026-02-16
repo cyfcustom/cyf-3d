@@ -6,9 +6,10 @@ import { useSublimacionCalculator } from '@/app/hooks/useSublimacionCalculator';
 type Props = {
   mo: ReturnType<typeof useSublimacionCalculator>['state']['mo'];
   onChange: (patch: Partial<Props['mo']>) => void;
+  readOnly?: boolean;
 };
 
-export function SublimMoCard({ mo, onChange }: Props) {
+export function SublimMoCard({ mo, onChange, readOnly = false }: Props) {
   const perUnit = mo.enabled
     ? ((mo.setupMinutes + mo.runMinutesPerUnit) / 60) * mo.hourlyRate
     : 0;
@@ -20,7 +21,7 @@ export function SublimMoCard({ mo, onChange }: Props) {
           <h3 className="text-lg font-semibold">Mano de obra</h3>
           <p className="text-sm text-muted-foreground">(setup + corrida) × tarifa / 60. Aplicada por unidad.</p>
         </div>
-        <Switch checked={mo.enabled} onCheckedChange={(v) => onChange({ enabled: v })} />
+        <Switch checked={mo.enabled} onCheckedChange={(v) => onChange({ enabled: v })} disabled={readOnly} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -33,6 +34,7 @@ export function SublimMoCard({ mo, onChange }: Props) {
             min="0"
             value={mo.setupMinutes}
             onChange={(e) => onChange({ setupMinutes: parseMoney(e.target.value) })}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1">
@@ -44,6 +46,7 @@ export function SublimMoCard({ mo, onChange }: Props) {
             min="0"
             value={mo.runMinutesPerUnit}
             onChange={(e) => onChange({ runMinutesPerUnit: parseMoney(e.target.value) })}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1">
@@ -55,6 +58,7 @@ export function SublimMoCard({ mo, onChange }: Props) {
             min="0"
             value={mo.hourlyRate}
             onChange={(e) => onChange({ hourlyRate: parseMoney(e.target.value) })}
+            disabled={readOnly}
           />
         </div>
         <div className="space-y-1">

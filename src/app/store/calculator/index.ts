@@ -68,6 +68,8 @@ export {
   vinilTotalsAtom,
   sublimacionStateAtom,
   sublimacionTotalsAtom,
+  sublimacionConfigMetaAtom,
+  hydrateSublimacionFromSupabaseAtom,
   etiquetasStateAtom,
   etiquetasTotalsAtom,
   dtfStateAtom,
@@ -89,6 +91,8 @@ export {
   getCalculatorAtoms,
   CALCULATOR_ATOMS_MAP,
 } from './atoms';
+
+export type { ConfigMeta } from './atoms';
 
 // Hooks
 export {

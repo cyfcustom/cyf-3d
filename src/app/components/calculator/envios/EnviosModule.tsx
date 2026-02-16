@@ -2,7 +2,7 @@ import { useEnviosCalculator } from '@/app/store/calculator';
 import { EnviosMensajeriaCard } from './EnviosMensajeriaCard';
 import { EnviosExtrasCard } from './EnviosExtrasCard';
 import { EnviosSummaryCard } from './EnviosSummaryCard';
-import { useSummaryReporter } from '../resumen/summaryContext';
+import { useSummaryReporter } from '../summary/summaryContext';
 
 export function EnviosModule() {
   const calc = useEnviosCalculator();

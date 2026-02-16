@@ -6,9 +6,62 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type UserRole = 'admin' | 'supervisor' | 'worker';
+
 export type Database = {
   public: {
     Tables: {
+      calculator_configs: {
+        Row: {
+          id: string
+          module_name: string
+          config_version: number
+          is_active: boolean
+          direct_costs: Json
+          depreciation: Json
+          indirect_costs: Json | null
+          labor_costs: Json | null
+          financials: Json
+          extra_config: Json | null
+          created_by: string | null
+          updated_by: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          module_name: string
+          config_version?: number
+          is_active?: boolean
+          direct_costs?: Json
+          depreciation?: Json
+          indirect_costs?: Json | null
+          labor_costs?: Json | null
+          financials: Json
+          extra_config?: Json | null
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          module_name?: string
+          config_version?: number
+          is_active?: boolean
+          direct_costs?: Json
+          depreciation?: Json
+          indirect_costs?: Json | null
+          labor_costs?: Json | null
+          financials?: Json
+          extra_config?: Json | null
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       calculator_rates: {
         Row: {
           currency: string | null
@@ -273,12 +326,173 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          id: string
+          user_id: string
+          role: string
+          display_name: string | null
+          created_by: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          role: string
+          display_name?: string | null
+          created_by?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          role?: string
+          display_name?: string | null
+          created_by?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      supervisor_permissions: {
+        Row: {
+          id: string
+          user_id: string
+          module_name: string
+          can_edit_direct_costs: boolean
+          can_edit_depreciation: boolean
+          can_edit_labor: boolean
+          can_edit_financials: boolean
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          module_name: string
+          can_edit_direct_costs?: boolean
+          can_edit_depreciation?: boolean
+          can_edit_labor?: boolean
+          can_edit_financials?: boolean
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          module_name?: string
+          can_edit_direct_costs?: boolean
+          can_edit_depreciation?: boolean
+          can_edit_labor?: boolean
+          can_edit_financials?: boolean
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      config_audit_log: {
+        Row: {
+          id: string
+          config_id: string
+          module_name: string
+          changed_by: string
+          changed_at: string | null
+          field_changed: string
+          old_value: Json | null
+          new_value: Json | null
+          change_reason: string | null
+          previous_version: number
+        }
+        Insert: {
+          id?: string
+          config_id: string
+          module_name: string
+          changed_by: string
+          changed_at?: string | null
+          field_changed: string
+          old_value?: Json | null
+          new_value?: Json | null
+          change_reason?: string | null
+          previous_version: number
+        }
+        Update: {
+          id?: string
+          config_id?: string
+          module_name?: string
+          changed_by?: string
+          changed_at?: string | null
+          field_changed?: string
+          old_value?: Json | null
+          new_value?: Json | null
+          change_reason?: string | null
+          previous_version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "config_audit_log_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "calculator_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calculation_history: {
+        Row: {
+          id: string
+          user_id: string
+          module_name: string
+          input_state: Json
+          config_version: number
+          result_totals: Json
+          quantity: number
+          total_amount: number
+          note: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          module_name: string
+          input_state: Json
+          config_version: number
+          result_totals: Json
+          quantity: number
+          total_amount: number
+          note?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          module_name?: string
+          input_state?: Json
+          config_version?: number
+          result_totals?: Json
+          quantity?: number
+          total_amount?: number
+          note?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { uid: string }
+        Returns: string
+      }
+      update_calculator_config: {
+        Args: {
+          p_config_id: string
+          p_field: string
+          p_new_value: Json
+          p_reason?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

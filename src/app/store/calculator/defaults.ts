@@ -1,5 +1,9 @@
 /**
- * Default states and presets for all calculators
+ * Default states and presets for all calculators.
+ *
+ * NOTE: For modules migrated to Supabase (currently: sublimación), these defaults
+ * serve as OFFLINE FALLBACK values. The primary source of truth is the
+ * `calculator_configs` table in Supabase. If the fetch fails, these values are used.
  */
 
 import type {

@@ -7,9 +7,10 @@ import { useSublimacionCalculator } from '@/app/hooks/useSublimacionCalculator';
 type Props = {
   items: ReturnType<typeof useSublimacionCalculator>['state']['direct'];
   onChange: (id: string, patch: Partial<{ enabled: boolean; price: number; quantity: number }>) => void;
+  readOnly?: boolean;
 };
 
-export function SublimDirectCostsCard({ items, onChange }: Props) {
+export function SublimDirectCostsCard({ items, onChange, readOnly = false }: Props) {
   const perItem = useMemo(() => items.map((it) => ({ id: it.id, unit: it.quantity > 0 ? it.price / it.quantity : 0 })), [items]);
   const getUnit = (id: string) => perItem.find((p) => p.id === id)?.unit ?? 0;
 
@@ -24,7 +25,11 @@ export function SublimDirectCostsCard({ items, onChange }: Props) {
         {items.map((item) => (
           <div key={item.id} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
             <label className="flex items-center gap-2 font-medium">
-              <Switch checked={item.enabled} onCheckedChange={(v) => onChange(item.id, { enabled: v })} />
+              <Switch
+                checked={item.enabled}
+                onCheckedChange={(v) => onChange(item.id, { enabled: v })}
+                disabled={readOnly}
+              />
               <span>{item.label}</span>
             </label>
             <div className="space-y-1">
@@ -35,6 +40,7 @@ export function SublimDirectCostsCard({ items, onChange }: Props) {
                 step="0.01"
                 value={item.price}
                 onChange={(e) => onChange(item.id, { price: parseMoney(e.target.value) })}
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-1">
@@ -46,6 +52,7 @@ export function SublimDirectCostsCard({ items, onChange }: Props) {
                 min="1"
                 value={item.quantity}
                 onChange={(e) => onChange(item.id, { quantity: parseMoney(e.target.value) || 1 })}
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-1">

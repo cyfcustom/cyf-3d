@@ -5,7 +5,7 @@ import { EsferasIndirectCard } from './EsferasIndirectCard';
 import { EsferasMoCard } from './EsferasMoCard';
 import { EsferasGICard } from './EsferasGICard';
 import { EsferasSummaryCard } from './EsferasSummaryCard';
-import { useSummaryReporter } from '../resumen/summaryContext';
+import { useSummaryReporter } from '../summary/summaryContext';
 
 export function EsferasModule() {
   const calculator = useEsferasCalculator();

@@ -9,7 +9,7 @@ import { Separator } from '@/app/components/ui/separator';
 import { Switch } from '@/app/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { Textarea } from '@/app/components/ui/textarea';
-import { useSummaryReporter } from '../resumen/summaryContext';
+import { useSummaryReporter } from '../summary/summaryContext';
 
 export function DtfModule() {
   const calc = useDtfCalculator();

@@ -12,8 +12,9 @@ import { EnviosModule } from '../components/calculator/envios/EnviosModule';
 import { ConversorModule } from '../components/calculator/conversor/ConversorModule';
 import { PersonalizableModule } from '../components/calculator/personalizado/PersonalizableModule';
 import { FAQModule } from '../components/faq/FAQModule';
-import { ResumenGeneralModule } from '../components/calculator/resumen/ResumenGeneralModule';
-import { SummaryProvider } from '../components/calculator/resumen/summaryContext';
+import { SummaryModule } from '../components/calculator/summary/SummaryModule';
+import { SummaryProvider } from '../components/calculator/summary/summaryContext';
+import { CalculatorConfigProvider } from '../providers/CalculatorConfigProvider';
 import { Button } from '../components/ui/button';
 import { CalculatorDashboard } from '../components/calculator/CalculatorDashboard';
 import { Home } from 'lucide-react';
@@ -44,6 +45,7 @@ export function CalculatorSuitePage() {
   };
 
   return (
+    <CalculatorConfigProvider>
     <SummaryProvider>
       <div className="min-h-screen flex flex-col bg-background text-foreground">
         <Navbar />
@@ -180,7 +182,7 @@ export function CalculatorSuitePage() {
 
             {active === 'resumen' && (
               <section className="space-y-4">
-                <ResumenGeneralModule />
+                <SummaryModule />
               </section>
             )}
           </div>
@@ -190,5 +192,6 @@ export function CalculatorSuitePage() {
         <Footer />
       </div>
     </SummaryProvider>
+    </CalculatorConfigProvider>
   );
 }

@@ -4,7 +4,7 @@ import { VinilDepreciationCard } from './VinilDepreciationCard';
 import { VinilExtrasCard } from './VinilExtrasCard';
 import { VinilGICard } from './VinilGICard';
 import { VinilSummaryCard } from './VinilSummaryCard';
-import { useSummaryReporter } from '../resumen/summaryContext';
+import { useSummaryReporter } from '../summary/summaryContext';
 
 export function VinilModule() {
   const calculator = useVinilCalculator();

@@ -5,7 +5,7 @@ import { PapeleriaIndirectCard } from './PapeleriaIndirectCard';
 import { PapeleriaMoCard } from './PapeleriaMoCard';
 import { PapeleriaGICard } from './PapeleriaGICard';
 import { PapeleriaSummaryCard } from './PapeleriaSummaryCard';
-import { useSummaryReporter } from '../resumen/summaryContext';
+import { useSummaryReporter } from '../summary/summaryContext';
 
 export function PapeleriaModule() {
   const calc = usePapeleriaCalculator();

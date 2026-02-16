@@ -41,6 +41,7 @@ import {
   ENVIOS_DEFAULT_STATE,
   ETIQUETAS_PRODUCT_PRESETS,
 } from './defaults';
+import { fetchActiveConfig } from '@/app/lib/api/calculatorConfigApi';
 
 // ============================================================================
 // STORAGE KEYS
@@ -73,11 +74,65 @@ export const vinilStateAtom = atomWithStorage<VinilCalculatorState>(
   VINIL_DEFAULT_STATE
 );
 
-// Sublimación
-export const sublimacionStateAtom = atomWithStorage<CalculatorState>(
-  STORAGE_KEYS.sublimacion,
-  SUBLIMACION_DEFAULT_STATE
-);
+// Sublimación — now hydrated from Supabase, with defaults.ts as offline fallback
+export const sublimacionStateAtom = atom<CalculatorState>(SUBLIMACION_DEFAULT_STATE);
+
+// Meta information about the active Supabase config for sublimación
+export interface ConfigMeta {
+  configId: string | null;
+  configVersion: number;
+  isLoading: boolean;
+  lastSynced: string | null;
+}
+
+export const sublimacionConfigMetaAtom = atom<ConfigMeta>({
+  configId: null,
+  configVersion: 0,
+  isLoading: false,
+  lastSynced: null,
+});
+
+// Write-only atom: fetches config from Supabase and populates sublimacionStateAtom
+export const hydrateSublimacionFromSupabaseAtom = atom(null, async (get, set) => {
+  set(sublimacionConfigMetaAtom, (prev) => ({ ...prev, isLoading: true }));
+
+  try {
+    const config = await fetchActiveConfig('sublimacion');
+
+    if (config) {
+      const directCosts = config.direct_costs as DirectCostItem[];
+      const depreciation = config.depreciation as DepreciationItem[];
+      const laborCosts = config.labor_costs as LaborCosts | null;
+      const financials = config.financials as FinancialSettings;
+
+      set(sublimacionStateAtom, {
+        directCosts,
+        depreciation,
+        laborCosts: laborCosts ?? SUBLIMACION_DEFAULT_STATE.laborCosts,
+        financials,
+        quantity: get(sublimacionStateAtom).quantity, // preserve user's current quantity
+      });
+
+      set(sublimacionConfigMetaAtom, {
+        configId: config.id,
+        configVersion: config.config_version,
+        isLoading: false,
+        lastSynced: new Date().toISOString(),
+      });
+    } else {
+      // Supabase unavailable — keep defaults
+      set(sublimacionConfigMetaAtom, (prev) => ({ ...prev, isLoading: false }));
+    }
+  } catch (error) {
+    console.warn('[Hydrate] Failed to fetch sublimación config, using defaults:', error);
+    set(sublimacionConfigMetaAtom, (prev) => ({ ...prev, isLoading: false }));
+  }
+
+  // Clean up old localStorage key if it exists
+  try {
+    localStorage.removeItem(STORAGE_KEYS.sublimacion);
+  } catch {}
+});
 
 // Etiquetas
 export const etiquetasStateAtom = atomWithStorage<EtiquetasCalculatorState>(

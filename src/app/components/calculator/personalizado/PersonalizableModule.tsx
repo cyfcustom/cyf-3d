@@ -3,7 +3,7 @@ import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 import { Switch } from '@/app/components/ui/switch';
 import { parseMoney, formatMoney } from '@/app/lib/money';
-import { useSummaryReporter } from '../resumen/summaryContext';
+import { useSummaryReporter } from '../summary/summaryContext';
 
 type DirRow = {
   desc: string;

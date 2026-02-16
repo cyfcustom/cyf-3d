@@ -5,7 +5,7 @@ import { EmpaquesIndirectCard } from './EmpaquesIndirectCard';
 import { EmpaquesMoCard } from './EmpaquesMoCard';
 import { EmpaquesGICard } from './EmpaquesGICard';
 import { EmpaquesSummaryCard } from './EmpaquesSummaryCard';
-import { useSummaryReporter } from '../resumen/summaryContext';
+import { useSummaryReporter } from '../summary/summaryContext';
 
 export function EmpaquesModule() {
   const calc = useEmpaquesCalculator();

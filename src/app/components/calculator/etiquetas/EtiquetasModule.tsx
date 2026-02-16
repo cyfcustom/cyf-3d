@@ -5,7 +5,7 @@ import { EtiquetasIndirectCard } from './EtiquetasIndirectCard';
 import { EtiquetasMoCard } from './EtiquetasMoCard';
 import { EtiquetasGICard } from './EtiquetasGICard';
 import { EtiquetasSummaryCard } from './EtiquetasSummaryCard';
-import { useSummaryReporter } from '../resumen/summaryContext';
+import { useSummaryReporter } from '../summary/summaryContext';
 
 export function EtiquetasModule() {
   const calc = useEtiquetasCalculator();
