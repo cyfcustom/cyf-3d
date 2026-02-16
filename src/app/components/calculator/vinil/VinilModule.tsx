@@ -1,4 +1,4 @@
-import { useVinilCalculator } from '@/app/hooks/useVinilCalculator';
+import { useVinilCalculator } from '@/app/store/calculator';
 import { VinilDirectCostsCard } from './VinilDirectCostsCard';
 import { VinilDepreciationCard } from './VinilDepreciationCard';
 import { VinilExtrasCard } from './VinilExtrasCard';

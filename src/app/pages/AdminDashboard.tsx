@@ -2,6 +2,7 @@ import { useAuth } from '@/app/hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogOut, Calculator, Palette, Shield, Settings } from 'lucide-react';
 import { useState } from 'react';
+import { MFASetupDialog } from '@/app/components/admin/MFASetupDialog';
 
 export function AdminDashboard() {
   const { authUser, signOut } = useAuth();
@@ -140,29 +141,8 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* MFA Setup Section */}
-        {showMfaSetup && (
-          <div className="mt-6 bg-white rounded-2xl p-6 shadow-sm border-2 border-yellow-400">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Shield className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-slate-900 mb-2">
-                  Autenticación de Dos Factores (2FA)
-                </h3>
-                <p className="text-sm text-slate-600 mb-4">
-                  Configura Google Authenticator para mayor seguridad. Ve a la configuración de tu cuenta en Supabase para habilitar 2FA.
-                </p>
-                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                  <p className="text-xs text-slate-600 mb-2">
-                    <strong>Nota:</strong> El 2FA se configura desde el dashboard de Supabase. Una vez configurado, se te pedirá el código cada vez que inicies sesión.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* MFA Setup Dialog */}
+        <MFASetupDialog isOpen={showMfaSetup} onClose={() => setShowMfaSetup(false)} />
       </main>
     </div>
   );

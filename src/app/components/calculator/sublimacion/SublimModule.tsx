@@ -1,4 +1,4 @@
-import { useSublimacionCalculator } from '@/app/hooks/useSublimacionCalculator';
+import { useSublimacionCalculator } from '@/app/store/calculator';
 import { SublimDirectCostsCard } from './SublimDirectCostsCard';
 import { SublimDepreciationCard } from './SublimDepreciationCard';
 import { SublimMoCard } from './SublimMoCard';

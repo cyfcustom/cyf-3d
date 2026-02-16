@@ -15,9 +15,11 @@ import { FAQModule } from '../components/faq/FAQModule';
 import { ResumenGeneralModule } from '../components/calculator/resumen/ResumenGeneralModule';
 import { SummaryProvider } from '../components/calculator/resumen/summaryContext';
 import { Button } from '../components/ui/button';
+import { CalculatorDashboard } from '../components/calculator/CalculatorDashboard';
+import { Home } from 'lucide-react';
 
 const sections = [
-  { id: 'bienvenida', label: 'Bienvenida' },
+  { id: 'dashboard', label: '🏠 Inicio', icon: Home },
   { id: 'vinil', label: 'Vinil' },
   { id: 'sublimacion', label: 'Sublimación' },
   { id: 'esferas', label: 'Esferas navideñas' },
@@ -33,7 +35,7 @@ const sections = [
 ];
 
 export function CalculatorSuitePage() {
-  const [active, setActive] = useState<(typeof sections)[number]['id']>('bienvenida');
+  const [active, setActive] = useState<(typeof sections)[number]['id']>('dashboard');
   const [open, setOpen] = useState(false);
   const current = sections.find((s) => s.id === active);
   const activate = (id: (typeof sections)[number]['id']) => {
@@ -50,19 +52,23 @@ export function CalculatorSuitePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex gap-6">
           {/* Sidebar */}
           <aside className={`w-64 shrink-0 hidden lg:block`}>
-            <div className="sticky top-24 space-y-2">
-              <h3 className="text-sm font-semibold text-muted-foreground">Calculadoras CYF Customs</h3>
+            <div className="sticky top-24 space-y-4">
+              <h3 className="text-sm font-semibold text-muted-foreground px-3">Calculadoras CYF Customs</h3>
               <nav className="space-y-1">
-                {sections.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => activate(s.id)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition text-sm font-medium ${
-                      active === s.id ? 'bg-muted font-semibold' : 'hover:bg-muted'
-                    }`}
-                  >
-                    {s.label}
-                  </button>
+                {sections.map((s, idx) => (
+                  <div key={s.id}>
+                    <button
+                      onClick={() => activate(s.id)}
+                      className={`w-full text-left px-3 py-2 rounded-lg transition text-sm font-medium flex items-center gap-2 ${
+                        active === s.id
+                          ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
+                          : 'hover:bg-muted'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                    {idx === 0 && <div className="my-3 border-t border-border" />}
+                  </div>
                 ))}
               </nav>
             </div>
@@ -82,26 +88,26 @@ export function CalculatorSuitePage() {
 
             {open && (
               <div className="lg:hidden border border-border rounded-xl p-3 space-y-1 mb-4 bg-card">
-                {sections.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => activate(s.id)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition text-sm font-medium ${
-                      active === s.id ? 'bg-muted font-semibold' : 'hover:bg-muted'
-                    }`}
-                  >
-                    {s.label}
-                  </button>
+                {sections.map((s, idx) => (
+                  <div key={s.id}>
+                    <button
+                      onClick={() => activate(s.id)}
+                      className={`w-full text-left px-3 py-2 rounded-lg transition text-sm font-medium ${
+                        active === s.id
+                          ? 'bg-primary text-primary-foreground font-semibold'
+                          : 'hover:bg-muted'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                    {idx === 0 && <div className="my-2 border-t border-border" />}
+                  </div>
                 ))}
               </div>
             )}
 
-            {active === 'bienvenida' && (
-              <section className="space-y-3 bg-card border border-border rounded-2xl p-6 shadow-sm">
-                <p className="text-sm uppercase tracking-wide text-primary font-semibold">Bienvenido</p>
-                <h1 className="text-3xl font-bold">Calculadoras de gastos CYF Customs</h1>
-                <p className="text-muted-foreground text-sm">Migración modular desde el HTML legado. Usa el menú para navegar entre módulos.</p>
-              </section>
+            {active === 'dashboard' && (
+              <CalculatorDashboard onSelectCalculator={activate} />
             )}
 
             {active === 'vinil' && (

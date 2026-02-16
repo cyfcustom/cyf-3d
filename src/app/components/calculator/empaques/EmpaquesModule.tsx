@@ -1,4 +1,4 @@
-import { useEmpaquesCalculator } from '@/app/hooks/useEmpaquesCalculator';
+import { useEmpaquesCalculator } from '@/app/store/calculator';
 import { EmpaquesDirectCostsCard } from './EmpaquesDirectCostsCard';
 import { EmpaquesDepreciationCard } from './EmpaquesDepreciationCard';
 import { EmpaquesIndirectCard } from './EmpaquesIndirectCard';

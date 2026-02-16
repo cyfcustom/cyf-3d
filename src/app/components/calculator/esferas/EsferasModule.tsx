@@ -1,4 +1,4 @@
-import { useEsferasCalculator } from '@/app/hooks/useEsferasCalculator';
+import { useEsferasCalculator } from '@/app/store/calculator';
 import { EsferasDirectCostsCard } from './EsferasDirectCostsCard';
 import { EsferasDepreciationCard } from './EsferasDepreciationCard';
 import { EsferasIndirectCard } from './EsferasIndirectCard';

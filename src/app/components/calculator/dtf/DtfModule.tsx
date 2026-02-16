@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useDtfCalculator } from '@/app/hooks/useDtfCalculator';
+import { useDtfCalculator } from '@/app/store/calculator';
 import { formatMoney, parseMoney } from '@/app/lib/money';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';

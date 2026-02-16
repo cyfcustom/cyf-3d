@@ -1,4 +1,4 @@
-import { usePapeleriaCalculator } from '@/app/hooks/usePapeleriaCalculator';
+import { usePapeleriaCalculator } from '@/app/store/calculator';
 import { PapeleriaDirectCostsCard } from './PapeleriaDirectCostsCard';
 import { PapeleriaDepreciationCard } from './PapeleriaDepreciationCard';
 import { PapeleriaIndirectCard } from './PapeleriaIndirectCard';

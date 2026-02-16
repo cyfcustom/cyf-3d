@@ -1,4 +1,4 @@
-import { useEtiquetasCalculator } from '@/app/hooks/useEtiquetasCalculator';
+import { useEtiquetasCalculator } from '@/app/store/calculator';
 import { EtiquetasDirectCostsCard } from './EtiquetasDirectCostsCard';
 import { EtiquetasDepreciationCard } from './EtiquetasDepreciationCard';
 import { EtiquetasIndirectCard } from './EtiquetasIndirectCard';
