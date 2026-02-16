@@ -9,11 +9,11 @@ import { atomWithStorage } from 'jotai/utils';
 import type {
   CalculatorType,
   CalculatorState,
-  VinilCalculatorState,
-  EtiquetasCalculatorState,
-  EnviosCalculatorState,
+  VinylCalculatorState,
+  LabelsCalculatorState,
+  ShippingCalculatorState,
   DtfCalculatorState,
-  EsferasCalculatorState,
+  SpheresCalculatorState,
   CalculationTotals,
   PerUnitCosts,
   DirectCostItem,
@@ -25,21 +25,21 @@ import type {
 import {
   calculatePerUnitCosts,
   calculateTotals,
-  calculateVinilPerUnit,
-  calculateEnviosCosts,
+  calculateVinylPerUnit,
+  calculateShippingCosts,
   calculateDtfTotals,
-  calculateEsferasTotals,
+  calculateSpheresTotals,
 } from './calculations';
 import {
-  PAPELERIA_DEFAULT_STATE,
-  VINIL_DEFAULT_STATE,
-  SUBLIMACION_DEFAULT_STATE,
-  ETIQUETAS_DEFAULT_STATE,
+  STATIONERY_DEFAULT_STATE,
+  VINYL_DEFAULT_STATE,
+  SUBLIMATION_DEFAULT_STATE,
+  LABELS_DEFAULT_STATE,
   DTF_DEFAULT_STATE,
-  EMPAQUES_DEFAULT_STATE,
-  ESFERAS_DEFAULT_STATE,
-  ENVIOS_DEFAULT_STATE,
-  ETIQUETAS_PRODUCT_PRESETS,
+  PACKAGING_DEFAULT_STATE,
+  SPHERES_DEFAULT_STATE,
+  SHIPPING_DEFAULT_STATE,
+  LABELS_PRODUCT_PRESETS,
 } from './defaults';
 import { fetchActiveConfig } from '@/app/lib/api/calculatorConfigApi';
 
@@ -48,36 +48,63 @@ import { fetchActiveConfig } from '@/app/lib/api/calculatorConfigApi';
 // ============================================================================
 
 const STORAGE_KEYS = {
-  papeleria: 'papeleria-calculator-v2',
-  vinil: 'vinil-calculator-v2',
-  sublimacion: 'sublimacion-calculator-v2',
-  etiquetas: 'etiquetas-calculator-v2',
+  stationery: 'stationery-calculator-v2',
+  vinyl: 'vinyl-calculator-v2',
+  sublimation: 'sublimation-calculator-v2',
+  labels: 'labels-calculator-v2',
   dtf: 'dtf-calculator-v2',
-  empaques: 'empaques-calculator-v2',
-  esferas: 'esferas-calculator-v2',
-  envios: 'envios-calculator-v2',
+  packaging: 'packaging-calculator-v2',
+  spheres: 'spheres-calculator-v2',
+  shipping: 'shipping-calculator-v2',
 } as const;
+
+// Old keys for migration
+const LEGACY_STORAGE_KEYS = {
+  stationery: 'papeleria-calculator-v2',
+  vinyl: 'vinil-calculator-v2',
+  sublimation: 'sublimacion-calculator-v2',
+  labels: 'etiquetas-calculator-v2',
+  packaging: 'empaques-calculator-v2',
+  spheres: 'esferas-calculator-v2',
+  shipping: 'envios-calculator-v2',
+} as const;
+
+// Migrate old localStorage keys to new ones
+function migrateStorageKey(oldKey: string, newKey: string) {
+  try {
+    const oldData = localStorage.getItem(oldKey);
+    if (oldData && !localStorage.getItem(newKey)) {
+      localStorage.setItem(newKey, oldData);
+    }
+    localStorage.removeItem(oldKey);
+  } catch {}
+}
+
+// Run migration on module load
+Object.entries(LEGACY_STORAGE_KEYS).forEach(([module, oldKey]) => {
+  migrateStorageKey(oldKey, STORAGE_KEYS[module as keyof typeof STORAGE_KEYS]);
+});
 
 // ============================================================================
 // BASE CALCULATOR ATOMS (with localStorage persistence)
 // ============================================================================
 
-// Papelería
-export const papeleriaStateAtom = atomWithStorage<CalculatorState>(
-  STORAGE_KEYS.papeleria,
-  PAPELERIA_DEFAULT_STATE
+// Stationery
+export const stationeryStateAtom = atomWithStorage<CalculatorState>(
+  STORAGE_KEYS.stationery,
+  STATIONERY_DEFAULT_STATE
 );
 
-// Vinil
-export const vinilStateAtom = atomWithStorage<VinilCalculatorState>(
-  STORAGE_KEYS.vinil,
-  VINIL_DEFAULT_STATE
+// Vinyl
+export const vinylStateAtom = atomWithStorage<VinylCalculatorState>(
+  STORAGE_KEYS.vinyl,
+  VINYL_DEFAULT_STATE
 );
 
-// Sublimación — now hydrated from Supabase, with defaults.ts as offline fallback
-export const sublimacionStateAtom = atom<CalculatorState>(SUBLIMACION_DEFAULT_STATE);
+// Sublimation — now hydrated from Supabase, with defaults.ts as offline fallback
+export const sublimationStateAtom = atom<CalculatorState>(SUBLIMATION_DEFAULT_STATE);
 
-// Meta information about the active Supabase config for sublimación
+// Meta information about the active Supabase config for sublimation
 export interface ConfigMeta {
   configId: string | null;
   configVersion: number;
@@ -85,19 +112,19 @@ export interface ConfigMeta {
   lastSynced: string | null;
 }
 
-export const sublimacionConfigMetaAtom = atom<ConfigMeta>({
+export const sublimationConfigMetaAtom = atom<ConfigMeta>({
   configId: null,
   configVersion: 0,
   isLoading: false,
   lastSynced: null,
 });
 
-// Write-only atom: fetches config from Supabase and populates sublimacionStateAtom
-export const hydrateSublimacionFromSupabaseAtom = atom(null, async (get, set) => {
-  set(sublimacionConfigMetaAtom, (prev) => ({ ...prev, isLoading: true }));
+// Write-only atom: fetches config from Supabase and populates sublimationStateAtom
+export const hydrateSublimationFromSupabaseAtom = atom(null, async (get, set) => {
+  set(sublimationConfigMetaAtom, (prev) => ({ ...prev, isLoading: true }));
 
   try {
-    const config = await fetchActiveConfig('sublimacion');
+    const config = await fetchActiveConfig('sublimation');
 
     if (config) {
       const directCosts = config.direct_costs as DirectCostItem[];
@@ -105,15 +132,15 @@ export const hydrateSublimacionFromSupabaseAtom = atom(null, async (get, set) =>
       const laborCosts = config.labor_costs as LaborCosts | null;
       const financials = config.financials as FinancialSettings;
 
-      set(sublimacionStateAtom, {
+      set(sublimationStateAtom, {
         directCosts,
         depreciation,
-        laborCosts: laborCosts ?? SUBLIMACION_DEFAULT_STATE.laborCosts,
+        laborCosts: laborCosts ?? SUBLIMATION_DEFAULT_STATE.laborCosts,
         financials,
-        quantity: get(sublimacionStateAtom).quantity, // preserve user's current quantity
+        quantity: get(sublimationStateAtom).quantity, // preserve user's current quantity
       });
 
-      set(sublimacionConfigMetaAtom, {
+      set(sublimationConfigMetaAtom, {
         configId: config.id,
         configVersion: config.config_version,
         isLoading: false,
@@ -121,23 +148,23 @@ export const hydrateSublimacionFromSupabaseAtom = atom(null, async (get, set) =>
       });
     } else {
       // Supabase unavailable — keep defaults
-      set(sublimacionConfigMetaAtom, (prev) => ({ ...prev, isLoading: false }));
+      set(sublimationConfigMetaAtom, (prev) => ({ ...prev, isLoading: false }));
     }
   } catch (error) {
-    console.warn('[Hydrate] Failed to fetch sublimación config, using defaults:', error);
-    set(sublimacionConfigMetaAtom, (prev) => ({ ...prev, isLoading: false }));
+    console.warn('[Hydrate] Failed to fetch sublimation config, using defaults:', error);
+    set(sublimationConfigMetaAtom, (prev) => ({ ...prev, isLoading: false }));
   }
 
   // Clean up old localStorage key if it exists
   try {
-    localStorage.removeItem(STORAGE_KEYS.sublimacion);
+    localStorage.removeItem(LEGACY_STORAGE_KEYS.sublimation);
   } catch {}
 });
 
-// Etiquetas
-export const etiquetasStateAtom = atomWithStorage<EtiquetasCalculatorState>(
-  STORAGE_KEYS.etiquetas,
-  ETIQUETAS_DEFAULT_STATE
+// Labels
+export const labelsStateAtom = atomWithStorage<LabelsCalculatorState>(
+  STORAGE_KEYS.labels,
+  LABELS_DEFAULT_STATE
 );
 
 // DTF
@@ -146,22 +173,22 @@ export const dtfStateAtom = atomWithStorage<DtfCalculatorState>(
   DTF_DEFAULT_STATE
 );
 
-// Empaques
-export const empaquesStateAtom = atomWithStorage<CalculatorState>(
-  STORAGE_KEYS.empaques,
-  EMPAQUES_DEFAULT_STATE
+// Packaging
+export const packagingStateAtom = atomWithStorage<CalculatorState>(
+  STORAGE_KEYS.packaging,
+  PACKAGING_DEFAULT_STATE
 );
 
-// Esferas
-export const esferasStateAtom = atomWithStorage<EsferasCalculatorState>(
-  STORAGE_KEYS.esferas,
-  ESFERAS_DEFAULT_STATE
+// Spheres
+export const spheresStateAtom = atomWithStorage<SpheresCalculatorState>(
+  STORAGE_KEYS.spheres,
+  SPHERES_DEFAULT_STATE
 );
 
-// Envíos
-export const enviosStateAtom = atomWithStorage<EnviosCalculatorState>(
-  STORAGE_KEYS.envios,
-  ENVIOS_DEFAULT_STATE
+// Shipping
+export const shippingStateAtom = atomWithStorage<ShippingCalculatorState>(
+  STORAGE_KEYS.shipping,
+  SHIPPING_DEFAULT_STATE
 );
 
 // ============================================================================
@@ -169,10 +196,10 @@ export const enviosStateAtom = atomWithStorage<EnviosCalculatorState>(
 // ============================================================================
 
 /**
- * Papelería totals - derived atom
+ * Stationery totals - derived atom
  */
-export const papeleriaTotalsAtom = atom((get): CalculationTotals => {
-  const state = get(papeleriaStateAtom);
+export const stationeryTotalsAtom = atom((get): CalculationTotals => {
+  const state = get(stationeryStateAtom);
   const perUnit = calculatePerUnitCosts(
     state.directCosts,
     state.depreciation,
@@ -184,25 +211,25 @@ export const papeleriaTotalsAtom = atom((get): CalculationTotals => {
 });
 
 /**
- * Vinil totals - derived atom (includes merma calculation)
+ * Vinyl totals - derived atom (includes waste calculation)
  */
-export const vinilTotalsAtom = atom((get): CalculationTotals => {
-  const state = get(vinilStateAtom);
-  const perUnit = calculateVinilPerUnit(
+export const vinylTotalsAtom = atom((get): CalculationTotals => {
+  const state = get(vinylStateAtom);
+  const perUnit = calculateVinylPerUnit(
     state.directCosts,
     state.depreciation,
     state.extrasPerUnit,
-    state.mermaPct,
+    state.wastePct,
     state.financials
   );
   return calculateTotals(perUnit, state.quantity);
 });
 
 /**
- * Sublimación totals - derived atom
+ * Sublimation totals - derived atom
  */
-export const sublimacionTotalsAtom = atom((get): CalculationTotals => {
-  const state = get(sublimacionStateAtom);
+export const sublimationTotalsAtom = atom((get): CalculationTotals => {
+  const state = get(sublimationStateAtom);
   const perUnit = calculatePerUnitCosts(
     state.directCosts,
     state.depreciation,
@@ -214,10 +241,10 @@ export const sublimacionTotalsAtom = atom((get): CalculationTotals => {
 });
 
 /**
- * Etiquetas totals - derived atom
+ * Labels totals - derived atom
  */
-export const etiquetasTotalsAtom = atom((get): CalculationTotals => {
-  const state = get(etiquetasStateAtom);
+export const labelsTotalsAtom = atom((get): CalculationTotals => {
+  const state = get(labelsStateAtom);
   const perUnit = calculatePerUnitCosts(
     state.directCosts,
     state.depreciation,
@@ -237,10 +264,10 @@ export const dtfTotalsAtom = atom((get) => {
 });
 
 /**
- * Empaques totals - derived atom
+ * Packaging totals - derived atom
  */
-export const empaquesTotalsAtom = atom((get): CalculationTotals => {
-  const state = get(empaquesStateAtom);
+export const packagingTotalsAtom = atom((get): CalculationTotals => {
+  const state = get(packagingStateAtom);
   const perUnit = calculatePerUnitCosts(
     state.directCosts,
     state.depreciation,
@@ -252,32 +279,32 @@ export const empaquesTotalsAtom = atom((get): CalculationTotals => {
 });
 
 /**
- * Esferas totals - derived atom
+ * Spheres totals - derived atom
  */
-export const esferasTotalsAtom = atom((get) => {
-  const state = get(esferasStateAtom);
-  return calculateEsferasTotals(state);
+export const spheresTotalsAtom = atom((get) => {
+  const state = get(spheresStateAtom);
+  return calculateSpheresTotals(state);
 });
 
 /**
- * Envíos totals - derived atom
+ * Shipping totals - derived atom
  */
-export const enviosTotalsAtom = atom((get) => {
-  const state = get(enviosStateAtom);
-  return calculateEnviosCosts(
-    state.mensajeria.enabled,
-    state.mensajeria.baseRate,
-    state.mensajeria.km,
-    state.mensajeria.kmRate,
-    state.mensajeria.kg,
-    state.mensajeria.kgRate,
-    state.extras.embalaje.enabled,
-    state.extras.embalaje.cost,
-    state.extras.fragil.enabled,
-    state.extras.fragil.cost,
-    state.extras.seguro.enabled,
-    state.extras.seguro.percentaje,
-    state.extras.otros
+export const shippingTotalsAtom = atom((get) => {
+  const state = get(shippingStateAtom);
+  return calculateShippingCosts(
+    state.courier.enabled,
+    state.courier.baseRate,
+    state.courier.km,
+    state.courier.kmRate,
+    state.courier.kg,
+    state.courier.kgRate,
+    state.extras.packaging.enabled,
+    state.extras.packaging.cost,
+    state.extras.fragile.enabled,
+    state.extras.fragile.cost,
+    state.extras.insurance.enabled,
+    state.extras.insurance.percentage,
+    state.extras.other
   );
 });
 
@@ -286,13 +313,13 @@ export const enviosTotalsAtom = atom((get) => {
 // ============================================================================
 
 /**
- * Update direct cost item in Papelería
+ * Update direct cost item in Stationery
  */
-export const updatePapeleriaDirectCostAtom = atom(
+export const updateStationeryDirectCostAtom = atom(
   null,
   (get, set, update: { id: string; patch: Partial<DirectCostItem> }) => {
-    const state = get(papeleriaStateAtom);
-    set(papeleriaStateAtom, {
+    const state = get(stationeryStateAtom);
+    set(stationeryStateAtom, {
       ...state,
       directCosts: state.directCosts!.map((item) =>
         item.id === update.id ? { ...item, ...update.patch } : item
@@ -302,13 +329,13 @@ export const updatePapeleriaDirectCostAtom = atom(
 );
 
 /**
- * Update depreciation item in Papelería
+ * Update depreciation item in Stationery
  */
-export const updatePapeleriaDepreciationAtom = atom(
+export const updateStationeryDepreciationAtom = atom(
   null,
   (get, set, update: { id: string; patch: Partial<DepreciationItem> }) => {
-    const state = get(papeleriaStateAtom);
-    set(papeleriaStateAtom, {
+    const state = get(stationeryStateAtom);
+    set(stationeryStateAtom, {
       ...state,
       depreciation: state.depreciation!.map((item) =>
         item.id === update.id ? { ...item, ...update.patch } : item
@@ -318,13 +345,13 @@ export const updatePapeleriaDepreciationAtom = atom(
 );
 
 /**
- * Update indirect costs in Papelería
+ * Update indirect costs in Stationery
  */
-export const updatePapeleriaIndirectCostsAtom = atom(
+export const updateStationeryIndirectCostsAtom = atom(
   null,
   (get, set, patch: Partial<IndirectCosts>) => {
-    const state = get(papeleriaStateAtom);
-    set(papeleriaStateAtom, {
+    const state = get(stationeryStateAtom);
+    set(stationeryStateAtom, {
       ...state,
       indirectCosts: { ...state.indirectCosts!, ...patch },
     });
@@ -332,13 +359,13 @@ export const updatePapeleriaIndirectCostsAtom = atom(
 );
 
 /**
- * Update labor costs in Papelería
+ * Update labor costs in Stationery
  */
-export const updatePapeleriaLaborCostsAtom = atom(
+export const updateStationeryLaborCostsAtom = atom(
   null,
   (get, set, patch: Partial<LaborCosts>) => {
-    const state = get(papeleriaStateAtom);
-    set(papeleriaStateAtom, {
+    const state = get(stationeryStateAtom);
+    set(stationeryStateAtom, {
       ...state,
       laborCosts: { ...state.laborCosts!, ...patch },
     });
@@ -346,13 +373,13 @@ export const updatePapeleriaLaborCostsAtom = atom(
 );
 
 /**
- * Update financials in Papelería
+ * Update financials in Stationery
  */
-export const updatePapeleriaFinancialsAtom = atom(
+export const updateStationeryFinancialsAtom = atom(
   null,
   (get, set, patch: Partial<FinancialSettings>) => {
-    const state = get(papeleriaStateAtom);
-    set(papeleriaStateAtom, {
+    const state = get(stationeryStateAtom);
+    set(stationeryStateAtom, {
       ...state,
       financials: { ...state.financials, ...patch },
     });
@@ -360,35 +387,35 @@ export const updatePapeleriaFinancialsAtom = atom(
 );
 
 /**
- * Update quantity in Papelería
+ * Update quantity in Stationery
  */
-export const updatePapeleriaQuantityAtom = atom(
+export const updateStationeryQuantityAtom = atom(
   null,
   (get, set, quantity: number) => {
-    const state = get(papeleriaStateAtom);
-    set(papeleriaStateAtom, { ...state, quantity });
+    const state = get(stationeryStateAtom);
+    set(stationeryStateAtom, { ...state, quantity });
   }
 );
 
 /**
- * Reset Papelería to defaults
+ * Reset Stationery to defaults
  */
-export const resetPapeleriaAtom = atom(null, (get, set) => {
-  set(papeleriaStateAtom, PAPELERIA_DEFAULT_STATE);
+export const resetStationeryAtom = atom(null, (get, set) => {
+  set(stationeryStateAtom, STATIONERY_DEFAULT_STATE);
 });
 
 // ============================================================================
-// ETIQUETAS SPECIAL ACTIONS
+// LABELS SPECIAL ACTIONS
 // ============================================================================
 
 /**
- * Update product type in Etiquetas (updates preset values)
+ * Update product type in Labels (updates preset values)
  */
-export const updateEtiquetasProductTypeAtom = atom(
+export const updateLabelsProductTypeAtom = atom(
   null,
-  (get, set, productType: EtiquetasCalculatorState['productType']) => {
-    const state = get(etiquetasStateAtom);
-    const preset = ETIQUETAS_PRODUCT_PRESETS[productType];
+  (get, set, productType: LabelsCalculatorState['productType']) => {
+    const state = get(labelsStateAtom);
+    const preset = LABELS_PRODUCT_PRESETS[productType];
 
     if (!preset) return;
 
@@ -398,7 +425,7 @@ export const updateEtiquetasProductTypeAtom = atom(
         : item
     );
 
-    set(etiquetasStateAtom, {
+    set(labelsStateAtom, {
       ...state,
       productType,
       directCosts: updatedDirectCosts,
@@ -415,7 +442,7 @@ export const updateEtiquetasProductTypeAtom = atom(
  * Returns a set of common updater atoms
  */
 export function createCalculatorUpdaters<T extends CalculatorState>(
-  stateAtom: typeof papeleriaStateAtom,
+  stateAtom: typeof stationeryStateAtom,
   defaultState: T
 ) {
   return {
@@ -472,45 +499,45 @@ export function createCalculatorUpdaters<T extends CalculatorState>(
 // ============================================================================
 
 export const CALCULATOR_ATOMS_MAP = {
-  papeleria: {
-    state: papeleriaStateAtom,
-    totals: papeleriaTotalsAtom,
-    default: PAPELERIA_DEFAULT_STATE,
+  stationery: {
+    state: stationeryStateAtom,
+    totals: stationeryTotalsAtom,
+    default: STATIONERY_DEFAULT_STATE,
   },
-  vinil: {
-    state: vinilStateAtom,
-    totals: vinilTotalsAtom,
-    default: VINIL_DEFAULT_STATE,
+  vinyl: {
+    state: vinylStateAtom,
+    totals: vinylTotalsAtom,
+    default: VINYL_DEFAULT_STATE,
   },
-  sublimacion: {
-    state: sublimacionStateAtom,
-    totals: sublimacionTotalsAtom,
-    default: SUBLIMACION_DEFAULT_STATE,
+  sublimation: {
+    state: sublimationStateAtom,
+    totals: sublimationTotalsAtom,
+    default: SUBLIMATION_DEFAULT_STATE,
   },
-  etiquetas: {
-    state: etiquetasStateAtom,
-    totals: etiquetasTotalsAtom,
-    default: ETIQUETAS_DEFAULT_STATE,
+  labels: {
+    state: labelsStateAtom,
+    totals: labelsTotalsAtom,
+    default: LABELS_DEFAULT_STATE,
   },
   dtf: {
     state: dtfStateAtom,
     totals: dtfTotalsAtom,
     default: DTF_DEFAULT_STATE,
   },
-  empaques: {
-    state: empaquesStateAtom,
-    totals: empaquesTotalsAtom,
-    default: EMPAQUES_DEFAULT_STATE,
+  packaging: {
+    state: packagingStateAtom,
+    totals: packagingTotalsAtom,
+    default: PACKAGING_DEFAULT_STATE,
   },
-  esferas: {
-    state: esferasStateAtom,
-    totals: esferasTotalsAtom,
-    default: ESFERAS_DEFAULT_STATE,
+  spheres: {
+    state: spheresStateAtom,
+    totals: spheresTotalsAtom,
+    default: SPHERES_DEFAULT_STATE,
   },
-  envios: {
-    state: enviosStateAtom,
-    totals: enviosTotalsAtom,
-    default: ENVIOS_DEFAULT_STATE,
+  shipping: {
+    state: shippingStateAtom,
+    totals: shippingTotalsAtom,
+    default: SHIPPING_DEFAULT_STATE,
   },
 } as const;
 

@@ -4,11 +4,13 @@ import { LogOut, Calculator, Palette, Shield, Settings, ExternalLink, ChevronRig
 import { useState } from 'react';
 import { MFASetupDialog } from '@/app/components/admin/MFASetupDialog';
 import { motion } from 'framer-motion';
+import { useTranslation, Trans } from 'react-i18next';
 
 export function AdminDashboard() {
   const { authUser, signOut } = useAuth();
   const navigate = useNavigate();
   const [showMfaSetup, setShowMfaSetup] = useState(false);
+  const { t } = useTranslation('admin');
 
   const handleLogout = async () => {
     await signOut();
@@ -44,7 +46,7 @@ export function AdminDashboard() {
                 <img src="/CYF CUSTOM_isotipo circular negro.png" alt="CYF" className="w-8 h-8" />
               </motion.div>
               <div>
-                <h1 className="text-xl font-extrabold tracking-tight">CYF ADMIN</h1>
+                <h1 className="text-xl font-extrabold tracking-tight">{t('dashboard.title')}</h1>
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{authUser?.email}</p>
               </div>
             </div>
@@ -56,7 +58,7 @@ export function AdminDashboard() {
               className="group flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-muted/50 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all duration-300 border border-border/50 font-bold text-xs uppercase tracking-wider"
             >
               <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
-              <span>Cerrar Sesión</span>
+              <span>{t('dashboard.logout')}</span>
             </motion.button>
           </div>
         </div>
@@ -72,10 +74,19 @@ export function AdminDashboard() {
           {/* Welcome Section */}
           <motion.div variants={itemVariants} className="mb-12">
             <h2 className="text-4xl font-extrabold tracking-tight mb-3">
-              Bienvenido, <span className="text-[#FFD600]">Francisco</span>
+              <Trans
+                i18nKey="dashboard.welcome"
+                ns="admin"
+                values={{ name: 'Francisco' }}
+                components={{ highlight: <span className="text-[#FFD600]" /> }}
+              />
             </h2>
             <p className="text-muted-foreground font-medium text-lg max-w-2xl">
-              Gestiona el universo digital de <span className="text-foreground font-bold">CYF Customs</span> desde tu centro de control privado.
+              <Trans
+                i18nKey="dashboard.subtitle"
+                ns="admin"
+                components={{ bold: <span className="text-foreground font-bold" /> }}
+              />
             </p>
           </motion.div>
 
@@ -89,9 +100,9 @@ export function AdminDashboard() {
                 <div className="w-12 h-12 bg-[#FF6B35]/10 rounded-2xl flex items-center justify-center group-hover:bg-[#FF6B35] transition-all mb-4">
                   <Sliders className="w-6 h-6 text-[#FF6B35] group-hover:text-white" />
                 </div>
-                <h3 className="text-lg font-bold mb-1">Configuración</h3>
-                <p className="text-sm text-muted-foreground mb-4">Tarifas y parámetros de cada calculadora.</p>
-                <span className="mt-auto text-[10px] font-bold text-[#FF6B35] uppercase tracking-widest">Gestionar</span>
+                <h3 className="text-lg font-bold mb-1">{t('cards.config.title')}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{t('cards.config.description')}</p>
+                <span className="mt-auto text-[10px] font-bold text-[#FF6B35] uppercase tracking-widest">{t('cards.config.action')}</span>
               </Link>
             </motion.div>
 
@@ -103,9 +114,9 @@ export function AdminDashboard() {
                 <div className="w-12 h-12 bg-[#10B981]/10 rounded-2xl flex items-center justify-center group-hover:bg-[#10B981] transition-all mb-4">
                   <Users className="w-6 h-6 text-[#10B981] group-hover:text-white" />
                 </div>
-                <h3 className="text-lg font-bold mb-1">Usuarios</h3>
-                <p className="text-sm text-muted-foreground mb-4">Roles y permisos de acceso.</p>
-                <span className="mt-auto text-[10px] font-bold text-[#10B981] uppercase tracking-widest">Gestionar</span>
+                <h3 className="text-lg font-bold mb-1">{t('cards.users.title')}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{t('cards.users.description')}</p>
+                <span className="mt-auto text-[10px] font-bold text-[#10B981] uppercase tracking-widest">{t('cards.users.action')}</span>
               </Link>
             </motion.div>
 
@@ -117,9 +128,9 @@ export function AdminDashboard() {
                 <div className="w-12 h-12 bg-[#8B5CF6]/10 rounded-2xl flex items-center justify-center group-hover:bg-[#8B5CF6] transition-all mb-4">
                   <History className="w-6 h-6 text-[#8B5CF6] group-hover:text-white" />
                 </div>
-                <h3 className="text-lg font-bold mb-1">Auditoría</h3>
-                <p className="text-sm text-muted-foreground mb-4">Historial de cambios de configuración.</p>
-                <span className="mt-auto text-[10px] font-bold text-[#8B5CF6] uppercase tracking-widest">Ver Log</span>
+                <h3 className="text-lg font-bold mb-1">{t('cards.audit.title')}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{t('cards.audit.description')}</p>
+                <span className="mt-auto text-[10px] font-bold text-[#8B5CF6] uppercase tracking-widest">{t('cards.audit.action')}</span>
               </Link>
             </motion.div>
 
@@ -131,9 +142,9 @@ export function AdminDashboard() {
                 <div className="w-12 h-12 bg-[#06B6D4]/10 rounded-2xl flex items-center justify-center group-hover:bg-[#06B6D4] transition-all mb-4">
                   <FileText className="w-6 h-6 text-[#06B6D4] group-hover:text-white" />
                 </div>
-                <h3 className="text-lg font-bold mb-1">Cálculos</h3>
-                <p className="text-sm text-muted-foreground mb-4">Historial de cálculos de usuarios.</p>
-                <span className="mt-auto text-[10px] font-bold text-[#06B6D4] uppercase tracking-widest">Ver Historial</span>
+                <h3 className="text-lg font-bold mb-1">{t('cards.calculations.title')}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{t('cards.calculations.description')}</p>
+                <span className="mt-auto text-[10px] font-bold text-[#06B6D4] uppercase tracking-widest">{t('cards.calculations.action')}</span>
               </Link>
             </motion.div>
           </div>
@@ -143,7 +154,7 @@ export function AdminDashboard() {
             {/* Mis Diseños Card */}
             <motion.div variants={itemVariants}>
               <Link
-                to="/configurador"
+                to="/configurator"
                 className="group relative flex flex-col bg-card border border-border/40 hover:border-[#FFD600]/50 rounded-[32px] p-8 shadow-sm hover:shadow-2xl hover:shadow-[#FFD600]/5 transition-all duration-500 overflow-hidden h-full"
               >
                 <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#FFD600]/5 blur-3xl rounded-full group-hover:bg-[#FFD600]/10 transition-colors" />
@@ -155,13 +166,13 @@ export function AdminDashboard() {
                   <ExternalLink size={20} className="text-muted-foreground/30 group-hover:text-[#FFD600] transition-colors" />
                 </div>
 
-                <h3 className="text-2xl font-extrabold mb-3">Mis Diseños</h3>
+                <h3 className="text-2xl font-extrabold mb-3">{t('quickActions.designs.title')}</h3>
                 <p className="text-muted-foreground font-medium text-sm leading-relaxed mb-8">
-                  Workspace creativo para crear y personalizar productos en 3D.
+                  {t('quickActions.designs.description')}
                 </p>
 
                 <div className="mt-auto flex items-center gap-2 text-[11px] font-bold text-[#FFD600] uppercase tracking-widest">
-                  ABRIR CONFIGURADOR <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  {t('quickActions.designs.action')} <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </div>
               </Link>
             </motion.div>
@@ -169,7 +180,7 @@ export function AdminDashboard() {
             {/* Calculadoras Card */}
             <motion.div variants={itemVariants}>
               <Link
-                to="/calculadoras"
+                to="/calculators"
                 className="group relative flex flex-col bg-card border border-border/40 hover:border-[#00B4D8]/50 rounded-[32px] p-8 shadow-sm hover:shadow-2xl hover:shadow-[#00B4D8]/5 transition-all duration-500 overflow-hidden h-full"
               >
                 <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#00B4D8]/5 blur-3xl rounded-full group-hover:bg-[#00B4D8]/10 transition-colors" />
@@ -181,13 +192,13 @@ export function AdminDashboard() {
                   <ExternalLink size={20} className="text-muted-foreground/30 group-hover:text-[#00B4D8] transition-colors" />
                 </div>
 
-                <h3 className="text-2xl font-extrabold mb-3">Calculadoras</h3>
+                <h3 className="text-2xl font-extrabold mb-3">{t('quickActions.calculators.title')}</h3>
                 <p className="text-muted-foreground font-medium text-sm leading-relaxed mb-8">
-                  Suite completa de herramientas para cotizaciones precisas.
+                  {t('quickActions.calculators.description')}
                 </p>
 
                 <div className="mt-auto flex items-center gap-2 text-[11px] font-bold text-[#00B4D8] uppercase tracking-widest">
-                  IR A LAS SUITE <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  {t('quickActions.calculators.action')} <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </div>
               </Link>
             </motion.div>
@@ -207,13 +218,13 @@ export function AdminDashboard() {
                   <Settings size={20} className="text-muted-foreground/30 group-hover:text-foreground transition-colors" />
                 </div>
 
-                <h3 className="text-2xl font-extrabold mb-3">Seguridad</h3>
+                <h3 className="text-2xl font-extrabold mb-3">{t('quickActions.security.title')}</h3>
                 <p className="text-muted-foreground font-medium text-sm leading-relaxed mb-8">
-                  Configura MFA y protege el acceso a la plataforma.
+                  {t('quickActions.security.description')}
                 </p>
 
                 <div className="mt-auto flex items-center gap-2 text-[11px] font-bold text-muted-foreground group-hover:text-foreground uppercase tracking-widest transition-colors">
-                  CONFIGURAR 2FA <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  {t('quickActions.security.action')} <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </div>
               </button>
             </motion.div>
@@ -223,30 +234,30 @@ export function AdminDashboard() {
           <motion.div variants={itemVariants} className="bg-card border border-border/40 rounded-[32px] p-8 md:p-10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
               <div>
-                <h3 className="text-2xl font-extrabold mb-2">Resumen Operativo</h3>
-                <p className="text-muted-foreground font-medium text-sm tracking-wide">Estado actual de la plataforma y servicios.</p>
+                <h3 className="text-2xl font-extrabold mb-2">{t('overview.title')}</h3>
+                <p className="text-muted-foreground font-medium text-sm tracking-wide">{t('overview.subtitle')}</p>
               </div>
               <div className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold uppercase tracking-widest">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                Sistemas Online
+                {t('overview.systemsOnline')}
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-muted/30 border border-border/20 rounded-3xl p-6">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Módulos Activos</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{t('overview.activeModules')}</p>
                 <p className="text-3xl font-extrabold tracking-tight">8</p>
               </div>
               <div className="bg-muted/30 border border-border/20 rounded-3xl p-6">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Sesión Admin</p>
-                <p className="text-3xl font-extrabold tracking-tight text-emerald-500">Protegido</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{t('overview.adminSession')}</p>
+                <p className="text-3xl font-extrabold tracking-tight text-emerald-500">{t('overview.protected')}</p>
               </div>
               <div className="bg-muted/30 border border-border/20 rounded-3xl p-6">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Base de Datos</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{t('overview.database')}</p>
                 <p className="text-3xl font-extrabold tracking-tight">Supabase</p>
               </div>
               <div className="bg-muted/30 border border-border/20 rounded-3xl p-6">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Región</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{t('overview.region')}</p>
                 <p className="text-3xl font-extrabold tracking-tight">VE</p>
               </div>
             </div>

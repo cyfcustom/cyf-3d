@@ -1,7 +1,7 @@
 /**
  * Default states and presets for all calculators.
  *
- * NOTE: For modules migrated to Supabase (currently: sublimación), these defaults
+ * NOTE: For modules migrated to Supabase (currently: sublimation), these defaults
  * serve as OFFLINE FALLBACK values. The primary source of truth is the
  * `calculator_configs` table in Supabase. If the fetch fails, these values are used.
  */
@@ -12,13 +12,13 @@ import type {
   IndirectCosts,
   LaborCosts,
   FinancialSettings,
-  VinilCalculatorState,
-  EtiquetasCalculatorState,
-  EtiquetasProductType,
-  EnviosCalculatorState,
+  VinylCalculatorState,
+  LabelsCalculatorState,
+  LabelsProductType,
+  ShippingCalculatorState,
   CalculatorState,
   DtfCalculatorState,
-  EsferasCalculatorState,
+  SpheresCalculatorState,
 } from './types';
 
 // ============================================================================
@@ -26,22 +26,22 @@ import type {
 // ============================================================================
 
 export const DEFAULT_FINANCIALS: FinancialSettings = {
-  gananciaPct: 40,
-  impuestosPct: 16,
-  applyGanancia: true,
-  applyImpuestos: true,
+  profitPct: 40,
+  taxPct: 16,
+  applyProfit: true,
+  applyTax: true,
 };
 
 export const DEFAULT_INDIRECT_COSTS: IndirectCosts = {
   enabled: false,
   monthly: {
-    alquiler: 0,
+    rent: 0,
     internet: 0,
-    suscripciones: 0,
-    transporte: 0,
-    electricidad: 0,
-    publicidad: 0,
-    otros: 0,
+    subscriptions: 0,
+    transport: 0,
+    electricity: 0,
+    advertising: 0,
+    other: 0,
   },
   unitsPerMonth: 100,
 };
@@ -49,17 +49,17 @@ export const DEFAULT_INDIRECT_COSTS: IndirectCosts = {
 export const DEFAULT_LABOR_COSTS: LaborCosts = {
   enabled: false,
   salary: 400,
-  hoursPerMonth: 176, // ~22 días × 8 horas
+  hoursPerMonth: 176, // ~22 days x 8 hours
   setupMinutes: 5,
   runMinutesPerUnit: 3,
   unitsPerBatch: 1,
 };
 
 // ============================================================================
-// PAPELERIA DEFAULTS
+// STATIONERY DEFAULTS
 // ============================================================================
 
-export const PAPELERIA_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
+export const STATIONERY_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
   { id: 'sustratoA', label: 'Sustrato A', enabled: false, price: 20, quantity: 50 },
   { id: 'sustratoB', label: 'Sustrato B', enabled: false, price: 0, quantity: 0 },
   { id: 'adhA', label: 'Adhesivo / montaje A', enabled: false, price: 3, quantity: 1 },
@@ -68,7 +68,7 @@ export const PAPELERIA_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
   { id: 'pack', label: 'Empaque', enabled: false, price: 5, quantity: 50 },
 ];
 
-export const PAPELERIA_DEFAULT_DEPRECIATION: DepreciationItem[] = [
+export const STATIONERY_DEFAULT_DEPRECIATION: DepreciationItem[] = [
   { id: 'plotter', label: 'Plotter de corte', enabled: false, mode: 'month', price: 400, unitsPerMonth: 100 },
   { id: 'impresora', label: 'Impresora', enabled: false, mode: 'month', price: 240, unitsPerMonth: 100 },
   { id: 'guillotina', label: 'Guillotina', enabled: false, mode: 'month', price: 120, unitsPerMonth: 100 },
@@ -78,9 +78,9 @@ export const PAPELERIA_DEFAULT_DEPRECIATION: DepreciationItem[] = [
   { id: 'tapete', label: 'Tapete', enabled: false, mode: 'life', price: 12, lifeUnits: 100 },
 ];
 
-export const PAPELERIA_DEFAULT_STATE: CalculatorState = {
-  directCosts: PAPELERIA_DEFAULT_DIRECT_COSTS,
-  depreciation: PAPELERIA_DEFAULT_DEPRECIATION,
+export const STATIONERY_DEFAULT_STATE: CalculatorState = {
+  directCosts: STATIONERY_DEFAULT_DIRECT_COSTS,
+  depreciation: STATIONERY_DEFAULT_DEPRECIATION,
   indirectCosts: DEFAULT_INDIRECT_COSTS,
   laborCosts: DEFAULT_LABOR_COSTS,
   financials: DEFAULT_FINANCIALS,
@@ -88,10 +88,10 @@ export const PAPELERIA_DEFAULT_STATE: CalculatorState = {
 };
 
 // ============================================================================
-// VINIL DEFAULTS
+// VINYL DEFAULTS
 // ============================================================================
 
-export const VINIL_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
+export const VINYL_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
   { id: 'base', label: 'Producto base', enabled: true, price: 90, quantity: 36 },
   { id: 'papel', label: 'Papel', enabled: true, price: 10, quantity: 100 },
   { id: 'tinta', label: 'Tinta', enabled: true, price: 40, quantity: 300 },
@@ -99,27 +99,27 @@ export const VINIL_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
   { id: 'empaque', label: 'Empaque', enabled: true, price: 5, quantity: 50 },
 ];
 
-export const VINIL_DEFAULT_DEPRECIATION: DepreciationItem[] = [
+export const VINYL_DEFAULT_DEPRECIATION: DepreciationItem[] = [
   { id: 'impresora', label: 'Impresora', enabled: true, mode: 'life', price: 240, lifeUnits: 2400 },
   { id: 'plancha', label: 'Plancha térmica', enabled: true, mode: 'life', price: 400, lifeUnits: 2400 },
   { id: 'pc', label: 'PC', enabled: true, mode: 'life', price: 350, lifeUnits: 2400 },
   { id: 'tapete', label: 'Tapete de corte', enabled: false, mode: 'life', price: 12, lifeUnits: 500 },
 ];
 
-export const VINIL_DEFAULT_STATE: VinilCalculatorState = {
-  directCosts: VINIL_DEFAULT_DIRECT_COSTS,
-  depreciation: VINIL_DEFAULT_DEPRECIATION,
+export const VINYL_DEFAULT_STATE: VinylCalculatorState = {
+  directCosts: VINYL_DEFAULT_DIRECT_COSTS,
+  depreciation: VINYL_DEFAULT_DEPRECIATION,
   extrasPerUnit: 0,
-  mermaPct: 5,
+  wastePct: 5,
   financials: DEFAULT_FINANCIALS,
   quantity: 1,
 };
 
 // ============================================================================
-// SUBLIMACION DEFAULTS
+// SUBLIMATION DEFAULTS
 // ============================================================================
 
-export const SUBLIMACION_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
+export const SUBLIMATION_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
   { id: 'producto', label: 'Producto base', enabled: true, price: 90, quantity: 36 },
   { id: 'papel', label: 'Papel sublimación', enabled: true, price: 10, quantity: 100 },
   { id: 'tinta', label: 'Tinta', enabled: true, price: 40, quantity: 300 },
@@ -127,7 +127,7 @@ export const SUBLIMACION_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
   { id: 'empaque', label: 'Empaque', enabled: true, price: 5, quantity: 50 },
 ];
 
-export const SUBLIMACION_DEFAULT_DEPRECIATION: DepreciationItem[] = [
+export const SUBLIMATION_DEFAULT_DEPRECIATION: DepreciationItem[] = [
   { id: 'impresora', label: 'Impresora', enabled: true, mode: 'month', price: 240, unitsPerMonth: 100 },
   { id: 'plancha', label: 'Plancha térmica', enabled: true, mode: 'month', price: 400, unitsPerMonth: 100 },
   { id: 'pc', label: 'PC', enabled: true, mode: 'month', price: 350, unitsPerMonth: 100 },
@@ -135,9 +135,9 @@ export const SUBLIMACION_DEFAULT_DEPRECIATION: DepreciationItem[] = [
   { id: 'resistencia', label: 'Resistencia', enabled: false, mode: 'month', price: 50, unitsPerMonth: 100 },
 ];
 
-export const SUBLIMACION_DEFAULT_STATE: CalculatorState = {
-  directCosts: SUBLIMACION_DEFAULT_DIRECT_COSTS,
-  depreciation: SUBLIMACION_DEFAULT_DEPRECIATION,
+export const SUBLIMATION_DEFAULT_STATE: CalculatorState = {
+  directCosts: SUBLIMATION_DEFAULT_DIRECT_COSTS,
+  depreciation: SUBLIMATION_DEFAULT_DEPRECIATION,
   laborCosts: {
     enabled: false,
     salary: 400,
@@ -151,44 +151,44 @@ export const SUBLIMACION_DEFAULT_STATE: CalculatorState = {
 };
 
 // ============================================================================
-// ETIQUETAS DEFAULTS
+// LABELS DEFAULTS
 // ============================================================================
 
-export const ETIQUETAS_PRODUCT_PRESETS: Record<
-  EtiquetasProductType,
+export const LABELS_PRODUCT_PRESETS: Record<
+  LabelsProductType,
   { price: number; quantity: number }
 > = {
-  'Vinil imprimible': { price: 13, quantity: 20 },
-  'Papel fotográfico adhesivo': { price: 13, quantity: 50 },
-  'Etiqueta PVC': { price: 15, quantity: 20 },
-  'Etiqueta BOPP': { price: 16, quantity: 20 },
-  Holográfico: { price: 18, quantity: 20 },
-  Transparente: { price: 14, quantity: 20 },
-  Kraft: { price: 12, quantity: 20 },
-  Otros: { price: 2.5, quantity: 1 },
+  'printable_vinyl': { price: 13, quantity: 20 },
+  'adhesive_photo_paper': { price: 13, quantity: 50 },
+  'pvc_label': { price: 15, quantity: 20 },
+  'bopp_label': { price: 16, quantity: 20 },
+  'holographic': { price: 18, quantity: 20 },
+  'transparent': { price: 14, quantity: 20 },
+  'kraft': { price: 12, quantity: 20 },
+  'other': { price: 2.5, quantity: 1 },
 };
 
-export const ETIQUETAS_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
+export const LABELS_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
   { id: 'producto', label: 'Producto base', enabled: true, price: 13, quantity: 20 },
   { id: 'tinta', label: 'Tinta', enabled: true, price: 30, quantity: 1000 },
   { id: 'laminado', label: 'Laminado en frío', enabled: false, price: 10, quantity: 20 },
 ];
 
-export const ETIQUETAS_DEFAULT_DEPRECIATION: DepreciationItem[] = [
+export const LABELS_DEFAULT_DEPRECIATION: DepreciationItem[] = [
   { id: 'cuchilla', label: 'Cuchilla', enabled: true, mode: 'life', price: 25, lifeUnits: 100 },
   { id: 'plotter', label: 'Plotter de corte', enabled: true, mode: 'month', price: 400, unitsPerMonth: 100 },
   { id: 'impresora', label: 'Impresora', enabled: true, mode: 'month', price: 240, unitsPerMonth: 100 },
 ];
 
-export const ETIQUETAS_DEFAULT_STATE: EtiquetasCalculatorState = {
-  directCosts: ETIQUETAS_DEFAULT_DIRECT_COSTS,
-  depreciation: ETIQUETAS_DEFAULT_DEPRECIATION,
+export const LABELS_DEFAULT_STATE: LabelsCalculatorState = {
+  directCosts: LABELS_DEFAULT_DIRECT_COSTS,
+  depreciation: LABELS_DEFAULT_DEPRECIATION,
   indirectCosts: DEFAULT_INDIRECT_COSTS,
   laborCosts: {
     ...DEFAULT_LABOR_COSTS,
     runMinutesPerUnit: 2,
   },
-  productType: 'Vinil imprimible',
+  productType: 'printable_vinyl',
   financials: DEFAULT_FINANCIALS,
   quantity: 1,
 };
@@ -207,12 +207,12 @@ export const DTF_DEFAULT_STATE: DtfCalculatorState = {
   designWidthCm: 10,
   designHeightCm: 10,
   extras: {
-    envio: 0,
-    diseno: 0,
-    plancha: 0,
-    otros: 0,
+    shipping: 0,
+    design: 0,
+    press: 0,
+    other: 0,
   },
-  prenda: {
+  garment: {
     enabled: false,
     count: 0,
     packPrice: 0,
@@ -231,23 +231,23 @@ export const DTF_DEFAULT_STATE: DtfCalculatorState = {
 };
 
 // ============================================================================
-// EMPAQUES DEFAULTS
+// PACKAGING DEFAULTS
 // ============================================================================
 
-export const EMPAQUES_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
+export const PACKAGING_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
   { id: 'material', label: 'Material base', enabled: true, price: 50, quantity: 100 },
   { id: 'tinta', label: 'Tinta/impresión', enabled: true, price: 30, quantity: 500 },
   { id: 'adhesivo', label: 'Adhesivo/pegamento', enabled: false, price: 15, quantity: 200 },
 ];
 
-export const EMPAQUES_DEFAULT_DEPRECIATION: DepreciationItem[] = [
+export const PACKAGING_DEFAULT_DEPRECIATION: DepreciationItem[] = [
   { id: 'cortadora', label: 'Cortadora', enabled: true, mode: 'month', price: 300, unitsPerMonth: 100 },
   { id: 'selladora', label: 'Selladora', enabled: false, mode: 'month', price: 200, unitsPerMonth: 100 },
 ];
 
-export const EMPAQUES_DEFAULT_STATE: CalculatorState = {
-  directCosts: EMPAQUES_DEFAULT_DIRECT_COSTS,
-  depreciation: EMPAQUES_DEFAULT_DEPRECIATION,
+export const PACKAGING_DEFAULT_STATE: CalculatorState = {
+  directCosts: PACKAGING_DEFAULT_DIRECT_COSTS,
+  depreciation: PACKAGING_DEFAULT_DEPRECIATION,
   indirectCosts: DEFAULT_INDIRECT_COSTS,
   laborCosts: DEFAULT_LABOR_COSTS,
   financials: DEFAULT_FINANCIALS,
@@ -255,10 +255,10 @@ export const EMPAQUES_DEFAULT_STATE: CalculatorState = {
 };
 
 // ============================================================================
-// ESFERAS DEFAULTS
+// SPHERES DEFAULTS
 // ============================================================================
 
-export const ESFERAS_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
+export const SPHERES_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
   { id: 'producto', label: 'Producto', enabled: true, price: 24, quantity: 12 },
   { id: 'vinil', label: 'Vinil adhesivo', enabled: false, price: 8, quantity: 100 },
   { id: 'papel', label: 'Papel fotográfico', enabled: false, price: 10, quantity: 100 },
@@ -268,7 +268,7 @@ export const ESFERAS_DEFAULT_DIRECT_COSTS: DirectCostItem[] = [
   { id: 'silicon', label: 'Silicón en barra', enabled: false, price: 5, quantity: 50 },
 ];
 
-export const ESFERAS_DEFAULT_DEPRECIATION: DepreciationItem[] = [
+export const SPHERES_DEFAULT_DEPRECIATION: DepreciationItem[] = [
   { id: 'impresora', label: 'Impresora', enabled: false, mode: 'month', price: 240, unitsPerMonth: 100 },
   { id: 'plancha', label: 'Plancha térmica', enabled: false, mode: 'month', price: 400, unitsPerMonth: 100 },
   { id: 'pc', label: 'Computadora', enabled: false, mode: 'month', price: 350, unitsPerMonth: 100 },
@@ -278,29 +278,29 @@ export const ESFERAS_DEFAULT_DEPRECIATION: DepreciationItem[] = [
   { id: 'pistola', label: 'Pistola de silicón', enabled: false, mode: 'month', price: 18, unitsPerMonth: 100 },
 ];
 
-export const ESFERAS_DEFAULT_STATE: EsferasCalculatorState = {
+export const SPHERES_DEFAULT_STATE: SpheresCalculatorState = {
   productSelection: 'colores6',
-  directCosts: ESFERAS_DEFAULT_DIRECT_COSTS,
-  depreciation: ESFERAS_DEFAULT_DEPRECIATION,
+  directCosts: SPHERES_DEFAULT_DIRECT_COSTS,
+  depreciation: SPHERES_DEFAULT_DEPRECIATION,
   indirectCosts: DEFAULT_INDIRECT_COSTS,
   laborCosts: {
     ...DEFAULT_LABOR_COSTS,
     runMinutesPerUnit: 2,
   },
   financials: DEFAULT_FINANCIALS,
-  gananciaMode: 'margen',
+  profitMode: 'margin',
   quantity: 1,
   quantityEnabled: false,
 };
 
 // ============================================================================
-// ENVIOS DEFAULTS
+// SHIPPING DEFAULTS
 // ============================================================================
 
-export const ENVIOS_DEFAULT_STATE: EnviosCalculatorState = {
-  mensajeria: {
+export const SHIPPING_DEFAULT_STATE: ShippingCalculatorState = {
+  courier: {
     enabled: false,
-    tipo: 'Motorizado local',
+    type: 'local_motorcycle',
     km: 0,
     baseRate: 0,
     kmRate: 0,
@@ -308,9 +308,9 @@ export const ENVIOS_DEFAULT_STATE: EnviosCalculatorState = {
     kgRate: 0,
   },
   extras: {
-    embalaje: { enabled: false, cost: 0 },
-    fragil: { enabled: false, cost: 0 },
-    seguro: { enabled: false, percentaje: 0 },
-    otros: 0,
+    packaging: { enabled: false, cost: 0 },
+    fragile: { enabled: false, cost: 0 },
+    insurance: { enabled: false, percentage: 0 },
+    other: 0,
   },
 };

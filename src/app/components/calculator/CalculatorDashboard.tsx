@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Package2
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -59,117 +60,57 @@ interface Category {
   }[];
 }
 
-const categories: Category[] = [
+interface CategoryDef {
+  id: string;
+  titleKey: string;
+  descKey: string;
+  calculators: {
+    id: string;
+    moduleKey: string;
+    icon: React.ReactNode;
+    color: string;
+  }[];
+}
+
+const categoryDefs: CategoryDef[] = [
   {
-    id: 'impresion',
-    title: 'Servicios de Impresión',
-    description: 'Calculadoras para servicios de impresión y personalización',
+    id: 'printing',
+    titleKey: 'categories.printing',
+    descKey: 'categories.printingDesc',
     calculators: [
-      {
-        id: 'vinil',
-        title: 'Vinil',
-        description: 'Impresión y corte de vinil adhesivo',
-        icon: <Printer className="w-5 h-5 text-white" />,
-        color: 'bg-gradient-to-br from-purple-500 to-purple-600',
-      },
-      {
-        id: 'sublimacion',
-        title: 'Sublimación',
-        description: 'Transferencia térmica en productos',
-        icon: <Droplet className="w-5 h-5 text-white" />,
-        color: 'bg-gradient-to-br from-blue-500 to-blue-600',
-      },
-      {
-        id: 'dtf',
-        title: 'DTF Terceros',
-        description: 'Direct-to-Film para terceros',
-        icon: <Sparkles className="w-5 h-5 text-white" />,
-        color: 'bg-gradient-to-br from-pink-500 to-pink-600',
-      },
-      {
-        id: 'etiquetas',
-        title: 'Etiquetas',
-        description: 'Stickers y etiquetas personalizadas',
-        icon: <Tags className="w-5 h-5 text-white" />,
-        color: 'bg-gradient-to-br from-green-500 to-green-600',
-      },
+      { id: 'vinyl', moduleKey: 'modules.vinyl', icon: <Printer className="w-5 h-5 text-white" />, color: 'bg-gradient-to-br from-purple-500 to-purple-600' },
+      { id: 'sublimation', moduleKey: 'modules.sublimation', icon: <Droplet className="w-5 h-5 text-white" />, color: 'bg-gradient-to-br from-blue-500 to-blue-600' },
+      { id: 'dtf', moduleKey: 'modules.dtf', icon: <Sparkles className="w-5 h-5 text-white" />, color: 'bg-gradient-to-br from-pink-500 to-pink-600' },
+      { id: 'labels', moduleKey: 'modules.labels', icon: <Tags className="w-5 h-5 text-white" />, color: 'bg-gradient-to-br from-green-500 to-green-600' },
     ],
   },
   {
-    id: 'productos',
-    title: 'Productos Físicos',
-    description: 'Calculadoras para productos y materiales',
+    id: 'products',
+    titleKey: 'categories.physical',
+    descKey: 'categories.physicalDesc',
     calculators: [
-      {
-        id: 'papeleria',
-        title: 'Papelería',
-        description: 'Tarjetas, flyers y documentos',
-        icon: <FileText className="w-5 h-5 text-white" />,
-        color: 'bg-gradient-to-br from-orange-500 to-orange-600',
-      },
-      {
-        id: 'empaques',
-        title: 'Empaques',
-        description: 'Packaging personalizado',
-        icon: <Package className="w-5 h-5 text-white" />,
-        color: 'bg-gradient-to-br from-amber-500 to-amber-600',
-      },
-      {
-        id: 'esferas',
-        title: 'Esferas Navideñas',
-        description: 'Productos especiales temporales',
-        icon: <Sparkles className="w-5 h-5 text-white" />,
-        color: 'bg-gradient-to-br from-red-500 to-red-600',
-      },
+      { id: 'stationery', moduleKey: 'modules.stationery', icon: <FileText className="w-5 h-5 text-white" />, color: 'bg-gradient-to-br from-orange-500 to-orange-600' },
+      { id: 'packaging', moduleKey: 'modules.packaging', icon: <Package className="w-5 h-5 text-white" />, color: 'bg-gradient-to-br from-amber-500 to-amber-600' },
+      { id: 'spheres', moduleKey: 'modules.spheres', icon: <Sparkles className="w-5 h-5 text-white" />, color: 'bg-gradient-to-br from-red-500 to-red-600' },
     ],
   },
   {
-    id: 'complementarios',
-    title: 'Servicios Complementarios',
-    description: 'Logística y personalización avanzada',
+    id: 'complementary',
+    titleKey: 'categories.complementary',
+    descKey: 'categories.complementaryDesc',
     calculators: [
-      {
-        id: 'envios',
-        title: 'Envíos',
-        description: 'Cálculo de costos de envío',
-        icon: <Truck className="w-5 h-5 text-white" />,
-        color: 'bg-gradient-to-br from-indigo-500 to-indigo-600',
-      },
-      {
-        id: 'personalizado',
-        title: 'Producto Personalizable',
-        description: 'Configuración custom avanzada',
-        icon: <Package2 className="w-5 h-5 text-white" />,
-        color: 'bg-gradient-to-br from-cyan-500 to-cyan-600',
-      },
+      { id: 'shipping', moduleKey: 'modules.shipping', icon: <Truck className="w-5 h-5 text-white" />, color: 'bg-gradient-to-br from-indigo-500 to-indigo-600' },
+      { id: 'customizable', moduleKey: 'modules.custom', icon: <Package2 className="w-5 h-5 text-white" />, color: 'bg-gradient-to-br from-cyan-500 to-cyan-600' },
     ],
   },
   {
-    id: 'herramientas',
-    title: 'Herramientas y Administración',
-    description: 'Utilidades y vistas consolidadas',
+    id: 'tools',
+    titleKey: 'categories.tools',
+    descKey: 'categories.toolsDesc',
     calculators: [
-      {
-        id: 'conversor',
-        title: 'Conversor de Unidades',
-        description: 'Conversión entre diferentes medidas',
-        icon: <Settings className="w-5 h-5 text-white" />,
-        color: 'bg-gradient-to-br from-slate-500 to-slate-600',
-      },
-      {
-        id: 'resumen',
-        title: 'Resumen General',
-        description: 'Vista consolidada de todas las calculadoras',
-        icon: <BarChart3 className="w-5 h-5 text-white" />,
-        color: 'bg-gradient-to-br from-teal-500 to-teal-600',
-      },
-      {
-        id: 'faq',
-        title: 'Preguntas Frecuentes',
-        description: 'Ayuda y preguntas comunes',
-        icon: <HelpCircle className="w-5 h-5 text-white" />,
-        color: 'bg-gradient-to-br from-violet-500 to-violet-600',
-      },
+      { id: 'converter', moduleKey: 'modules.converter', icon: <Settings className="w-5 h-5 text-white" />, color: 'bg-gradient-to-br from-slate-500 to-slate-600' },
+      { id: 'summary', moduleKey: 'modules.summary', icon: <BarChart3 className="w-5 h-5 text-white" />, color: 'bg-gradient-to-br from-teal-500 to-teal-600' },
+      { id: 'faq', moduleKey: 'modules.faq', icon: <HelpCircle className="w-5 h-5 text-white" />, color: 'bg-gradient-to-br from-violet-500 to-violet-600' },
     ],
   },
 ];
@@ -179,24 +120,26 @@ interface CalculatorDashboardProps {
 }
 
 export function CalculatorDashboard({ onSelectCalculator }: CalculatorDashboardProps) {
+  const { t } = useTranslation(['calculator', 'common']);
+
   return (
     <div className="space-y-12 animate-in fade-in duration-500">
       {/* Hero Section */}
       <div className="text-center space-y-4 max-w-3xl mx-auto">
         <Badge variant="outline" className="mb-2">
           <Calculator className="w-3 h-3 mr-1" />
-          Suite de Calculadoras
+          {t('calculator:dashboard.title')}
         </Badge>
         <h1 className="text-4xl font-bold tracking-tight">
-          Calculadoras CYF Customs
+          {t('calculator:dashboard.heading')}
         </h1>
         <p className="text-lg text-muted-foreground">
-          Herramientas profesionales para calcular costos, gestionar presupuestos y optimizar tus proyectos de personalización
+          {t('calculator:dashboard.description')}
         </p>
       </div>
 
       {/* Categories */}
-      {categories.map((category, idx) => (
+      {categoryDefs.map((category, idx) => (
         <div
           key={category.id}
           className="space-y-4 animate-in slide-in-from-bottom duration-500"
@@ -205,9 +148,9 @@ export function CalculatorDashboard({ onSelectCalculator }: CalculatorDashboardP
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-border" />
             <div className="space-y-1">
-              <h2 className="text-2xl font-bold">{category.title}</h2>
+              <h2 className="text-2xl font-bold">{t(`calculator:${category.titleKey}`)}</h2>
               <p className="text-sm text-muted-foreground text-center">
-                {category.description}
+                {t(`calculator:${category.descKey}`)}
               </p>
             </div>
             <div className="h-px flex-1 bg-border" />
@@ -217,7 +160,11 @@ export function CalculatorDashboard({ onSelectCalculator }: CalculatorDashboardP
             {category.calculators.map((calc) => (
               <CalculatorCard
                 key={calc.id}
-                {...calc}
+                id={calc.id}
+                title={t(`calculator:${calc.moduleKey}.name`)}
+                description={t(`calculator:${calc.moduleKey}.description`)}
+                icon={calc.icon}
+                color={calc.color}
                 onClick={() => onSelectCalculator(calc.id)}
               />
             ))}
@@ -229,15 +176,15 @@ export function CalculatorDashboard({ onSelectCalculator }: CalculatorDashboardP
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t">
         <div className="text-center space-y-2">
           <div className="text-4xl font-bold text-primary">12</div>
-          <p className="text-sm text-muted-foreground">Calculadoras Disponibles</p>
+          <p className="text-sm text-muted-foreground">{t('calculator:dashboard.stats.available')}</p>
         </div>
         <div className="text-center space-y-2">
           <div className="text-4xl font-bold text-primary">4</div>
-          <p className="text-sm text-muted-foreground">Categorías de Servicio</p>
+          <p className="text-sm text-muted-foreground">{t('calculator:dashboard.stats.categories')}</p>
         </div>
         <div className="text-center space-y-2">
           <div className="text-4xl font-bold text-primary">∞</div>
-          <p className="text-sm text-muted-foreground">Posibilidades Creativas</p>
+          <p className="text-sm text-muted-foreground">{t('calculator:dashboard.stats.possibilities')}</p>
         </div>
       </div>
     </div>

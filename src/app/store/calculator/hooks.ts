@@ -1,74 +1,70 @@
 /**
  * Convenience hooks for using calculator atoms in components
  * Wraps Jotai atoms with ergonomic APIs
- *
- * IMPORTANT: These hooks maintain backward compatibility with the old useState-based hooks
- * by mapping the new internal structure to the old API surface
  */
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { CalculatorType } from './types';
 import { getCalculatorAtoms } from './atoms';
 import {
-  papeleriaStateAtom,
-  papeleriaTotalsAtom,
-  updatePapeleriaDirectCostAtom,
-  updatePapeleriaDepreciationAtom,
-  updatePapeleriaIndirectCostsAtom,
-  updatePapeleriaLaborCostsAtom,
-  updatePapeleriaFinancialsAtom,
-  updatePapeleriaQuantityAtom,
-  resetPapeleriaAtom,
-  vinilStateAtom,
-  vinilTotalsAtom,
-  sublimacionStateAtom,
-  sublimacionTotalsAtom,
-  etiquetasStateAtom,
-  etiquetasTotalsAtom,
-  updateEtiquetasProductTypeAtom,
+  stationeryStateAtom,
+  stationeryTotalsAtom,
+  updateStationeryDirectCostAtom,
+  updateStationeryDepreciationAtom,
+  updateStationeryIndirectCostsAtom,
+  updateStationeryLaborCostsAtom,
+  updateStationeryFinancialsAtom,
+  updateStationeryQuantityAtom,
+  resetStationeryAtom,
+  vinylStateAtom,
+  vinylTotalsAtom,
+  sublimationStateAtom,
+  sublimationTotalsAtom,
+  labelsStateAtom,
+  labelsTotalsAtom,
+  updateLabelsProductTypeAtom,
   dtfStateAtom,
   dtfTotalsAtom,
-  empaquesStateAtom,
-  empaquesTotalsAtom,
-  esferasStateAtom,
-  esferasTotalsAtom,
-  enviosStateAtom,
-  enviosTotalsAtom,
+  packagingStateAtom,
+  packagingTotalsAtom,
+  spheresStateAtom,
+  spheresTotalsAtom,
+  shippingStateAtom,
+  shippingTotalsAtom,
 } from './atoms';
 
 // ============================================================================
-// PAPELERIA HOOK
+// STATIONERY HOOK
 // ============================================================================
 
-export function usePapeleriaCalculator() {
-  const [internalState, setState] = useAtom(papeleriaStateAtom);
-  const totals = useAtomValue(papeleriaTotalsAtom);
-  const updateDirectCost = useSetAtom(updatePapeleriaDirectCostAtom);
-  const updateDepreciation = useSetAtom(updatePapeleriaDepreciationAtom);
-  const updateIndirectCosts = useSetAtom(updatePapeleriaIndirectCostsAtom);
-  const updateLaborCosts = useSetAtom(updatePapeleriaLaborCostsAtom);
-  const updateFinancials = useSetAtom(updatePapeleriaFinancialsAtom);
-  const updateQuantity = useSetAtom(updatePapeleriaQuantityAtom);
-  const reset = useSetAtom(resetPapeleriaAtom);
+export function useStationeryCalculator() {
+  const [internalState, setState] = useAtom(stationeryStateAtom);
+  const totals = useAtomValue(stationeryTotalsAtom);
+  const updateDirectCost = useSetAtom(updateStationeryDirectCostAtom);
+  const updateDepreciation = useSetAtom(updateStationeryDepreciationAtom);
+  const updateIndirectCosts = useSetAtom(updateStationeryIndirectCostsAtom);
+  const updateLaborCosts = useSetAtom(updateStationeryLaborCostsAtom);
+  const updateFinancials = useSetAtom(updateStationeryFinancialsAtom);
+  const updateQuantity = useSetAtom(updateStationeryQuantityAtom);
+  const reset = useSetAtom(resetStationeryAtom);
 
-  // Backward compatibility: map new structure to old API
   const state = {
     direct: internalState.directCosts || [],
     depreciation: internalState.depreciation || [],
     indirect: internalState.indirectCosts || {
       enabled: false,
       monthly: {
-        alquiler: 0,
+        rent: 0,
         internet: 0,
-        suscripciones: 0,
-        transporte: 0,
-        electricidad: 0,
-        publicidad: 0,
-        otros: 0,
+        subscriptions: 0,
+        transport: 0,
+        electricity: 0,
+        advertising: 0,
+        other: 0,
       },
       unitsPerMonth: 100,
     },
-    mo: internalState.laborCosts || {
+    labor: internalState.laborCosts || {
       enabled: false,
       salary: 400,
       hoursPerMonth: 176,
@@ -76,10 +72,10 @@ export function usePapeleriaCalculator() {
       runMinutesPerUnit: 3,
       unitsPerBatch: 1,
     },
-    gananciaPct: internalState.financials.gananciaPct,
-    impuestosPct: internalState.financials.impuestosPct,
-    applyGanancia: internalState.financials.applyGanancia,
-    applyImpuestos: internalState.financials.applyImpuestos,
+    profitPct: internalState.financials.profitPct,
+    taxPct: internalState.financials.taxPct,
+    applyProfit: internalState.financials.applyProfit,
+    applyTax: internalState.financials.applyTax,
     quantity: internalState.quantity,
   };
 
@@ -94,33 +90,33 @@ export function usePapeleriaCalculator() {
         monthly: { ...state.indirect.monthly, [key]: value },
       });
     },
-    setMo: updateLaborCosts,
-    setGananciaPct: (value: number) => updateFinancials({ gananciaPct: value }),
-    setImpuestosPct: (value: number) => updateFinancials({ impuestosPct: value }),
-    setApplyGanancia: (value: boolean) => updateFinancials({ applyGanancia: value }),
-    setApplyImpuestos: (value: boolean) => updateFinancials({ applyImpuestos: value }),
+    setLabor: updateLaborCosts,
+    setProfitPct: (value: number) => updateFinancials({ profitPct: value }),
+    setTaxPct: (value: number) => updateFinancials({ taxPct: value }),
+    setApplyProfit: (value: boolean) => updateFinancials({ applyProfit: value }),
+    setApplyTax: (value: boolean) => updateFinancials({ applyTax: value }),
     setQuantity: updateQuantity,
     reset,
   };
 }
 
 // ============================================================================
-// VINIL HOOK
+// VINYL HOOK
 // ============================================================================
 
-export function useVinilCalculator() {
-  const [internalState, setState] = useAtom(vinilStateAtom);
-  const totals = useAtomValue(vinilTotalsAtom);
+export function useVinylCalculator() {
+  const [internalState, setState] = useAtom(vinylStateAtom);
+  const totals = useAtomValue(vinylTotalsAtom);
 
   const state = {
     direct: internalState.directCosts || [],
     depreciation: internalState.depreciation || [],
     extrasPerUnit: internalState.extrasPerUnit,
-    mermaPct: internalState.mermaPct,
-    gananciaPct: internalState.financials.gananciaPct,
-    impuestosPct: internalState.financials.impuestosPct,
-    applyGanancia: internalState.financials.applyGanancia,
-    applyImpuestos: internalState.financials.applyImpuestos,
+    wastePct: internalState.wastePct,
+    profitPct: internalState.financials.profitPct,
+    taxPct: internalState.financials.taxPct,
+    applyProfit: internalState.financials.applyProfit,
+    applyTax: internalState.financials.applyTax,
     quantity: internalState.quantity,
   };
 
@@ -144,41 +140,41 @@ export function useVinilCalculator() {
       });
     },
     setExtrasPerUnit: (value: number) => setState({ ...internalState, extrasPerUnit: value }),
-    setMermaPct: (value: number) => setState({ ...internalState, mermaPct: value }),
-    setGananciaPct: (value: number) =>
-      setState({ ...internalState, financials: { ...internalState.financials, gananciaPct: value } }),
-    setImpuestosPct: (value: number) =>
-      setState({ ...internalState, financials: { ...internalState.financials, impuestosPct: value } }),
-    setApplyGanancia: (value: boolean) =>
-      setState({ ...internalState, financials: { ...internalState.financials, applyGanancia: value } }),
-    setApplyImpuestos: (value: boolean) =>
-      setState({ ...internalState, financials: { ...internalState.financials, applyImpuestos: value } }),
+    setWastePct: (value: number) => setState({ ...internalState, wastePct: value }),
+    setProfitPct: (value: number) =>
+      setState({ ...internalState, financials: { ...internalState.financials, profitPct: value } }),
+    setTaxPct: (value: number) =>
+      setState({ ...internalState, financials: { ...internalState.financials, taxPct: value } }),
+    setApplyProfit: (value: boolean) =>
+      setState({ ...internalState, financials: { ...internalState.financials, applyProfit: value } }),
+    setApplyTax: (value: boolean) =>
+      setState({ ...internalState, financials: { ...internalState.financials, applyTax: value } }),
     setQuantity: (value: number) => setState({ ...internalState, quantity: value }),
-    reset: () => setState(getCalculatorAtoms('vinil').default),
+    reset: () => setState(getCalculatorAtoms('vinyl').default),
   };
 }
 
 // ============================================================================
-// SUBLIMACION HOOK
+// SUBLIMATION HOOK
 // ============================================================================
 
-export function useSublimacionCalculator() {
-  const [internalState, setState] = useAtom(sublimacionStateAtom);
-  const totals = useAtomValue(sublimacionTotalsAtom);
+export function useSublimationCalculator() {
+  const [internalState, setState] = useAtom(sublimationStateAtom);
+  const totals = useAtomValue(sublimationTotalsAtom);
 
   const state = {
     direct: internalState.directCosts || [],
     depreciation: internalState.depreciation || [],
-    mo: internalState.laborCosts || {
+    labor: internalState.laborCosts || {
       enabled: false,
       setupMinutes: 10,
       runMinutesPerUnit: 1.5,
       hourlyRate: 8,
     },
-    gananciaPct: internalState.financials.gananciaPct,
-    impuestosPct: internalState.financials.impuestosPct,
-    applyGanancia: internalState.financials.applyGanancia,
-    applyImpuestos: internalState.financials.applyImpuestos,
+    profitPct: internalState.financials.profitPct,
+    taxPct: internalState.financials.taxPct,
+    applyProfit: internalState.financials.applyProfit,
+    applyTax: internalState.financials.applyTax,
     quantity: internalState.quantity,
   };
 
@@ -201,33 +197,33 @@ export function useSublimacionCalculator() {
         ),
       });
     },
-    updateMo: (patch: any) => {
+    updateLabor: (patch: any) => {
       setState({
         ...internalState,
         laborCosts: { ...internalState.laborCosts!, ...patch },
       });
     },
-    setGananciaPct: (value: number) =>
-      setState({ ...internalState, financials: { ...internalState.financials, gananciaPct: value } }),
-    setImpuestosPct: (value: number) =>
-      setState({ ...internalState, financials: { ...internalState.financials, impuestosPct: value } }),
-    setApplyGanancia: (value: boolean) =>
-      setState({ ...internalState, financials: { ...internalState.financials, applyGanancia: value } }),
-    setApplyImpuestos: (value: boolean) =>
-      setState({ ...internalState, financials: { ...internalState.financials, applyImpuestos: value } }),
+    setProfitPct: (value: number) =>
+      setState({ ...internalState, financials: { ...internalState.financials, profitPct: value } }),
+    setTaxPct: (value: number) =>
+      setState({ ...internalState, financials: { ...internalState.financials, taxPct: value } }),
+    setApplyProfit: (value: boolean) =>
+      setState({ ...internalState, financials: { ...internalState.financials, applyProfit: value } }),
+    setApplyTax: (value: boolean) =>
+      setState({ ...internalState, financials: { ...internalState.financials, applyTax: value } }),
     setQuantity: (value: number) => setState({ ...internalState, quantity: value }),
-    reset: () => setState(getCalculatorAtoms('sublimacion').default),
+    reset: () => setState(getCalculatorAtoms('sublimation').default),
   };
 }
 
 // ============================================================================
-// ETIQUETAS HOOK
+// LABELS HOOK
 // ============================================================================
 
-export function useEtiquetasCalculator() {
-  const [internalState, setState] = useAtom(etiquetasStateAtom);
-  const totals = useAtomValue(etiquetasTotalsAtom);
-  const updateProductType = useSetAtom(updateEtiquetasProductTypeAtom);
+export function useLabelsCalculator() {
+  const [internalState, setState] = useAtom(labelsStateAtom);
+  const totals = useAtomValue(labelsTotalsAtom);
+  const updateProductType = useSetAtom(updateLabelsProductTypeAtom);
 
   const state = {
     direct: internalState.directCosts || [],
@@ -235,17 +231,17 @@ export function useEtiquetasCalculator() {
     indirect: internalState.indirectCosts || {
       enabled: false,
       monthly: {
-        alquiler: 0,
+        rent: 0,
         internet: 0,
-        suscripciones: 0,
-        transporte: 0,
-        electricidad: 0,
-        publicidad: 0,
-        otros: 0,
+        subscriptions: 0,
+        transport: 0,
+        electricity: 0,
+        advertising: 0,
+        other: 0,
       },
       unitsPerMonth: 100,
     },
-    mo: internalState.laborCosts || {
+    labor: internalState.laborCosts || {
       enabled: false,
       salary: 400,
       hoursPerMonth: 176,
@@ -254,10 +250,10 @@ export function useEtiquetasCalculator() {
       unitsPerBatch: 1,
     },
     productType: internalState.productType,
-    gananciaPct: internalState.financials.gananciaPct,
-    impuestosPct: internalState.financials.impuestosPct,
-    applyGanancia: internalState.financials.applyGanancia,
-    applyImpuestos: internalState.financials.applyImpuestos,
+    profitPct: internalState.financials.profitPct,
+    taxPct: internalState.financials.taxPct,
+    applyProfit: internalState.financials.applyProfit,
+    applyTax: internalState.financials.applyTax,
     quantity: internalState.quantity,
   };
 
@@ -296,22 +292,22 @@ export function useEtiquetasCalculator() {
         },
       });
     },
-    setMo: (patch: any) => {
+    setLabor: (patch: any) => {
       setState({
         ...internalState,
         laborCosts: { ...internalState.laborCosts, ...patch },
       });
     },
-    setGananciaPct: (value: number) =>
-      setState({ ...internalState, financials: { ...internalState.financials, gananciaPct: value } }),
-    setImpuestosPct: (value: number) =>
-      setState({ ...internalState, financials: { ...internalState.financials, impuestosPct: value } }),
-    setApplyGanancia: (value: boolean) =>
-      setState({ ...internalState, financials: { ...internalState.financials, applyGanancia: value } }),
-    setApplyImpuestos: (value: boolean) =>
-      setState({ ...internalState, financials: { ...internalState.financials, applyImpuestos: value } }),
+    setProfitPct: (value: number) =>
+      setState({ ...internalState, financials: { ...internalState.financials, profitPct: value } }),
+    setTaxPct: (value: number) =>
+      setState({ ...internalState, financials: { ...internalState.financials, taxPct: value } }),
+    setApplyProfit: (value: boolean) =>
+      setState({ ...internalState, financials: { ...internalState.financials, applyProfit: value } }),
+    setApplyTax: (value: boolean) =>
+      setState({ ...internalState, financials: { ...internalState.financials, applyTax: value } }),
     setQuantity: (value: number) => setState({ ...internalState, quantity: value }),
-    reset: () => setState(getCalculatorAtoms('etiquetas').default),
+    reset: () => setState(getCalculatorAtoms('labels').default),
   };
 }
 
@@ -320,10 +316,20 @@ export function useEtiquetasCalculator() {
 // ============================================================================
 
 export function useDtfCalculator() {
-  const [state, setState] = useAtom(dtfStateAtom);
+  const [internalState, setState] = useAtom(dtfStateAtom);
   const totals = useAtomValue(dtfTotalsAtom);
 
-  const setStatePatch = (patch: Partial<typeof state>) => setState((prev) => ({ ...prev, ...patch }));
+  const state = {
+    ...internalState,
+    indirect: internalState.indirectCosts,
+    labor: internalState.laborCosts,
+    applyProfit: internalState.financials.applyProfit,
+    applyTax: internalState.financials.applyTax,
+    profitPct: internalState.financials.profitPct,
+    taxPct: internalState.financials.taxPct,
+  };
+
+  const setStatePatch = (patch: Partial<typeof internalState>) => setState((prev) => ({ ...prev, ...patch }));
 
   return {
     state,
@@ -336,11 +342,11 @@ export function useDtfCalculator() {
     setDesignCount: (v: number) => setStatePatch({ designCount: v }),
     setDesignWidthCm: (v: number) => setStatePatch({ designWidthCm: v }),
     setDesignHeightCm: (v: number) => setStatePatch({ designHeightCm: v }),
-    setExtras: (patch: Partial<typeof state.extras>) =>
+    setExtras: (patch: Partial<typeof internalState.extras>) =>
       setState((prev) => ({ ...prev, extras: { ...prev.extras, ...patch } })),
-    setPrenda: (patch: Partial<typeof state.prenda>) =>
-      setState((prev) => ({ ...prev, prenda: { ...prev.prenda, ...patch } })),
-    setDepreciation: (patch: Partial<typeof state.depreciation>) =>
+    setGarment: (patch: Partial<typeof internalState.garment>) =>
+      setState((prev) => ({ ...prev, garment: { ...prev.garment, ...patch } })),
+    setDepreciation: (patch: Partial<typeof internalState.depreciation>) =>
       setState((prev) => ({ ...prev, depreciation: { ...prev.depreciation, ...patch } })),
     setIndirect: (patch: any) =>
       setState((prev) => ({ ...prev, indirectCosts: { ...prev.indirectCosts, ...patch } })),
@@ -352,27 +358,27 @@ export function useDtfCalculator() {
           monthly: { ...prev.indirectCosts.monthly, [key]: value },
         },
       })),
-    setMo: (patch: any) =>
+    setLabor: (patch: any) =>
       setState((prev) => ({ ...prev, laborCosts: { ...prev.laborCosts, ...patch } })),
-    setGananciaPct: (v: number) =>
-      setState((prev) => ({ ...prev, financials: { ...prev.financials, gananciaPct: v } })),
-    setImpuestosPct: (v: number) =>
-      setState((prev) => ({ ...prev, financials: { ...prev.financials, impuestosPct: v } })),
-    setApplyGanancia: (v: boolean) =>
-      setState((prev) => ({ ...prev, financials: { ...prev.financials, applyGanancia: v } })),
-    setApplyImpuestos: (v: boolean) =>
-      setState((prev) => ({ ...prev, financials: { ...prev.financials, applyImpuestos: v } })),
+    setProfitPct: (v: number) =>
+      setState((prev) => ({ ...prev, financials: { ...prev.financials, profitPct: v } })),
+    setTaxPct: (v: number) =>
+      setState((prev) => ({ ...prev, financials: { ...prev.financials, taxPct: v } })),
+    setApplyProfit: (v: boolean) =>
+      setState((prev) => ({ ...prev, financials: { ...prev.financials, applyProfit: v } })),
+    setApplyTax: (v: boolean) =>
+      setState((prev) => ({ ...prev, financials: { ...prev.financials, applyTax: v } })),
     reset: () => setState(getCalculatorAtoms('dtf').default),
   };
 }
 
 // ============================================================================
-// EMPAQUES HOOK
+// PACKAGING HOOK
 // ============================================================================
 
-export function useEmpaquesCalculator() {
-  const [internalState, setState] = useAtom(empaquesStateAtom);
-  const totals = useAtomValue(empaquesTotalsAtom);
+export function usePackagingCalculator() {
+  const [internalState, setState] = useAtom(packagingStateAtom);
+  const totals = useAtomValue(packagingTotalsAtom);
 
   const state = {
     direct: internalState.directCosts || [],
@@ -380,17 +386,17 @@ export function useEmpaquesCalculator() {
     indirect: internalState.indirectCosts || {
       enabled: false,
       monthly: {
-        alquiler: 0,
+        rent: 0,
         internet: 0,
-        suscripciones: 0,
-        transporte: 0,
-        electricidad: 0,
-        publicidad: 0,
-        otros: 0,
+        subscriptions: 0,
+        transport: 0,
+        electricity: 0,
+        advertising: 0,
+        other: 0,
       },
       unitsPerMonth: 100,
     },
-    mo: internalState.laborCosts || {
+    labor: internalState.laborCosts || {
       enabled: false,
       salary: 400,
       hoursPerMonth: 176,
@@ -398,10 +404,10 @@ export function useEmpaquesCalculator() {
       runMinutesPerUnit: 3,
       unitsPerBatch: 1,
     },
-    gananciaPct: internalState.financials.gananciaPct,
-    impuestosPct: internalState.financials.impuestosPct,
-    applyGanancia: internalState.financials.applyGanancia,
-    applyImpuestos: internalState.financials.applyImpuestos,
+    profitPct: internalState.financials.profitPct,
+    taxPct: internalState.financials.taxPct,
+    applyProfit: internalState.financials.applyProfit,
+    applyTax: internalState.financials.applyTax,
     quantity: internalState.quantity,
   };
 
@@ -439,32 +445,66 @@ export function useEmpaquesCalculator() {
         },
       });
     },
-    setMo: (patch: any) => {
+    setLabor: (patch: any) => {
       setState({
         ...internalState,
         laborCosts: { ...internalState.laborCosts!, ...patch },
       });
     },
-    setGananciaPct: (value: number) =>
-      setState({ ...internalState, financials: { ...internalState.financials, gananciaPct: value } }),
-    setImpuestosPct: (value: number) =>
-      setState({ ...internalState, financials: { ...internalState.financials, impuestosPct: value } }),
-    setApplyGanancia: (value: boolean) =>
-      setState({ ...internalState, financials: { ...internalState.financials, applyGanancia: value } }),
-    setApplyImpuestos: (value: boolean) =>
-      setState({ ...internalState, financials: { ...internalState.financials, applyImpuestos: value } }),
+    setProfitPct: (value: number) =>
+      setState({ ...internalState, financials: { ...internalState.financials, profitPct: value } }),
+    setTaxPct: (value: number) =>
+      setState({ ...internalState, financials: { ...internalState.financials, taxPct: value } }),
+    setApplyProfit: (value: boolean) =>
+      setState({ ...internalState, financials: { ...internalState.financials, applyProfit: value } }),
+    setApplyTax: (value: boolean) =>
+      setState({ ...internalState, financials: { ...internalState.financials, applyTax: value } }),
     setQuantity: (value: number) => setState({ ...internalState, quantity: value }),
-    reset: () => setState(getCalculatorAtoms('empaques').default),
+    reset: () => setState(getCalculatorAtoms('packaging').default),
   };
 }
 
 // ============================================================================
-// ESFERAS HOOK
+// SPHERES HOOK
 // ============================================================================
 
-export function useEsferasCalculator() {
-  const [state, setState] = useAtom(esferasStateAtom);
-  const totals = useAtomValue(esferasTotalsAtom);
+export function useSpheresCalculator() {
+  const [internalState, setState] = useAtom(spheresStateAtom);
+  const totals = useAtomValue(spheresTotalsAtom);
+
+  const state = {
+    direct: internalState.directCosts || [],
+    depreciation: internalState.depreciation || [],
+    indirect: internalState.indirectCosts || {
+      enabled: false,
+      monthly: {
+        rent: 0,
+        internet: 0,
+        subscriptions: 0,
+        transport: 0,
+        electricity: 0,
+        advertising: 0,
+        other: 0,
+      },
+      unitsPerMonth: 100,
+    },
+    labor: internalState.laborCosts || {
+      enabled: false,
+      salary: 400,
+      hoursPerMonth: 176,
+      setupMinutes: 5,
+      runMinutesPerUnit: 2,
+      unitsPerBatch: 1,
+    },
+    productSelection: internalState.productSelection,
+    profitPct: internalState.financials.profitPct,
+    taxPct: internalState.financials.taxPct,
+    applyProfit: internalState.financials.applyProfit,
+    applyTax: internalState.financials.applyTax,
+    profitMode: internalState.profitMode,
+    quantity: internalState.quantity,
+    quantityEnabled: internalState.quantityEnabled,
+  };
 
   return {
     state,
@@ -494,30 +534,30 @@ export function useEsferasCalculator() {
       setState((prev) => ({ ...prev, indirectCosts: { ...prev.indirectCosts, unitsPerMonth: value } })),
     setIndirectEnabled: (value: boolean) =>
       setState((prev) => ({ ...prev, indirectCosts: { ...prev.indirectCosts, enabled: value } })),
-    updateMo: (patch: any) => setState((prev) => ({ ...prev, laborCosts: { ...prev.laborCosts, ...patch } })),
-    setGananciaPct: (value: number) =>
-      setState((prev) => ({ ...prev, financials: { ...prev.financials, gananciaPct: value } })),
-    setImpuestosPct: (value: number) =>
-      setState((prev) => ({ ...prev, financials: { ...prev.financials, impuestosPct: value } })),
-    setGananciaMode: (mode: 'markup' | 'margen') => setState((prev) => ({ ...prev, gananciaMode: mode })),
-    setApplyGanancia: (value: boolean) =>
-      setState((prev) => ({ ...prev, financials: { ...prev.financials, applyGanancia: value } })),
-    setApplyImpuestos: (value: boolean) =>
-      setState((prev) => ({ ...prev, financials: { ...prev.financials, applyImpuestos: value } })),
+    updateLabor: (patch: any) => setState((prev) => ({ ...prev, laborCosts: { ...prev.laborCosts, ...patch } })),
+    setProfitPct: (value: number) =>
+      setState((prev) => ({ ...prev, financials: { ...prev.financials, profitPct: value } })),
+    setTaxPct: (value: number) =>
+      setState((prev) => ({ ...prev, financials: { ...prev.financials, taxPct: value } })),
+    setProfitMode: (mode: 'markup' | 'margin') => setState((prev) => ({ ...prev, profitMode: mode })),
+    setApplyProfit: (value: boolean) =>
+      setState((prev) => ({ ...prev, financials: { ...prev.financials, applyProfit: value } })),
+    setApplyTax: (value: boolean) =>
+      setState((prev) => ({ ...prev, financials: { ...prev.financials, applyTax: value } })),
     setQuantity: (value: number) => setState((prev) => ({ ...prev, quantity: value })),
     setQuantityEnabled: (value: boolean) => setState((prev) => ({ ...prev, quantityEnabled: value })),
     setProductSelection: (value: string) => setState((prev) => ({ ...prev, productSelection: value })),
-    reset: () => setState(getCalculatorAtoms('esferas').default),
+    reset: () => setState(getCalculatorAtoms('spheres').default),
   };
 }
 
 // ============================================================================
-// ENVIOS HOOK
+// SHIPPING HOOK
 // ============================================================================
 
-export function useEnviosCalculator() {
-  const [state, setState] = useAtom(enviosStateAtom);
-  const totals = useAtomValue(enviosTotalsAtom);
+export function useShippingCalculator() {
+  const [state, setState] = useAtom(shippingStateAtom);
+  const totals = useAtomValue(shippingTotalsAtom);
 
   return {
     state,
@@ -525,7 +565,7 @@ export function useEnviosCalculator() {
     setField: (key: any, value: any) => {
       setState({ ...state, [key]: value });
     },
-    reset: () => setState(getCalculatorAtoms('envios').default),
+    reset: () => setState(getCalculatorAtoms('shipping').default),
   };
 }
 

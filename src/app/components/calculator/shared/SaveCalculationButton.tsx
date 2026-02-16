@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAtomValue } from 'jotai';
 import { Button } from '@/app/components/ui/button';
 import { authUserAtom } from '@/app/store/atoms';
-import { sublimacionConfigMetaAtom } from '@/app/store/calculator';
+import { sublimationConfigMetaAtom } from '@/app/store/calculator';
 import { saveCalculation } from '@/app/lib/api/calculationHistoryApi';
 import { toast } from 'sonner';
 import { Save, Check } from 'lucide-react';
@@ -17,7 +17,7 @@ interface Props {
 
 export function SaveCalculationButton({ moduleName, totals, quantity, note }: Props) {
   const authUser = useAtomValue(authUserAtom);
-  const configMeta = useAtomValue(sublimacionConfigMetaAtom);
+  const configMeta = useAtomValue(sublimationConfigMetaAtom);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 

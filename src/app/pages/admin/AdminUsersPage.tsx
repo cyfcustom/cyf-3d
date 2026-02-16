@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { listUsersWithRoles, assignRole, removeRole } from '@/app/lib/api/userRolesApi';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -20,13 +21,8 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
   worker: <Wrench size={14} className="text-emerald-500" />,
 };
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Administrador',
-  supervisor: 'Supervisor',
-  worker: 'Trabajador',
-};
-
 export function AdminUsersPage() {
+  const { t } = useTranslation('admin');
   const [users, setUsers] = useState<UserRoleRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -46,7 +42,7 @@ export function AdminUsersPage() {
       setUsers(data as UserRoleRow[]);
     } catch (error) {
       console.error('[AdminUsers]', error);
-      toast.error('Error cargando usuarios');
+      toast.error(t('users.errorLoading'));
     } finally {
       setIsLoading(false);
     }
@@ -54,19 +50,19 @@ export function AdminUsersPage() {
 
   const handleAssignRole = async () => {
     if (!newUserId.trim()) {
-      toast.warning('Ingresa el UUID del usuario');
+      toast.warning(t('users.uuidRequired'));
       return;
     }
 
     setIsAdding(true);
     try {
       await assignRole(newUserId.trim(), newRole, newDisplayName || undefined);
-      toast.success('Rol asignado correctamente');
+      toast.success(t('users.roleAssigned'));
       setNewUserId('');
       setNewDisplayName('');
       await loadUsers();
     } catch (error: any) {
-      toast.error(error.message || 'Error al asignar rol');
+      toast.error(error.message || t('users.errorAssigning'));
     } finally {
       setIsAdding(false);
     }
@@ -75,19 +71,19 @@ export function AdminUsersPage() {
   const handleRemoveRole = async (userId: string) => {
     try {
       await removeRole(userId);
-      toast.success('Rol eliminado');
+      toast.success(t('users.roleRemoved'));
       await loadUsers();
     } catch (error: any) {
-      toast.error(error.message || 'Error al eliminar rol');
+      toast.error(error.message || t('users.errorRemoving'));
     }
   };
 
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-extrabold tracking-tight">Gestión de Usuarios</h2>
+        <h2 className="text-3xl font-extrabold tracking-tight">{t('users.title')}</h2>
         <p className="text-muted-foreground font-medium mt-2">
-          Asigna roles y gestiona permisos de acceso a las calculadoras.
+          {t('users.subtitle')}
         </p>
       </div>
 
@@ -95,41 +91,41 @@ export function AdminUsersPage() {
       <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
         <h3 className="text-lg font-bold flex items-center gap-2">
           <UserPlus size={18} />
-          Asignar Rol
+          {t('users.assignRole')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <span className="text-xs text-muted-foreground">UUID del usuario</span>
+            <span className="text-xs text-muted-foreground">{t('users.userUuid')}</span>
             <Input
               value={newUserId}
               onChange={(e) => setNewUserId(e.target.value)}
-              placeholder="uuid..."
+              placeholder={t('users.uuidPlaceholder')}
             />
           </div>
           <div>
-            <span className="text-xs text-muted-foreground">Nombre</span>
+            <span className="text-xs text-muted-foreground">{t('users.name')}</span>
             <Input
               value={newDisplayName}
               onChange={(e) => setNewDisplayName(e.target.value)}
-              placeholder="Nombre visible"
+              placeholder={t('users.namePlaceholder')}
             />
           </div>
           <div>
-            <span className="text-xs text-muted-foreground">Rol</span>
+            <span className="text-xs text-muted-foreground">{t('users.role')}</span>
             <select
               value={newRole}
               onChange={(e) => setNewRole(e.target.value as UserRole)}
               className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
             >
-              <option value="worker">Trabajador</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="admin">Administrador</option>
+              <option value="worker">{t('users.roles.worker')}</option>
+              <option value="supervisor">{t('users.roles.supervisor')}</option>
+              <option value="admin">{t('users.roles.admin')}</option>
             </select>
           </div>
           <div className="flex items-end">
             <Button onClick={handleAssignRole} disabled={isAdding} className="w-full gap-2">
               {isAdding ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
-              Asignar
+              {t('users.assign')}
             </Button>
           </div>
         </div>
@@ -137,7 +133,7 @@ export function AdminUsersPage() {
 
       {/* Users list */}
       <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-        <h3 className="text-lg font-bold">Usuarios con Rol</h3>
+        <h3 className="text-lg font-bold">{t('users.usersWithRole')}</h3>
 
         {isLoading ? (
           <div className="flex justify-center py-8">
@@ -145,7 +141,7 @@ export function AdminUsersPage() {
           </div>
         ) : users.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">
-            No hay usuarios con roles asignados.
+            {t('users.noUsersWithRoles')}
           </p>
         ) : (
           <div className="space-y-2">
@@ -162,7 +158,7 @@ export function AdminUsersPage() {
                     </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-2">
                       <span className="font-semibold uppercase tracking-wider">
-                        {ROLE_LABELS[user.role] ?? user.role}
+                        {t(`users.roles.${user.role}`, { defaultValue: user.role })}
                       </span>
                       <span>ID: {user.user_id.slice(0, 12)}...</span>
                     </div>

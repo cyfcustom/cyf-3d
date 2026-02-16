@@ -1,0 +1,22 @@
+{
+  "hero": {
+    "title": "Personalización sin límites",
+    "subtitle_1": "Si puedes ",
+    "subtitle_imagine": "imaginarlo",
+    "subtitle_2": ", podemos hacerlo ",
+    "subtitle_reality": "realidad",
+    "description": "Personaliza franelas, tazas y más con nuestro estudio 3D interactivo. Diseña tu producto único en minutos.",
+    "cta": "Empezar a Diseñar",
+    "examples": "Ver Ejemplos",
+    "imageAlt": "Productos personalizados coloridos"
+  },
+  "products": {
+    "loading": "Cargando productos...",
+    "title": "Elige tu ",
+    "titleHighlight": "base",
+    "description": "Selecciona el producto que quieres personalizar y comienza a crear tu diseño único",
+    "customize": "Personalizar",
+    "fromPrice": "Desde ${{price}}",
+    "freeShipping": "¡Envío gratis en pedidos mayores a $50!"
+  }
+}

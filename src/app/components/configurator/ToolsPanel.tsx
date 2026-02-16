@@ -2,6 +2,7 @@ import { Upload, X, RotateCw, Maximize2, Cloud } from 'lucide-react';
 import { useState } from 'react';
 import { useAtom } from 'jotai';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import {
   layersAtom,
   selectedColorAtom,
@@ -18,18 +19,19 @@ interface ToolsPanelProps {
   selectedColor: string;
 }
 
-const COLORS = [
-  { name: 'Blanco', value: '#FFFFFF' },
-  { name: 'Negro', value: '#000000' },
-  { name: 'Azul', value: '#0F172A' },
-  { name: 'Rojo', value: '#DC2626' },
-  { name: 'Gris', value: '#6B7280' },
-  { name: 'Verde', value: '#16A34A' },
-  { name: 'Amarillo', value: '#FFD600' },
-  { name: 'Rosa', value: '#EC4899' },
+const COLOR_KEYS = [
+  { key: 'white', value: '#FFFFFF' },
+  { key: 'black', value: '#000000' },
+  { key: 'blue', value: '#0F172A' },
+  { key: 'red', value: '#DC2626' },
+  { key: 'gray', value: '#6B7280' },
+  { key: 'green', value: '#16A34A' },
+  { key: 'yellow', value: '#FFD600' },
+  { key: 'pink', value: '#EC4899' },
 ];
 
 export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
+  const { t } = useTranslation('configurator');
   const [activePart, setActivePart] = useState<'body' | 'sleeves' | 'collar'>('body');
   const [layers, setLayers] = useAtom(layersAtom);
   const [isDragging, setIsDragging] = useState(false);
@@ -41,20 +43,20 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    
+
     const file = files[0];
-    
+
     // Show loading
     setLoadingState({
       isLoading: true,
-      message: 'Subiendo tu imagen...',
+      message: t('upload.uploading'),
     });
-    
+
     // Simulate upload delay
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    
+
     const reader = new FileReader();
-    
+
     reader.onload = (e) => {
       const newLayer: Layer = {
         id: Date.now().toString(),
@@ -64,15 +66,15 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
         scale: 1,
       };
       setLayers([...layers, newLayer]);
-      
+
       // Hide loading
       setLoadingState({
         isLoading: false,
         message: '',
       });
-      
+
       // Show success toast
-      toast.success('✅ Imagen subida correctamente', {
+      toast.success(`✅ ${t('upload.success')}`, {
         duration: 3000,
         style: {
           background: '#0F172A',
@@ -83,7 +85,7 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
         },
       });
     };
-    
+
     reader.readAsDataURL(file);
   };
 
@@ -104,7 +106,7 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
 
   const removeLayer = (id: string) => {
     setLayers(layers.filter(layer => layer.id !== id));
-    toast('🗑️ Capa eliminada', {
+    toast(`🗑️ ${t('upload.layerRemoved')}`, {
       duration: 2000,
       style: {
         background: '#0F172A',
@@ -130,7 +132,7 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
     // Show loading while generating preview
     setLoadingState({
       isLoading: true,
-      message: 'Renderizando tu obra maestra...',
+      message: t('upload.rendering'),
     });
 
     // Simulate screenshot generation
@@ -151,9 +153,9 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
   };
 
   return (
-    <div 
+    <div
       className="h-full bg-card flex flex-col border-l border-border"
-      style={{ 
+      style={{
         boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.06)',
         padding: '24px 20px' // Reduced padding for mobile
       }}
@@ -161,7 +163,7 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
       {/* Header */}
       <div className="mb-4 lg:mb-8">
         <h2 className="text-xl lg:text-2xl mb-2 font-bold text-foreground">
-          Personaliza tu Franela
+          {t('toolsPanel.title')}
         </h2>
         <div className="text-2xl lg:text-3xl font-extrabold text-foreground">
           $15.00
@@ -173,38 +175,38 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
         {/* Part Selector */}
         <div>
           <h3 className="text-xs lg:text-sm mb-2 lg:mb-3 font-semibold text-muted-foreground uppercase">
-            SELECCIONA LA PARTE
+            {t('toolsPanel.selectPart')}
           </h3>
           <div className="flex gap-2">
             <button
               onClick={() => setActivePart('body')}
               className={`flex-1 py-2 lg:py-3 px-3 lg:px-4 rounded-xl transition-all text-sm lg:text-base font-semibold ${
-                activePart === 'body' 
-                  ? 'bg-primary text-primary-foreground' 
+                activePart === 'body'
+                  ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-foreground hover:bg-accent'
               }`}
             >
-              Cuerpo
+              {t('parts.body')}
             </button>
             <button
               onClick={() => setActivePart('sleeves')}
               className={`flex-1 py-2 lg:py-3 px-3 lg:px-4 rounded-xl transition-all text-sm lg:text-base font-semibold ${
-                activePart === 'sleeves' 
-                  ? 'bg-primary text-primary-foreground' 
+                activePart === 'sleeves'
+                  ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-foreground hover:bg-accent'
               }`}
             >
-              Mangas
+              {t('parts.sleeves')}
             </button>
             <button
               onClick={() => setActivePart('collar')}
               className={`flex-1 py-2 lg:py-3 px-3 lg:px-4 rounded-xl transition-all text-sm lg:text-base font-semibold ${
-                activePart === 'collar' 
-                  ? 'bg-primary text-primary-foreground' 
+                activePart === 'collar'
+                  ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-foreground hover:bg-accent'
               }`}
             >
-              Cuello
+              {t('parts.collar')}
             </button>
           </div>
         </div>
@@ -212,13 +214,13 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
         {/* Color Picker */}
         <div>
           <h3 className="text-xs lg:text-sm mb-2 lg:mb-3 font-semibold text-muted-foreground uppercase">
-            COLOR DE LA BASE
+            {t('toolsPanel.baseColor')}
           </h3>
           <div className="grid grid-cols-4 gap-2 lg:gap-3">
-            {COLORS.map((color) => (
+            {COLOR_KEYS.map((color) => (
               <button
                 key={color.value}
-                onClick={() => handleColorChange(color.value, color.name)}
+                onClick={() => handleColorChange(color.value, t(`colors.${color.key}`))}
                 className={`relative aspect-square rounded-full transition-all hover:scale-110 active:scale-95 ${
                   color.value === '#FFFFFF' ? 'border-2 border-border' : ''
                 }`}
@@ -226,7 +228,7 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
                   backgroundColor: color.value,
                   boxShadow: selectedColor === color.value ? `0 0 0 3px var(--primary)` : '0 2px 4px rgba(0,0,0,0.1)'
                 }}
-                title={color.name}
+                title={t(`colors.${color.key}`)}
               />
             ))}
           </div>
@@ -235,9 +237,9 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
         {/* Upload Area */}
         <div>
           <h3 className="text-xs lg:text-sm mb-2 lg:mb-3 font-semibold text-muted-foreground uppercase">
-            TU DISEÑO / LOGO
+            {t('toolsPanel.designLogo')}
           </h3>
-          
+
           <div
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -252,14 +254,14 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
               onChange={(e) => handleFileUpload(e.target.files)}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            
+
             <div className="pointer-events-none">
               <Cloud size={40} className="mx-auto mb-3 lg:mb-4 lg:w-12 lg:h-12 text-muted-foreground" />
               <p className="mb-1 text-sm lg:text-base font-semibold text-foreground">
-                Sube tu imagen aquí
+                {t('upload.title')}
               </p>
               <p className="text-xs lg:text-sm text-muted-foreground font-medium">
-                Arrastra y suelta o haz clic
+                {t('upload.hint')}
               </p>
             </div>
           </div>
@@ -268,7 +270,7 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
           {layers.length > 0 && (
             <div className="mt-3 lg:mt-4 space-y-2">
               <h4 className="text-xs lg:text-sm mb-2 font-semibold text-muted-foreground uppercase">
-                CAPAS
+                {t('toolsPanel.layers')}
               </h4>
               {layers.map((layer) => (
                 <div
@@ -288,20 +290,20 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
                   <div className="flex gap-1">
                     <button
                       className="p-1.5 lg:p-2 hover:bg-accent active:bg-accent/80 rounded-lg transition-colors"
-                      title="Rotar"
+                      title={t('toolsPanel.rotate')}
                     >
                       <RotateCw size={14} className="lg:w-4 lg:h-4 text-foreground" />
                     </button>
                     <button
                       className="p-1.5 lg:p-2 hover:bg-accent active:bg-accent/80 rounded-lg transition-colors"
-                      title="Escalar"
+                      title={t('toolsPanel.scale')}
                     >
                       <Maximize2 size={14} className="lg:w-4 lg:h-4 text-foreground" />
                     </button>
                     <button
                       onClick={() => removeLayer(layer.id)}
                       className="p-1.5 lg:p-2 hover:bg-red-100 active:bg-red-200 rounded-lg transition-colors"
-                      title="Eliminar"
+                      title={t('toolsPanel.delete')}
                     >
                       <X size={14} className="lg:w-4 lg:h-4" style={{ color: '#DC2626' }} />
                     </button>
@@ -323,11 +325,11 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
           }}
           onClick={handleFinishOrder}
         >
-          <span className="text-base lg:text-lg">Finalizar y Pedir</span>
+          <span className="text-base lg:text-lg">{t('toolsPanel.finishOrder')}</span>
           <span className="text-xl lg:text-2xl">📲</span>
         </button>
         <p className="text-xs text-center mt-2 lg:mt-3 text-muted-foreground font-medium">
-          Se abrirá WhatsApp con tu diseño
+          {t('toolsPanel.whatsAppNote')}
         </p>
       </div>
     </div>

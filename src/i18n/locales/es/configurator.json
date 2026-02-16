@@ -1,0 +1,59 @@
+{
+  "colors": {
+    "white": "Blanco",
+    "black": "Negro",
+    "blue": "Azul",
+    "red": "Rojo",
+    "gray": "Gris",
+    "green": "Verde",
+    "yellow": "Amarillo",
+    "pink": "Rosa"
+  },
+  "upload": {
+    "uploading": "Subiendo tu imagen...",
+    "success": "Imagen subida correctamente",
+    "layerRemoved": "Capa eliminada",
+    "rendering": "Renderizando tu obra maestra...",
+    "title": "Sube tu imagen aquí",
+    "hint": "Arrastra y suelta o haz clic"
+  },
+  "success": {
+    "title": "¡Tu diseño está listo!",
+    "subtitle": "Estás a un paso de hacer realidad tu creación",
+    "product": "Franela",
+    "size": "Talla",
+    "sendWhatsApp": "Enviar Pedido a WhatsApp",
+    "whatsAppHint": "Se abrirá tu app de mensajería con la foto adjunta",
+    "whatsAppMessage": "¡Hola! Quiero hacer un pedido de una {{product}} personalizada.\n\nDetalles:\n- Producto: {{product}}\n- Talla: {{size}}\n- Color: {{color}}\n\n¿Cuál es el precio final y tiempo de entrega?"
+  },
+  "parts": {
+    "body": "Cuerpo",
+    "sleeves": "Mangas",
+    "collar": "Cuello"
+  },
+  "header": {
+    "backToStore": "Volver a la tienda",
+    "help": "Ayuda"
+  },
+  "toolsPanel": {
+    "title": "Personaliza tu Franela",
+    "selectPart": "SELECCIONA LA PARTE",
+    "baseColor": "COLOR DE LA BASE",
+    "designLogo": "TU DISEÑO / LOGO",
+    "layers": "CAPAS",
+    "rotate": "Rotar",
+    "scale": "Escalar",
+    "delete": "Eliminar",
+    "finishOrder": "Finalizar y Pedir",
+    "whatsAppNote": "Se abrirá WhatsApp con tu diseño"
+  },
+  "canvas": {
+    "preview": "T-Shirt Preview",
+    "viewFront": "Frontal",
+    "viewBack": "Trasera",
+    "viewLabel": "Vista {{view}}",
+    "rotate": "Rotar",
+    "zoom": "Zoom",
+    "fullscreen": "Pantalla completa"
+  }
+}

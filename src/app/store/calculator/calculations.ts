@@ -60,20 +60,20 @@ export function calculateIndirectCosts(costs: IndirectCosts): number {
   if (!costs.enabled) return 0;
 
   const monthlyTotal =
-    clampNumber(costs.monthly.alquiler, 0) +
+    clampNumber(costs.monthly.rent, 0) +
     clampNumber(costs.monthly.internet, 0) +
-    clampNumber(costs.monthly.suscripciones, 0) +
-    clampNumber(costs.monthly.transporte, 0) +
-    clampNumber(costs.monthly.electricidad, 0) +
-    clampNumber(costs.monthly.publicidad, 0) +
-    clampNumber(costs.monthly.otros, 0);
+    clampNumber(costs.monthly.subscriptions, 0) +
+    clampNumber(costs.monthly.transport, 0) +
+    clampNumber(costs.monthly.electricity, 0) +
+    clampNumber(costs.monthly.advertising, 0) +
+    clampNumber(costs.monthly.other, 0);
 
   const unitsPerMonth = clampNumber(costs.unitsPerMonth, 1);
   return monthlyTotal / unitsPerMonth;
 }
 
 /**
- * Calculate labor (mano de obra) cost per unit
+ * Calculate labor cost per unit
  * Based on time and hourly rate
  */
 export function calculateLaborCosts(labor: LaborCosts): number {
@@ -87,7 +87,7 @@ export function calculateLaborCosts(labor: LaborCosts): number {
   const runMinutesPerUnit = clampNumber(labor.runMinutesPerUnit, 0);
   const unitsPerBatch = clampNumber(labor.unitsPerBatch, 1);
 
-  // Total time = setup + (run time × units in batch)
+  // Total time = setup + (run time x units in batch)
   const totalMinutes = setupMinutes + runMinutesPerUnit * unitsPerBatch;
   const totalHours = totalMinutes / 60;
   const totalCost = costPerHour * totalHours;
@@ -103,8 +103,8 @@ export function calculateProfit(
   subtotal: number,
   settings: FinancialSettings
 ): number {
-  if (!settings.applyGanancia) return 0;
-  const percentage = clampNumber(settings.gananciaPct, 0, 1000);
+  if (!settings.applyProfit) return 0;
+  const percentage = clampNumber(settings.profitPct, 0, 1000);
   return subtotal * (percentage / 100);
 }
 
@@ -115,8 +115,8 @@ export function calculateTax(
   subtotalWithProfit: number,
   settings: FinancialSettings
 ): number {
-  if (!settings.applyImpuestos) return 0;
-  const percentage = clampNumber(settings.impuestosPct, 0, 1000);
+  if (!settings.applyTax) return 0;
+  const percentage = clampNumber(settings.taxPct, 0, 1000);
   return subtotalWithProfit * (percentage / 100);
 }
 
@@ -133,10 +133,10 @@ export function calculatePerUnitCosts(
   indirectCosts?: IndirectCosts,
   laborCosts?: LaborCosts,
   financials: FinancialSettings = {
-    gananciaPct: 0,
-    impuestosPct: 0,
-    applyGanancia: false,
-    applyImpuestos: false,
+    profitPct: 0,
+    taxPct: 0,
+    applyProfit: false,
+    applyTax: false,
   }
 ): PerUnitCosts {
   const direct = calculateDirectCosts(directCosts);
@@ -184,12 +184,12 @@ export function calculateTotals(
 }
 
 // ============================================================================
-// VINIL-SPECIFIC CALCULATIONS
+// VINYL-SPECIFIC CALCULATIONS
 // ============================================================================
 
 /**
- * Calculate with waste/scrap percentage (merma)
- * Used by Vinil calculator
+ * Calculate with waste/scrap percentage
+ * Used by Vinyl calculator
  */
 export function applyWastePercentage(
   baseCost: number,
@@ -201,13 +201,13 @@ export function applyWastePercentage(
 }
 
 /**
- * Vinil-specific total calculation
+ * Vinyl-specific total calculation
  */
-export function calculateVinilPerUnit(
+export function calculateVinylPerUnit(
   directCosts: DirectCostItem[],
   depreciation: DepreciationItem[],
   extrasPerUnit: number,
-  mermaPct: number,
+  wastePct: number,
   financials: FinancialSettings
 ): PerUnitCosts {
   const direct = calculateDirectCosts(directCosts);
@@ -215,7 +215,7 @@ export function calculateVinilPerUnit(
   const extras = clampNumber(extrasPerUnit, 0);
 
   const basePerUnit = direct + dep + extras;
-  const afterWaste = applyWastePercentage(basePerUnit, mermaPct);
+  const afterWaste = applyWastePercentage(basePerUnit, wastePct);
 
   const profit = calculateProfit(afterWaste, financials);
   const tax = calculateTax(afterWaste + profit, financials);
@@ -234,48 +234,48 @@ export function calculateVinilPerUnit(
 }
 
 // ============================================================================
-// ENVIOS-SPECIFIC CALCULATIONS
+// SHIPPING-SPECIFIC CALCULATIONS
 // ============================================================================
 
 /**
- * Calculate shipping costs (Envios)
+ * Calculate shipping costs
  */
-export function calculateEnviosCosts(
-  mensajeriaEnabled: boolean,
+export function calculateShippingCosts(
+  courierEnabled: boolean,
   baseRate: number,
   km: number,
   kmRate: number,
   kg: number,
   kgRate: number,
-  embalajeEnabled: boolean,
-  embalajeCost: number,
-  fragilEnabled: boolean,
-  fragilCost: number,
-  seguroEnabled: boolean,
-  seguroPercentage: number,
-  otros: number
-): { mensajeria: number; extras: number; total: number } {
-  const mensajeria = mensajeriaEnabled
+  packagingEnabled: boolean,
+  packagingCost: number,
+  fragileEnabled: boolean,
+  fragileCost: number,
+  insuranceEnabled: boolean,
+  insurancePercentage: number,
+  otherCosts: number
+): { courier: number; extras: number; total: number } {
+  const courier = courierEnabled
     ? clampNumber(baseRate, 0) +
       clampNumber(km, 0) * clampNumber(kmRate, 0) +
       clampNumber(kg, 0) * clampNumber(kgRate, 0)
     : 0;
 
   const extrasBase =
-    (embalajeEnabled ? clampNumber(embalajeCost, 0) : 0) +
-    (fragilEnabled ? clampNumber(fragilCost, 0) : 0) +
-    clampNumber(otros, 0);
+    (packagingEnabled ? clampNumber(packagingCost, 0) : 0) +
+    (fragileEnabled ? clampNumber(fragileCost, 0) : 0) +
+    clampNumber(otherCosts, 0);
 
-  const seguro = seguroEnabled
-    ? (mensajeria + extrasBase) * (clampNumber(seguroPercentage, 0) / 100)
+  const insurance = insuranceEnabled
+    ? (courier + extrasBase) * (clampNumber(insurancePercentage, 0) / 100)
     : 0;
 
-  const extras = extrasBase + seguro;
+  const extras = extrasBase + insurance;
 
   return {
-    mensajeria,
+    courier,
     extras,
-    total: mensajeria + extras,
+    total: courier + extras,
   };
 }
 
@@ -293,8 +293,8 @@ export function calculateDtfTotals(state: any) {
   const designLength = state.calcByDesign
     ? (() => {
         const cols = Math.max(1, Math.floor(ANCHO / Math.max(0.1, state.designWidthCm)));
-        const filas = Math.ceil(Math.max(1, state.designCount) / cols);
-        return filas * state.designHeightCm;
+        const rows = Math.ceil(Math.max(1, state.designCount) / cols);
+        return rows * state.designHeightCm;
       })()
     : state.lengthCm;
 
@@ -306,14 +306,14 @@ export function calculateDtfTotals(state: any) {
   const designCount = Math.max(1, state.designCount);
 
   const extrasFixed =
-    clampNumber(state.extras.envio, 0, 1e12) +
-    clampNumber(state.extras.diseno, 0, 1e12) +
-    clampNumber(state.extras.otros, 0, 1e12);
-  const planchaTotal = clampNumber(state.extras.plancha, 0, 1e12) * designCount;
-  const extrasSum = extrasFixed + planchaTotal;
+    clampNumber(state.extras.shipping, 0, 1e12) +
+    clampNumber(state.extras.design, 0, 1e12) +
+    clampNumber(state.extras.other, 0, 1e12);
+  const pressTotal = clampNumber(state.extras.press, 0, 1e12) * designCount;
+  const extrasSum = extrasFixed + pressTotal;
 
-  const prendaUnit = state.prenda.count > 0 ? state.prenda.packPrice / state.prenda.count : 0;
-  const prendaTotal = state.prenda.enabled ? prendaUnit * designCount : 0;
+  const garmentUnit = state.garment.count > 0 ? state.garment.packPrice / state.garment.count : 0;
+  const garmentTotal = state.garment.enabled ? garmentUnit * designCount : 0;
 
   const depPerUnit = state.depreciation.enabled ? state.depreciation.price / state.depreciation.lifeUnits : 0;
   const depTotal = depPerUnit * designCount;
@@ -321,13 +321,13 @@ export function calculateDtfTotals(state: any) {
   const indirectBase = (() => {
     const m = state.indirectCosts.monthly;
     const monthlyTotal =
-      m.alquiler + m.internet + m.suscripciones + m.transporte + m.electricidad + m.publicidad + m.otros;
+      m.rent + m.internet + m.subscriptions + m.transport + m.electricity + m.advertising + m.other;
     return monthlyTotal / Math.max(1, state.indirectCosts.unitsPerMonth);
   })();
   const indirectPerUnit = state.indirectCosts.enabled ? indirectBase : 0;
   const indirectTotal = indirectPerUnit * designCount;
 
-  const moPerUnit = state.laborCosts.enabled
+  const laborPerUnit = state.laborCosts.enabled
     ? (() => {
         const costPerMinute =
           state.laborCosts.hoursPerMonth > 0
@@ -338,39 +338,39 @@ export function calculateDtfTotals(state: any) {
         return state.laborCosts.unitsPerBatch > 0 ? (totalMinutes * costPerMinute) / state.laborCosts.unitsPerBatch : 0;
       })()
     : 0;
-  const moTotal = moPerUnit * designCount;
+  const laborTotal = laborPerUnit * designCount;
 
-  const subtotal = directCost + extrasSum + prendaTotal + depTotal + indirectTotal + moTotal;
+  const subtotal = directCost + extrasSum + garmentTotal + depTotal + indirectTotal + laborTotal;
 
-  const ganVal = state.financials.applyGanancia ? subtotal * (state.financials.gananciaPct / 100) : 0;
-  const impVal = state.financials.applyImpuestos
-    ? (subtotal + ganVal) * (state.financials.impuestosPct / 100)
+  const profitVal = state.financials.applyProfit ? subtotal * (state.financials.profitPct / 100) : 0;
+  const taxVal = state.financials.applyTax
+    ? (subtotal + profitVal) * (state.financials.taxPct / 100)
     : 0;
-  const total = subtotal + ganVal + impVal;
+  const total = subtotal + profitVal + taxVal;
 
   const perDesignDirect = designCount > 0 ? directCost / designCount : 0;
   const perDesignExtras = designCount > 0 ? extrasFixed / designCount : 0;
   const costPerStamp =
-    perDesignDirect + perDesignExtras + state.extras.plancha + depPerUnit + indirectPerUnit + moPerUnit;
-  const costPerShirt = prendaUnit + costPerStamp;
+    perDesignDirect + perDesignExtras + state.extras.press + depPerUnit + indirectPerUnit + laborPerUnit;
+  const costPerShirt = garmentUnit + costPerStamp;
 
   return {
     designLength,
     unitsCharged,
     directCost,
     extrasSum,
-    planchaTotal,
-    prendaUnit,
-    prendaTotal,
+    pressTotal,
+    garmentUnit,
+    garmentTotal,
     depPerUnit,
     depTotal,
     indirectPerUnit,
     indirectTotal,
-    moPerUnit,
-    moTotal,
-    subtotalSinGI: subtotal,
-    ganancia: ganVal,
-    impuestos: impVal,
+    laborPerUnit,
+    laborTotal,
+    subtotalBeforeFinancials: subtotal,
+    profit: profitVal,
+    tax: taxVal,
     total,
     perDesignDirect,
     perDesignExtras,
@@ -381,13 +381,13 @@ export function calculateDtfTotals(state: any) {
 }
 
 // ============================================================================
-// ESFERAS-SPECIFIC CALCULATIONS
+// SPHERES-SPECIFIC CALCULATIONS
 // ============================================================================
 
 /**
- * Calculate Esferas totals with special ganancia mode (markup vs margen)
+ * Calculate Spheres totals with special profit mode (markup vs margin)
  */
-export function calculateEsferasTotals(state: any) {
+export function calculateSpheresTotals(state: any) {
   const directPerUnit = state.directCosts.reduce((sum: number, item: any) => {
     if (!item.enabled) return sum;
     const qty = clampNumber(item.quantity, 0.0001, 1e9);
@@ -408,19 +408,19 @@ export function calculateEsferasTotals(state: any) {
   const indirectBase = (() => {
     const monthly = state.indirectCosts.monthly;
     const monthlyTotal =
-      monthly.alquiler +
+      monthly.rent +
       monthly.internet +
-      monthly.suscripciones +
-      monthly.transporte +
-      monthly.electricidad +
-      monthly.publicidad +
-      monthly.otros;
+      monthly.subscriptions +
+      monthly.transport +
+      monthly.electricity +
+      monthly.advertising +
+      monthly.other;
     const units = clampNumber(state.indirectCosts.unitsPerMonth, 1, 1e9);
     return monthlyTotal / units;
   })();
   const indirectApplied = state.indirectCosts.enabled ? indirectBase : 0;
 
-  const moBase = (() => {
+  const laborBase = (() => {
     const salary = clampNumber(state.laborCosts.salary, 0, 1e9);
     const hours = clampNumber(state.laborCosts.hoursPerMonth, 0, 1e6);
     const setup = clampNumber(state.laborCosts.setupMinutes, 0, 1e6);
@@ -430,19 +430,19 @@ export function calculateEsferasTotals(state: any) {
     const totalMinutes = setup + run * units;
     return units > 0 ? (totalMinutes * costPerMinute) / units : 0;
   })();
-  const moApplied = state.laborCosts.enabled ? moBase : 0;
+  const laborApplied = state.laborCosts.enabled ? laborBase : 0;
 
-  const subNoGI = directPerUnit + depreciationPerUnit + indirectApplied + moApplied;
+  const subtotalBeforeFinancials = directPerUnit + depreciationPerUnit + indirectApplied + laborApplied;
 
-  const ganPct = clampNumber(state.financials.gananciaPct, 0, 1000);
-  const impPct = clampNumber(state.financials.impuestosPct, 0, 1000);
-  const gananciaVal = state.financials.applyGanancia
-    ? state.gananciaMode === 'margen'
-      ? subNoGI * (ganPct / Math.max(1, 100 - ganPct))
-      : subNoGI * (ganPct / 100)
+  const profitPct = clampNumber(state.financials.profitPct, 0, 1000);
+  const taxPct = clampNumber(state.financials.taxPct, 0, 1000);
+  const profitVal = state.financials.applyProfit
+    ? state.profitMode === 'margin'
+      ? subtotalBeforeFinancials * (profitPct / Math.max(1, 100 - profitPct))
+      : subtotalBeforeFinancials * (profitPct / 100)
     : 0;
-  const impuestosVal = state.financials.applyImpuestos ? (subNoGI + gananciaVal) * (impPct / 100) : 0;
-  const perUnitTotal = subNoGI + gananciaVal + impuestosVal;
+  const taxVal = state.financials.applyTax ? (subtotalBeforeFinancials + profitVal) * (taxPct / 100) : 0;
+  const perUnitTotal = subtotalBeforeFinancials + profitVal + taxVal;
 
   const qty = clampNumber(state.quantity, 1, 1e6);
   const multiplier = state.quantityEnabled ? qty : 1;
@@ -453,18 +453,18 @@ export function calculateEsferasTotals(state: any) {
       depreciation: depreciationPerUnit,
       indirectBase,
       indirectApplied,
-      moBase,
-      moApplied,
-      base: subNoGI,
-      ganancia: gananciaVal,
-      impuestos: impuestosVal,
+      laborBase,
+      laborApplied,
+      base: subtotalBeforeFinancials,
+      profit: profitVal,
+      tax: taxVal,
       total: perUnitTotal,
     },
     quantity: multiplier,
     quantityEnabled: state.quantityEnabled,
-    subtotalSinGI: subNoGI * multiplier,
-    gananciaTotal: gananciaVal * multiplier,
-    impuestosTotal: impuestosVal * multiplier,
+    subtotalBeforeFinancials: subtotalBeforeFinancials * multiplier,
+    totalProfit: profitVal * multiplier,
+    totalTax: taxVal * multiplier,
     total: perUnitTotal * multiplier,
   };
 }

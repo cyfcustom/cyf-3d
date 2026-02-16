@@ -1,17 +1,19 @@
 import { useAtom } from 'jotai';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { showSuccessModalAtom, designPreviewAtom, productConfigAtom } from '../store/atoms';
 
 export function SuccessModal() {
   const [showModal, setShowModal] = useAtom(showSuccessModalAtom);
   const [designPreview] = useAtom(designPreviewAtom);
   const [productConfig] = useAtom(productConfigAtom);
+  const { t } = useTranslation('configurator');
 
   const handleWhatsAppOrder = () => {
     const phoneNumber = '584121234567'; // Replace with actual WhatsApp number
-    const productName = productConfig.type === 'tshirt' ? 'Franela' : 'Producto';
-    const message = `¡Hola! Quiero hacer un pedido:\n\n${productName} - Talla ${productConfig.size}\nColor: ${productConfig.baseColorName}\n\nAdjunto mi diseño personalizado. ¿Cuál es el precio final y tiempo de entrega?`;
+    const productName = t('success.product');
+    const message = t('success.whatsAppMessage', { product: productName, size: productConfig.size, color: productConfig.baseColorName });
     
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     
@@ -92,11 +94,11 @@ export function SuccessModal() {
 
                 {/* Title */}
                 <h2 className="text-2xl lg:text-3xl mb-2 font-extrabold text-foreground">
-                  ¡Tu diseño está listo!
+                  {t('success.title')}
                 </h2>
 
                 <p className="text-sm lg:text-base mb-4 lg:mb-6 text-muted-foreground font-medium">
-                  Estás a un paso de hacer realidad tu creación
+                  {t('success.subtitle')}
                 </p>
 
                 {/* Design Preview */}
@@ -120,7 +122,7 @@ export function SuccessModal() {
                 {/* Product Summary */}
                 <div className="mb-4 lg:mb-6 p-3 lg:p-4 rounded-xl bg-muted">
                   <p className="text-sm lg:text-base font-semibold text-foreground">
-                    {productConfig.type === 'tshirt' ? 'Franela' : 'Producto'} • Talla{' '}
+                    {t('success.product')} • {t('success.size')}{' '}
                     {productConfig.size} • {productConfig.baseColorName}
                   </p>
                 </div>
@@ -137,13 +139,13 @@ export function SuccessModal() {
                     fontSize: '1rem',
                   }}
                 >
-                  <span className="lg:text-lg">Enviar Pedido a WhatsApp</span>
+                  <span className="lg:text-lg">{t('success.sendWhatsApp')}</span>
                   <span className="text-xl lg:text-2xl">📲</span>
                 </motion.button>
 
                 {/* Helper Text */}
                 <p className="text-xs mt-3 lg:mt-4 text-muted-foreground font-medium">
-                  Se abrirá tu app de mensajería con la foto adjunta
+                  {t('success.whatsAppHint')}
                 </p>
               </div>
             </div>

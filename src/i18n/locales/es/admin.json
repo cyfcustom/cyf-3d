@@ -1,0 +1,177 @@
+{
+  "dashboard": {
+    "title": "CYF ADMIN",
+    "logout": "Cerrar Sesión",
+    "welcome": "Bienvenido, <highlight>{{name}}</highlight>",
+    "subtitle": "Gestiona el universo digital de <bold>CYF Customs</bold> desde tu centro de control privado.",
+    "users": "Usuarios",
+    "calculationHistory": "Historial de cálculos de usuarios.",
+    "operativeSummary": "Resumen Operativo",
+    "openConfigurator": "ABRIR CONFIGURADOR"
+  },
+  "cards": {
+    "config": {
+      "title": "Configuración",
+      "description": "Tarifas y parámetros de cada calculadora.",
+      "action": "Gestionar"
+    },
+    "users": {
+      "title": "Usuarios",
+      "description": "Roles y permisos de acceso.",
+      "action": "Gestionar"
+    },
+    "audit": {
+      "title": "Auditoría",
+      "description": "Historial de cambios de configuración.",
+      "action": "Ver Log"
+    },
+    "calculations": {
+      "title": "Cálculos",
+      "description": "Historial de cálculos de usuarios.",
+      "action": "Ver Historial"
+    }
+  },
+  "quickActions": {
+    "designs": {
+      "title": "Mis Diseños",
+      "description": "Workspace creativo para crear y personalizar productos en 3D.",
+      "action": "ABRIR CONFIGURADOR"
+    },
+    "calculators": {
+      "title": "Calculadoras",
+      "description": "Suite completa de herramientas para cotizaciones precisas.",
+      "action": "IR A LAS SUITE"
+    },
+    "security": {
+      "title": "Seguridad",
+      "description": "Configura MFA y protege el acceso a la plataforma.",
+      "action": "CONFIGURAR 2FA"
+    }
+  },
+  "overview": {
+    "title": "Resumen Operativo",
+    "subtitle": "Estado actual de la plataforma y servicios.",
+    "systemsOnline": "Sistemas Online",
+    "activeModules": "Módulos Activos",
+    "adminSession": "Sesión Admin",
+    "protected": "Protegido",
+    "database": "Base de Datos",
+    "region": "Región"
+  },
+  "modules": {
+    "sublimacion": "Sublimación",
+    "vinil": "Vinil",
+    "papeleria": "Papelería",
+    "etiquetas": "Etiquetas",
+    "dtf": "DTF",
+    "empaques": "Empaques",
+    "esferas": "Esferas",
+    "envios": "Envíos"
+  },
+  "config": {
+    "title": "Configuración de Calculadoras",
+    "subtitle": "Gestiona las tarifas y parámetros de cada módulo de cálculo.",
+    "noConfigs": "No hay configuraciones en Supabase todavía.",
+    "runMigration": "Ejecuta la migración SQL para crear la configuración inicial.",
+    "version": "Versión {{version}}",
+    "updated": "Actualizado:",
+    "notAvailable": "N/A",
+    "editor": {
+      "versionInfo": "Versión {{version}} — Última actualización: {{date}}",
+      "notFound": "No se encontró configuración para \"{{module}}\".",
+      "back": "Volver",
+      "changeReason": "Razón del cambio (requerido antes de guardar)",
+      "changeReasonPlaceholder": "Ej: Actualización de precios de insumos febrero 2026",
+      "directCosts": "Costos Directos",
+      "saveDirectCosts": "Guardar costos directos",
+      "priceLabel": "Precio ($)",
+      "quantityLabel": "Cantidad",
+      "unitCostLabel": "Costo Ud.",
+      "depreciation": "Depreciación",
+      "saveDepreciation": "Guardar depreciación",
+      "equipmentPrice": "Precio equipo ($)",
+      "lifeUnits": "Vida útil (uds)",
+      "unitsPerMonth": "Unidades/mes",
+      "mode": "Modo: {{mode}}",
+      "financials": "Financieros",
+      "saveFinancials": "Guardar financieros",
+      "profitPct": "Ganancia (%)",
+      "taxPct": "Impuestos (%)",
+      "recentChanges": "Historial de cambios recientes",
+      "noChanges": "Sin cambios registrados.",
+      "errorLoading": "Error cargando configuración",
+      "changeReasonRequired": "Ingresa una razón del cambio antes de guardar",
+      "fieldUpdated": "Campo \"{{field}}\" actualizado correctamente",
+      "errorSaving": "Error al guardar"
+    }
+  },
+  "users": {
+    "title": "Gestión de Usuarios",
+    "subtitle": "Asigna roles y gestiona permisos de acceso a las calculadoras.",
+    "assignRole": "Asignar Rol",
+    "userUuid": "UUID del usuario",
+    "uuidPlaceholder": "uuid...",
+    "name": "Nombre",
+    "namePlaceholder": "Nombre visible",
+    "role": "Rol",
+    "assign": "Asignar",
+    "usersWithRole": "Usuarios con Rol",
+    "noUsersWithRoles": "No hay usuarios con roles asignados.",
+    "roles": {
+      "admin": "Administrador",
+      "supervisor": "Supervisor",
+      "worker": "Trabajador"
+    },
+    "errorLoading": "Error cargando usuarios",
+    "uuidRequired": "Ingresa el UUID del usuario",
+    "roleAssigned": "Rol asignado correctamente",
+    "errorAssigning": "Error al asignar rol",
+    "roleRemoved": "Rol eliminado",
+    "errorRemoving": "Error al eliminar rol"
+  },
+  "audit": {
+    "title": "Log de Auditoría",
+    "subtitle": "Historial de todos los cambios realizados a las configuraciones.",
+    "noChanges": "No hay cambios registrados todavía.",
+    "revert": "Revertir",
+    "reverted": "Cambio revertido en \"{{module}}.{{field}}\"",
+    "errorReverting": "Error al revertir",
+    "errorLoading": "Error cargando log de auditoría",
+    "oldValue": "Valor anterior",
+    "newValue": "Valor nuevo",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pageOf": "Página {{current}} de {{total}}"
+  },
+  "history": {
+    "title": "Historial de Cálculos",
+    "subtitle": "Registro de todos los cálculos realizados por los usuarios.",
+    "filterByModule": "Filtrar por módulo:",
+    "all": "Todos",
+    "records": "{{count}} registro",
+    "records_plural": "{{count}} registros",
+    "noCalculations": "Sin cálculos registrados.",
+    "unit": "ud.",
+    "user": "Usuario:",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pageOf": "Página {{current}} de {{total}}",
+    "errorLoading": "Error cargando historial"
+  },
+  "login": {
+    "panelTitle": "Panel de Administración",
+    "email": "Correo Electrónico",
+    "emailPlaceholder": "admin@cyfcustoms.com",
+    "password": "Contraseña",
+    "submit": "INICIAR SESIÓN",
+    "mfa": {
+      "title": "Verificación 2FA",
+      "description": "Ingresa el código de 6 dígitos generado por tu aplicación de autenticación.",
+      "placeholder": "000000",
+      "verify": "VERIFICAR",
+      "back": "VOLVER"
+    },
+    "restricted": "Acceso Restringido • Personal Autorizado",
+    "copyright": "© {{year}} CYF CUSTOMS VENEZUELA"
+  }
+}

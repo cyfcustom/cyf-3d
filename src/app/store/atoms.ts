@@ -1,4 +1,5 @@
 import { atom } from 'jotai';
+import { atomWithStorage } from 'jotai/utils';
 
 // Layer interface
 export interface Layer {
@@ -26,12 +27,12 @@ export interface LoadingState {
 // Atoms
 export const layersAtom = atom<Layer[]>([]);
 export const selectedColorAtom = atom<string>('#FFFFFF');
-export const selectedColorNameAtom = atom<string>('Blanco');
+export const selectedColorNameAtom = atom<string>('White');
 export const productConfigAtom = atom<ProductConfig>({
   type: 'tshirt',
   size: 'M',
   baseColor: '#FFFFFF',
-  baseColorName: 'Blanco',
+  baseColorName: 'White',
 });
 export const loadingStateAtom = atom<LoadingState>({
   isLoading: false,
@@ -47,6 +48,16 @@ export interface AuthUser {
   role?: string;
 }
 
-export const authUserAtom = atom<AuthUser | null>(null);
-export const isAuthenticatedAtom = atom<boolean>(false);
+// Persist auth state in localStorage
+export const authUserAtom = atomWithStorage<AuthUser | null>(
+  'cyf-customs-auth-user',
+  null
+);
+
+export const isAuthenticatedAtom = atomWithStorage<boolean>(
+  'cyf-customs-is-authenticated',
+  false
+);
+
+// MFA required is session-only (not persisted)
 export const mfaRequiredAtom = atom<boolean>(false);

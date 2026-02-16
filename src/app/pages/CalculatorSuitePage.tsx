@@ -1,16 +1,17 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { VinilModule } from '../components/calculator/vinil/VinilModule';
-import { SublimModule } from '../components/calculator/sublimacion/SublimModule';
-import { EsferasModule } from '../components/calculator/esferas/EsferasModule';
+import { VinylModule } from '../components/calculator/vinyl/VinylModule';
+import { SublimationModule } from '../components/calculator/sublimation/SublimationModule';
+import { SpheresModule } from '../components/calculator/spheres/SpheresModule';
 import { DtfModule } from '../components/calculator/dtf/DtfModule';
-import { PapeleriaModule } from '../components/calculator/papeleria/PapeleriaModule';
-import { EtiquetasModule } from '../components/calculator/etiquetas/EtiquetasModule';
-import { EmpaquesModule } from '../components/calculator/empaques/EmpaquesModule';
-import { EnviosModule } from '../components/calculator/envios/EnviosModule';
-import { ConversorModule } from '../components/calculator/conversor/ConversorModule';
-import { PersonalizableModule } from '../components/calculator/personalizado/PersonalizableModule';
+import { StationeryModule } from '../components/calculator/stationery/StationeryModule';
+import { LabelsModule } from '../components/calculator/labels/LabelsModule';
+import { PackagingModule } from '../components/calculator/packaging/PackagingModule';
+import { ShippingModule } from '../components/calculator/shipping/ShippingModule';
+import { ConverterModule } from '../components/calculator/converter/ConverterModule';
+import { CustomizableModule } from '../components/calculator/customizable/CustomizableModule';
 import { FAQModule } from '../components/faq/FAQModule';
 import { SummaryModule } from '../components/calculator/summary/SummaryModule';
 import { SummaryProvider } from '../components/calculator/summary/summaryContext';
@@ -19,24 +20,29 @@ import { Button } from '../components/ui/button';
 import { CalculatorDashboard } from '../components/calculator/CalculatorDashboard';
 import { Home } from 'lucide-react';
 
-const sections = [
-  { id: 'dashboard', label: '🏠 Inicio', icon: Home },
-  { id: 'vinil', label: 'Vinil' },
-  { id: 'sublimacion', label: 'Sublimación' },
-  { id: 'esferas', label: 'Esferas navideñas' },
-  { id: 'dtf', label: 'DTF terceros' },
-  { id: 'papeleria', label: 'Papelería' },
-  { id: 'etiquetas', label: 'Etiquetas' },
-  { id: 'empaques', label: 'Empaques' },
-  { id: 'envios', label: 'Envíos' },
-  { id: 'conversor', label: 'Conversor de unidades' },
-  { id: 'personalizado', label: 'Producto personalizable' },
-  { id: 'faq', label: 'Preguntas frecuentes' },
-  { id: 'resumen', label: 'Resumen general' },
-];
+const sectionDefs = [
+  { id: 'dashboard', labelKey: 'common:nav.home', prefix: '\u{1F3E0} ', icon: Home },
+  { id: 'vinyl', labelKey: 'calculator:modules.vinyl.name' },
+  { id: 'sublimation', labelKey: 'calculator:modules.sublimation.name' },
+  { id: 'spheres', labelKey: 'calculator:modules.spheres.name' },
+  { id: 'dtf', labelKey: 'calculator:modules.dtf.name' },
+  { id: 'stationery', labelKey: 'calculator:modules.stationery.name' },
+  { id: 'labels', labelKey: 'calculator:modules.labels.name' },
+  { id: 'packaging', labelKey: 'calculator:modules.packaging.name' },
+  { id: 'shipping', labelKey: 'calculator:modules.shipping.name' },
+  { id: 'converter', labelKey: 'calculator:modules.converter.name' },
+  { id: 'customizable', labelKey: 'calculator:modules.custom.name' },
+  { id: 'faq', labelKey: 'calculator:modules.faq.name' },
+  { id: 'summary', labelKey: 'calculator:modules.summary.name' },
+] as const;
 
 export function CalculatorSuitePage() {
-  const [active, setActive] = useState<(typeof sections)[number]['id']>('dashboard');
+  const { t } = useTranslation(['calculator', 'common']);
+  const sections = sectionDefs.map((s) => ({
+    ...s,
+    label: ('prefix' in s ? s.prefix : '') + t(s.labelKey),
+  }));
+  const [active, setActive] = useState<(typeof sectionDefs)[number]['id']>('dashboard');
   const [open, setOpen] = useState(false);
   const current = sections.find((s) => s.id === active);
   const activate = (id: (typeof sections)[number]['id']) => {
@@ -55,7 +61,7 @@ export function CalculatorSuitePage() {
           {/* Sidebar */}
           <aside className={`w-64 shrink-0 hidden lg:block`}>
             <div className="sticky top-24 space-y-4">
-              <h3 className="text-sm font-semibold text-muted-foreground px-3">Calculadoras CYF Customs</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground px-3">{t('calculator:suite.title')}</h3>
               <nav className="space-y-1">
                 {sections.map((s, idx) => (
                   <div key={s.id}>
@@ -80,11 +86,11 @@ export function CalculatorSuitePage() {
             {/* Mobile toggle */}
             <div className="lg:hidden flex justify-between items-center mb-2">
               <div className="space-y-1">
-                <p className="text-xs uppercase tracking-wide text-primary font-semibold">Suite CYF Customs</p>
-                <h1 className="text-2xl font-bold">{current?.label ?? 'Calculadoras de gastos'}</h1>
+                <p className="text-xs uppercase tracking-wide text-primary font-semibold">{t('calculator:suite.subtitle')}</p>
+                <h1 className="text-2xl font-bold">{current?.label ?? t('calculator:suite.expenses')}</h1>
               </div>
               <Button variant="outline" onClick={() => setOpen((v) => !v)}>
-                {open ? 'Cerrar menú' : 'Menú'}
+                {open ? t('common:nav.closeMenu') : t('common:nav.menu')}
               </Button>
             </div>
 
@@ -112,23 +118,23 @@ export function CalculatorSuitePage() {
               <CalculatorDashboard onSelectCalculator={activate} />
             )}
 
-            {active === 'vinil' && (
+            {active === 'vinyl' && (
               <section className="space-y-4">
-                <p className="text-xs uppercase tracking-wide text-primary font-semibold">Módulo 1</p>
-                <h2 className="text-2xl font-bold">Vinil</h2>
-                <VinilModule />
+                <p className="text-xs uppercase tracking-wide text-primary font-semibold">{t('calculator:modules.vinyl.moduleLabel')}</p>
+                <h2 className="text-2xl font-bold">{t('calculator:modules.vinyl.name')}</h2>
+                <VinylModule />
               </section>
             )}
 
-            {active === 'sublimacion' && (
+            {active === 'sublimation' && (
               <section className="space-y-4">
-                <SublimModule />
+                <SublimationModule />
               </section>
             )}
 
-            {active === 'esferas' && (
+            {active === 'spheres' && (
               <section className="space-y-4">
-                <EsferasModule />
+                <SpheresModule />
               </section>
             )}
 
@@ -138,39 +144,39 @@ export function CalculatorSuitePage() {
               </section>
             )}
 
-            {active === 'papeleria' && (
+            {active === 'stationery' && (
               <section className="space-y-4">
-                <PapeleriaModule />
+                <StationeryModule />
               </section>
             )}
 
-            {active === 'etiquetas' && (
+            {active === 'labels' && (
               <section className="space-y-4">
-                <EtiquetasModule />
+                <LabelsModule />
               </section>
             )}
 
-            {active === 'empaques' && (
+            {active === 'packaging' && (
               <section className="space-y-4">
-                <EmpaquesModule />
+                <PackagingModule />
               </section>
             )}
 
-            {active === 'envios' && (
+            {active === 'shipping' && (
               <section className="space-y-4">
-                <EnviosModule />
+                <ShippingModule />
               </section>
             )}
 
-            {active === 'conversor' && (
+            {active === 'converter' && (
               <section className="space-y-4">
-                <ConversorModule />
+                <ConverterModule />
               </section>
             )}
 
-            {active === 'personalizado' && (
+            {active === 'customizable' && (
               <section className="space-y-4">
-                <PersonalizableModule />
+                <CustomizableModule />
               </section>
             )}
 
@@ -180,7 +186,7 @@ export function CalculatorSuitePage() {
               </section>
             )}
 
-            {active === 'resumen' && (
+            {active === 'summary' && (
               <section className="space-y-4">
                 <SummaryModule />
               </section>

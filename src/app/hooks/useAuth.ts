@@ -1,57 +1,14 @@
-import { useEffect } from 'react';
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import { supabase } from '@/app/lib/supabase';
 import { authUserAtom, isAuthenticatedAtom, mfaRequiredAtom } from '@/app/store/atoms';
 import { toast } from 'sonner';
 
 export function useAuth() {
-  const [authUser, setAuthUser] = useAtom(authUserAtom);
-  const [isAuthenticated, setIsAuthenticated] = useAtom(isAuthenticatedAtom);
+  const [authUser] = useAtom(authUserAtom);
+  const [isAuthenticated] = useAtom(isAuthenticatedAtom);
   const [mfaRequired, setMfaRequired] = useAtom(mfaRequiredAtom);
-
-  useEffect(() => {
-    // Check active session on mount
-    checkSession();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        setAuthUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          role: session.user.user_metadata?.role || 'admin',
-        });
-        setIsAuthenticated(true);
-        setMfaRequired(false);
-      } else if (event === 'SIGNED_OUT') {
-        setAuthUser(null);
-        setIsAuthenticated(false);
-        setMfaRequired(false);
-      } else if (event === 'MFA_CHALLENGE_VERIFIED') {
-        setMfaRequired(false);
-        toast.success('Autenticación 2FA exitosa');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkSession = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (session) {
-      setAuthUser({
-        id: session.user.id,
-        email: session.user.email || '',
-        role: session.user.user_metadata?.role || 'admin',
-      });
-      setIsAuthenticated(true);
-    }
-  };
+  const setAuthUser = useSetAtom(authUserAtom);
+  const setIsAuthenticated = useSetAtom(isAuthenticatedAtom);
 
   const signIn = async (email: string, password: string) => {
     try {

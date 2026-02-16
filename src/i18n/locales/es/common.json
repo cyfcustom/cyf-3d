@@ -1,0 +1,24 @@
+{
+  "nav": {
+    "contact": "Contacto",
+    "menu": "Menú",
+    "closeMenu": "Cerrar menú",
+    "home": "Inicio"
+  },
+  "footer": {
+    "brandDescription": "Personalización de productos de alta calidad en Venezuela. Transforma tus ideas en productos únicos.",
+    "quickLinks": "Enlaces Rápidos",
+    "products": "Productos",
+    "contact": "Contacto",
+    "copyright": "© 2024 CYF Customs. Todos los derechos reservados.",
+    "privacyPolicy": "Política de Privacidad",
+    "termsOfService": "Términos de Servicio"
+  },
+  "actions": {
+    "copy": "Copiar",
+    "export": "Exportar / Imprimir",
+    "expandAll": "Expandir todo",
+    "collapseAll": "Colapsar todo"
+  },
+  "loading": "Cargando..."
+}

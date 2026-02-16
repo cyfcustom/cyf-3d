@@ -1,6 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { Instagram, Facebook, Mail, Phone } from 'lucide-react';
 
 export function Footer() {
+  const { t } = useTranslation();
+
   return (
     <footer className="w-full bg-card border-t border-border py-8 sm:py-12 px-4">
       <div className="max-w-7xl mx-auto">
@@ -12,35 +15,19 @@ export function Footer() {
               CYF Customs
             </h3>
             <p className="text-sm sm:text-base text-muted-foreground font-medium">
-              Personalización de productos de alta calidad en Venezuela. 
-              Transforma tus ideas en productos únicos.
+              {t('footer.brandDescription')}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
             <h4 className="mb-4 font-bold text-foreground">
-              Enlaces Rápidos
+              {t('footer.quickLinks')}
             </h4>
             <ul className="space-y-2">
               <li>
-                <a href="#productos" className="text-sm sm:text-base text-muted-foreground font-medium transition-colors hover:text-primary">
-                  Productos
-                </a>
-              </li>
-              <li>
-                <a href="#mis-disenos" className="text-sm sm:text-base text-muted-foreground font-medium transition-colors hover:text-primary">
-                  Mis Diseños
-                </a>
-              </li>
-              <li>
-                <a href="#como-funciona" className="text-sm sm:text-base text-muted-foreground font-medium transition-colors hover:text-primary">
-                  Cómo Funciona
-                </a>
-              </li>
-              <li>
-                <a href="#preguntas" className="text-sm sm:text-base text-muted-foreground font-medium transition-colors hover:text-primary">
-                  Preguntas Frecuentes
+                <a href="/#productos" className="text-sm sm:text-base text-muted-foreground font-medium transition-colors hover:text-primary">
+                  {t('footer.products')}
                 </a>
               </li>
             </ul>
@@ -49,7 +36,7 @@ export function Footer() {
           {/* Contact Section */}
           <div>
             <h4 className="mb-4 font-bold text-foreground">
-              Contacto
+              {t('footer.contact')}
             </h4>
             <div className="space-y-3 mb-4">
               <a href="mailto:contacto@cyfcustoms.com" className="flex items-center gap-2 text-sm sm:text-base text-muted-foreground font-medium transition-colors hover:text-primary">
@@ -61,18 +48,24 @@ export function Footer() {
                 +58 (424) 123-4567
               </a>
             </div>
-            
+
             {/* Social Media */}
             <div className="flex gap-3">
-              <a 
-                href="#instagram" 
+              <a
+                href="https://instagram.com/cyfcustoms"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2.5 rounded-lg bg-muted transition-all hover:scale-110 hover:bg-accent"
+                aria-label="Instagram"
               >
                 <Instagram size={20} style={{ color: 'var(--vibrant-orange)' }} />
               </a>
-              <a 
-                href="#facebook" 
+              <a
+                href="https://facebook.com/cyfcustoms"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2.5 rounded-lg bg-muted transition-all hover:scale-110 hover:bg-accent"
+                aria-label="Facebook"
               >
                 <Facebook size={20} style={{ color: 'var(--electric-blue)' }} />
               </a>
@@ -84,15 +77,11 @@ export function Footer() {
         <div className="pt-6 border-t border-border">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-xs sm:text-sm text-center sm:text-left text-muted-foreground">
-              © 2024 CYF Customs. Todos los derechos reservados.
+              {t('footer.copyright')}
             </p>
-            <div className="flex gap-4 text-xs sm:text-sm">
-              <a href="#privacidad" className="text-muted-foreground transition-colors hover:text-primary">
-                Política de Privacidad
-              </a>
-              <a href="#terminos" className="text-muted-foreground transition-colors hover:text-primary">
-                Términos de Servicio
-              </a>
+            <div className="flex gap-4 text-xs sm:text-sm text-muted-foreground">
+              <span>{t('footer.privacyPolicy')}</span>
+              <span>{t('footer.termsOfService')}</span>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   fetchActiveConfig,
   updateConfigField,
@@ -40,6 +41,7 @@ interface AuditEntry {
 }
 
 export function AdminConfigEditor() {
+  const { t } = useTranslation('admin');
   const { module } = useParams<{ module: string }>();
   const [config, setConfig] = useState<CalculatorConfig | null>(null);
   const [directCosts, setDirectCosts] = useState<DirectCostRow[]>([]);
@@ -68,7 +70,7 @@ export function AdminConfigEditor() {
       setAuditLog(audit.data as AuditEntry[]);
     } catch (error) {
       console.error('[AdminConfigEditor]', error);
-      toast.error('Error cargando configuración');
+      toast.error(t('config.editor.errorLoading'));
     } finally {
       setIsLoading(false);
     }
@@ -77,19 +79,19 @@ export function AdminConfigEditor() {
   const handleSaveField = async (field: string, value: Json) => {
     if (!config) return;
     if (!changeReason.trim()) {
-      toast.warning('Ingresa una razón del cambio antes de guardar');
+      toast.warning(t('config.editor.changeReasonRequired'));
       return;
     }
 
     setIsSaving(true);
     try {
       await updateConfigField(config.id, field, value, changeReason);
-      toast.success(`Campo "${field}" actualizado correctamente`);
+      toast.success(t('config.editor.fieldUpdated', { field }));
       setChangeReason('');
       await loadConfig(); // Reload to get new version
     } catch (error) {
       console.error('[Save]', error);
-      toast.error('Error al guardar');
+      toast.error(t('config.editor.errorSaving'));
     } finally {
       setIsSaving(false);
     }
@@ -118,9 +120,9 @@ export function AdminConfigEditor() {
   if (!config) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No se encontró configuración para "{module}".</p>
+        <p className="text-muted-foreground">{t('config.editor.notFound', { module })}</p>
         <Link to="/admin/config" className="text-primary mt-4 inline-block">
-          Volver
+          {t('config.editor.back')}
         </Link>
       </div>
     );
@@ -135,10 +137,12 @@ export function AdminConfigEditor() {
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight capitalize">{module}</h2>
           <p className="text-muted-foreground text-sm font-medium">
-            Versión {config.config_version} &mdash; Última actualización:{' '}
-            {config.updated_at
-              ? new Date(config.updated_at).toLocaleString('es-VE')
-              : 'N/A'}
+            {t('config.editor.versionInfo', {
+              version: config.config_version,
+              date: config.updated_at
+                ? new Date(config.updated_at).toLocaleString('es-VE')
+                : t('config.notAvailable'),
+            })}
           </p>
         </div>
       </div>
@@ -146,12 +150,12 @@ export function AdminConfigEditor() {
       {/* Change reason input */}
       <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4">
         <label className="text-sm font-bold text-amber-700 dark:text-amber-400">
-          Razón del cambio (requerido antes de guardar)
+          {t('config.editor.changeReason')}
         </label>
         <Input
           value={changeReason}
           onChange={(e) => setChangeReason(e.target.value)}
-          placeholder="Ej: Actualización de precios de insumos febrero 2026"
+          placeholder={t('config.editor.changeReasonPlaceholder')}
           className="mt-2"
         />
       </div>
@@ -159,7 +163,7 @@ export function AdminConfigEditor() {
       {/* Direct Costs */}
       <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold">Costos Directos</h3>
+          <h3 className="text-lg font-bold">{t('config.editor.directCosts')}</h3>
           <Button
             variant="outline"
             size="sm"
@@ -168,7 +172,7 @@ export function AdminConfigEditor() {
             className="gap-2"
           >
             <Save size={14} />
-            Guardar costos directos
+            {t('config.editor.saveDirectCosts')}
           </Button>
         </div>
         <div className="space-y-3">
@@ -176,7 +180,7 @@ export function AdminConfigEditor() {
             <div key={item.id} className="grid grid-cols-4 gap-3 items-center">
               <span className="font-medium text-sm">{item.label}</span>
               <div>
-                <span className="text-xs text-muted-foreground">Precio ($)</span>
+                <span className="text-xs text-muted-foreground">{t('config.editor.priceLabel')}</span>
                 <Input
                   type="number"
                   step="0.01"
@@ -185,7 +189,7 @@ export function AdminConfigEditor() {
                 />
               </div>
               <div>
-                <span className="text-xs text-muted-foreground">Cantidad</span>
+                <span className="text-xs text-muted-foreground">{t('config.editor.quantityLabel')}</span>
                 <Input
                   type="number"
                   step="1"
@@ -197,7 +201,7 @@ export function AdminConfigEditor() {
                 />
               </div>
               <div className="text-sm">
-                <span className="text-xs text-muted-foreground">Costo Ud.</span>
+                <span className="text-xs text-muted-foreground">{t('config.editor.unitCostLabel')}</span>
                 <div className="font-semibold">
                   {formatMoney(item.quantity > 0 ? item.price / item.quantity : 0, 'USD')}
                 </div>
@@ -210,7 +214,7 @@ export function AdminConfigEditor() {
       {/* Depreciation */}
       <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold">Depreciación</h3>
+          <h3 className="text-lg font-bold">{t('config.editor.depreciation')}</h3>
           <Button
             variant="outline"
             size="sm"
@@ -219,7 +223,7 @@ export function AdminConfigEditor() {
             className="gap-2"
           >
             <Save size={14} />
-            Guardar depreciación
+            {t('config.editor.saveDepreciation')}
           </Button>
         </div>
         <div className="space-y-3">
@@ -227,7 +231,7 @@ export function AdminConfigEditor() {
             <div key={item.id} className="grid grid-cols-4 gap-3 items-center">
               <span className="font-medium text-sm">{item.label}</span>
               <div>
-                <span className="text-xs text-muted-foreground">Precio equipo ($)</span>
+                <span className="text-xs text-muted-foreground">{t('config.editor.equipmentPrice')}</span>
                 <Input
                   type="number"
                   step="0.01"
@@ -237,7 +241,7 @@ export function AdminConfigEditor() {
               </div>
               <div>
                 <span className="text-xs text-muted-foreground">
-                  {item.mode === 'life' ? 'Vida útil (uds)' : 'Unidades/mes'}
+                  {item.mode === 'life' ? t('config.editor.lifeUnits') : t('config.editor.unitsPerMonth')}
                 </span>
                 <Input
                   type="number"
@@ -254,7 +258,7 @@ export function AdminConfigEditor() {
                 />
               </div>
               <div className="text-xs text-muted-foreground">
-                Modo: {item.mode}
+                {t('config.editor.mode', { mode: item.mode })}
               </div>
             </div>
           ))}
@@ -264,7 +268,7 @@ export function AdminConfigEditor() {
       {/* Financials */}
       <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold">Financieros</h3>
+          <h3 className="text-lg font-bold">{t('config.editor.financials')}</h3>
           <Button
             variant="outline"
             size="sm"
@@ -273,29 +277,29 @@ export function AdminConfigEditor() {
             className="gap-2"
           >
             <Save size={14} />
-            Guardar financieros
+            {t('config.editor.saveFinancials')}
           </Button>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <span className="text-xs text-muted-foreground">Ganancia (%)</span>
+            <span className="text-xs text-muted-foreground">{t('config.editor.profitPct')}</span>
             <Input
               type="number"
               step="1"
-              value={financials.gananciaPct ?? 0}
+              value={financials.profitPct ?? 0}
               onChange={(e) =>
-                setFinancials({ ...financials, gananciaPct: parseMoney(e.target.value) })
+                setFinancials({ ...financials, profitPct: parseMoney(e.target.value) })
               }
             />
           </div>
           <div>
-            <span className="text-xs text-muted-foreground">Impuestos (%)</span>
+            <span className="text-xs text-muted-foreground">{t('config.editor.taxPct')}</span>
             <Input
               type="number"
               step="1"
-              value={financials.impuestosPct ?? 0}
+              value={financials.taxPct ?? 0}
               onChange={(e) =>
-                setFinancials({ ...financials, impuestosPct: parseMoney(e.target.value) })
+                setFinancials({ ...financials, taxPct: parseMoney(e.target.value) })
               }
             />
           </div>
@@ -306,10 +310,10 @@ export function AdminConfigEditor() {
       <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
         <div className="flex items-center gap-2">
           <History size={18} />
-          <h3 className="text-lg font-bold">Historial de cambios recientes</h3>
+          <h3 className="text-lg font-bold">{t('config.editor.recentChanges')}</h3>
         </div>
         {auditLog.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Sin cambios registrados.</p>
+          <p className="text-sm text-muted-foreground">{t('config.editor.noChanges')}</p>
         ) : (
           <div className="space-y-2">
             {auditLog.map((entry) => (

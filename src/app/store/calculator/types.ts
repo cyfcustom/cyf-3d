@@ -4,14 +4,14 @@
  */
 
 export type CalculatorType =
-  | 'vinil'
-  | 'sublimacion'
+  | 'vinyl'
+  | 'sublimation'
   | 'dtf'
-  | 'etiquetas'
-  | 'papeleria'
-  | 'empaques'
-  | 'esferas'
-  | 'envios';
+  | 'labels'
+  | 'stationery'
+  | 'packaging'
+  | 'spheres'
+  | 'shipping';
 
 // ============================================================================
 // COST ITEMS
@@ -59,19 +59,19 @@ export type DepreciationItem =
 export interface IndirectCosts {
   enabled: boolean;
   monthly: {
-    alquiler: number;
+    rent: number;
     internet: number;
-    suscripciones: number;
-    transporte: number;
-    electricidad: number;
-    publicidad: number;
-    otros: number;
+    subscriptions: number;
+    transport: number;
+    electricity: number;
+    advertising: number;
+    other: number;
   };
   unitsPerMonth: number; // Monthly production volume for distribution
 }
 
 /**
- * Manual labor / Mano de obra
+ * Labor costs
  * Calculated based on time and hourly rate
  */
 export interface LaborCosts {
@@ -87,10 +87,10 @@ export interface LaborCosts {
  * Financial settings (profit margin, taxes)
  */
 export interface FinancialSettings {
-  gananciaPct: number; // Profit margin %
-  impuestosPct: number; // Tax %
-  applyGanancia: boolean;
-  applyImpuestos: boolean;
+  profitPct: number; // Profit margin %
+  taxPct: number; // Tax %
+  applyProfit: boolean;
+  applyTax: boolean;
 }
 
 // ============================================================================
@@ -137,7 +137,7 @@ export interface PerUnitCosts {
   depreciation: number;
   indirect: number;
   labor: number;
-  subtotalBeforeProfitAndTax: number; // Direct + Dep + Indirect (sin MO)
+  subtotalBeforeProfitAndTax: number;
   subtotal: number; // Including labor
   profit: number;
   tax: number;
@@ -162,22 +162,22 @@ export interface CalculationTotals {
 // ============================================================================
 
 /**
- * Vinil-specific state
+ * Vinyl-specific state
  */
-export interface VinilCalculatorState extends CalculatorState {
+export interface VinylCalculatorState extends CalculatorState {
   directCosts: DirectCostItem[];
   depreciation: DepreciationItem[];
   extrasPerUnit: number; // Additional per-unit costs
-  mermaPct: number; // Waste/scrap percentage
+  wastePct: number; // Waste/scrap percentage
 }
 
 /**
- * Envios (shipping) has unique structure
+ * Shipping calculator state
  */
-export interface EnviosCalculatorState {
-  mensajeria: {
+export interface ShippingCalculatorState {
+  courier: {
     enabled: boolean;
-    tipo: 'Motorizado local' | 'Mensajería urbana' | 'Encomienda nacional' | 'Internacional' | 'Otro';
+    type: 'local_motorcycle' | 'urban_courier' | 'national_shipping' | 'international' | 'other';
     km: number;
     baseRate: number;
     kmRate: number;
@@ -185,32 +185,32 @@ export interface EnviosCalculatorState {
     kgRate: number;
   };
   extras: {
-    embalaje: { enabled: boolean; cost: number };
-    fragil: { enabled: boolean; cost: number };
-    seguro: { enabled: boolean; percentaje: number };
-    otros: number;
+    packaging: { enabled: boolean; cost: number };
+    fragile: { enabled: boolean; cost: number };
+    insurance: { enabled: boolean; percentage: number };
+    other: number;
   };
 }
 
 /**
- * Etiquetas has product presets
+ * Labels product type presets
  */
-export type EtiquetasProductType =
-  | 'Vinil imprimible'
-  | 'Papel fotográfico adhesivo'
-  | 'Etiqueta PVC'
-  | 'Etiqueta BOPP'
-  | 'Holográfico'
-  | 'Transparente'
-  | 'Kraft'
-  | 'Otros';
+export type LabelsProductType =
+  | 'printable_vinyl'
+  | 'adhesive_photo_paper'
+  | 'pvc_label'
+  | 'bopp_label'
+  | 'holographic'
+  | 'transparent'
+  | 'kraft'
+  | 'other';
 
-export interface EtiquetasCalculatorState extends CalculatorState {
+export interface LabelsCalculatorState extends CalculatorState {
   directCosts: DirectCostItem[];
   depreciation: DepreciationItem[];
   indirectCosts: IndirectCosts;
   laborCosts: LaborCosts;
-  productType: EtiquetasProductType;
+  productType: LabelsProductType;
 }
 
 /**
@@ -229,12 +229,12 @@ export interface DtfCalculatorState {
   designWidthCm: number;
   designHeightCm: number;
   extras: {
-    envio: number;
-    diseno: number;
-    plancha: number;
-    otros: number;
+    shipping: number;
+    design: number;
+    press: number;
+    other: number;
   };
-  prenda: {
+  garment: {
     enabled: boolean;
     count: number;
     packPrice: number;
@@ -250,19 +250,19 @@ export interface DtfCalculatorState {
 }
 
 /**
- * Esferas Calculator State (Christmas ornaments)
- * Has unique gananciaMode (markup vs margin) and optional quantity multiplier
+ * Spheres Calculator State (Christmas ornaments)
+ * Has unique profitMode (markup vs margin) and optional quantity multiplier
  */
-export type EsferasGananciaMode = 'markup' | 'margen';
+export type SpheresProfitMode = 'markup' | 'margin';
 
-export interface EsferasCalculatorState {
+export interface SpheresCalculatorState {
   productSelection: string;
   directCosts: DirectCostItem[];
   depreciation: DepreciationItem[];
   indirectCosts: IndirectCosts;
   laborCosts: LaborCosts;
   financials: FinancialSettings;
-  gananciaMode: EsferasGananciaMode;
+  profitMode: SpheresProfitMode;
   quantity: number;
   quantityEnabled: boolean;
 }
@@ -279,7 +279,7 @@ export interface CalculatorMetadata {
   id: CalculatorType;
   name: string;
   description: string;
-  category: 'impresion' | 'productos' | 'complementarios' | 'herramientas';
+  category: 'printing' | 'products' | 'complementary' | 'tools';
   hasDirectCosts: boolean;
   hasDepreciation: boolean;
   hasIndirectCosts: boolean;

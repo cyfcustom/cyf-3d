@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { fetchAllHistory } from '@/app/lib/api/calculationHistoryApi';
 import type { CalculationHistoryEntry } from '@/app/lib/api/calculationHistoryApi';
 import { formatMoney } from '@/app/lib/money';
@@ -6,18 +7,8 @@ import { Button } from '@/app/components/ui/button';
 import { Loader2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
-const MODULE_LABELS: Record<string, string> = {
-  sublimacion: 'Sublimación',
-  vinil: 'Vinil',
-  papeleria: 'Papelería',
-  etiquetas: 'Etiquetas',
-  dtf: 'DTF',
-  empaques: 'Empaques',
-  esferas: 'Esferas',
-  envios: 'Envíos',
-};
-
 export function AdminHistoryPage() {
+  const { t } = useTranslation('admin');
   const [entries, setEntries] = useState<CalculationHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -36,27 +27,29 @@ export function AdminHistoryPage() {
       setTotalCount(result.count);
     } catch (error) {
       console.error('[AdminHistory]', error);
-      toast.error('Error cargando historial');
+      toast.error(t('history.errorLoading'));
     } finally {
       setIsLoading(false);
     }
   };
+
+  const moduleKeys = ['sublimacion', 'vinil', 'papeleria', 'etiquetas', 'dtf', 'empaques', 'esferas', 'envios'];
 
   return (
     <div className="space-y-8">
       <div>
         <h2 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
           <FileText size={28} />
-          Historial de Cálculos
+          {t('history.title')}
         </h2>
         <p className="text-muted-foreground font-medium mt-2">
-          Registro de todos los cálculos realizados por los usuarios.
+          {t('history.subtitle')}
         </p>
       </div>
 
       {/* Filter */}
       <div className="flex items-center gap-3">
-        <span className="text-sm font-medium">Filtrar por módulo:</span>
+        <span className="text-sm font-medium">{t('history.filterByModule')}</span>
         <select
           value={moduleFilter}
           onChange={(e) => {
@@ -65,15 +58,17 @@ export function AdminHistoryPage() {
           }}
           className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
         >
-          <option value="">Todos</option>
-          {Object.entries(MODULE_LABELS).map(([key, label]) => (
+          <option value="">{t('history.all')}</option>
+          {moduleKeys.map((key) => (
             <option key={key} value={key}>
-              {label}
+              {t(`modules.${key}`)}
             </option>
           ))}
         </select>
         <span className="text-sm text-muted-foreground">
-          {totalCount} registro{totalCount !== 1 ? 's' : ''}
+          {totalCount === 1
+            ? t('history.records', { count: totalCount })
+            : t('history.records_plural', { count: totalCount })}
         </span>
       </div>
 
@@ -83,7 +78,7 @@ export function AdminHistoryPage() {
         </div>
       ) : entries.length === 0 ? (
         <p className="text-center text-muted-foreground py-12">
-          Sin cálculos registrados.
+          {t('history.noCalculations')}
         </p>
       ) : (
         <div className="space-y-3">
@@ -95,14 +90,14 @@ export function AdminHistoryPage() {
               <div>
                 <div className="flex items-center gap-2 text-sm">
                   <span className="font-bold">
-                    {MODULE_LABELS[entry.module_name] ?? entry.module_name}
+                    {t(`modules.${entry.module_name}`, { defaultValue: entry.module_name })}
                   </span>
                   <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
                     v{entry.config_version}
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {entry.quantity} ud. &mdash; Usuario: {entry.user_id.slice(0, 12)}...
+                  {entry.quantity} {t('history.unit')} &mdash; {t('history.user')} {entry.user_id.slice(0, 12)}...
                   {entry.note && ` — ${entry.note}`}
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -122,17 +117,17 @@ export function AdminHistoryPage() {
                 disabled={page === 0}
                 onClick={() => setPage((p) => p - 1)}
               >
-                Anterior
+                {t('history.previous')}
               </Button>
               <span className="flex items-center text-sm text-muted-foreground">
-                Página {page + 1} de {Math.ceil(totalCount / 20)}
+                {t('history.pageOf', { current: page + 1, total: Math.ceil(totalCount / 20) })}
               </span>
               <Button
                 variant="outline"
                 disabled={(page + 1) * 20 >= totalCount}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Siguiente
+                {t('history.next')}
               </Button>
             </div>
           )}

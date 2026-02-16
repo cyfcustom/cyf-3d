@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Palette, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { Database } from '../types/supabase';
 
@@ -8,6 +9,7 @@ type Product = Database['public']['Tables']['products']['Row'];
 
 export function ProductGrid() {
   const navigate = useNavigate();
+  const { t } = useTranslation('landing');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,14 +34,14 @@ export function ProductGrid() {
   }, []);
 
   const handleCustomize = () => {
-    navigate('/configurador');
+    navigate('/configurator');
   };
 
   if (loading) {
     return (
       <div className="py-20 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-4 text-muted-foreground">Cargando productos...</p>
+        <p className="mt-4 text-muted-foreground">{t('products.loading')}</p>
       </div>
     );
   }
@@ -52,10 +54,10 @@ export function ProductGrid() {
           <h2
             className="text-3xl sm:text-4xl md:text-5xl mb-4 font-bold text-foreground"
           >
-            Elige tu <span style={{ color: 'var(--vibrant-orange)' }}>base</span>
+            {t('products.title')}<span style={{ color: 'var(--vibrant-orange)' }}>{t('products.titleHighlight')}</span>
           </h2>
           <p className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto text-muted-foreground font-medium">
-            Selecciona el producto que quieres personalizar y comienza a crear tu diseño único
+            {t('products.description')}
           </p>
         </div>
 
@@ -86,7 +88,7 @@ export function ProductGrid() {
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold" style={{ color: 'var(--vibrant-orange)' }}>
-                    Desde ${product.base_price.toFixed(2)}
+                    {t('products.fromPrice', { price: product.base_price.toFixed(2) })}
                   </span>
                   <button
                     onClick={handleCustomize}
@@ -94,7 +96,7 @@ export function ProductGrid() {
                     style={{ backgroundColor: 'var(--electric-blue)' }}
                   >
                     <Palette size={18} />
-                    Personalizar
+                    {t('products.customize')}
                   </button>
                 </div>
               </div>
@@ -107,7 +109,7 @@ export function ProductGrid() {
           <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-400 rounded-full">
             <Sparkles className="text-white" size={20} />
             <span className="text-white font-bold">
-              ¡Envío gratis en pedidos mayores a $50!
+              {t('products.freeShipping')}
             </span>
           </div>
         </div>

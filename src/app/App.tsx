@@ -103,7 +103,7 @@ export default function App() {
             }
           />
           <Route
-            path="/configurador"
+            path="/configurator"
             element={
               <ProtectedRoute>
                 <ConfiguratorWorkspace />
@@ -111,7 +111,7 @@ export default function App() {
             }
           />
           <Route
-            path="/calculadoras"
+            path="/calculators"
             element={
               <ProtectedRoute>
                 <CalculatorSuitePage />

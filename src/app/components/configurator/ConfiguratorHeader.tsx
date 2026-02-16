@@ -1,9 +1,11 @@
 import { ArrowLeft, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ThemeToggle } from '../ThemeToggle';
 
 export function ConfiguratorHeader() {
   const navigate = useNavigate();
+  const { t } = useTranslation('configurator');
 
   return (
     <header className="w-full bg-card border-b border-border h-16">
@@ -14,7 +16,7 @@ export function ConfiguratorHeader() {
           className="flex items-center gap-2 text-foreground font-medium transition-colors hover:text-primary"
         >
           <ArrowLeft size={20} />
-          <span>Volver a la tienda</span>
+          <span>{t('header.backToStore')}</span>
         </button>
 
         {/* Logo */}
@@ -29,7 +31,7 @@ export function ConfiguratorHeader() {
           <ThemeToggle />
           <button
             className="p-2 rounded-lg hover:bg-muted transition-colors"
-            aria-label="Ayuda"
+            aria-label={t('header.help')}
           >
             <HelpCircle size={24} className="text-foreground" />
           </button>
