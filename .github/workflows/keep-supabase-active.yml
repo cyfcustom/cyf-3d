@@ -1,0 +1,81 @@
+name: Keep Supabase Database Active
+
+on:
+  schedule:
+    # Runs at 9:00 AM UTC every Monday and Thursday
+    # Adjust timing as needed (https://crontab.guru for help)
+    - cron: '0 9 * * 1,4'
+
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  ping-database:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Supabase client
+        run: npm install @supabase/supabase-js
+
+      - name: Ping Supabase database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node << 'EOF'
+          const { createClient } = require('@supabase/supabase-js');
+
+          const supabaseUrl = process.env.SUPABASE_URL;
+          const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+          if (!supabaseUrl || !supabaseKey) {
+            console.error('❌ Error: Missing Supabase credentials in GitHub Secrets');
+            process.exit(1);
+          }
+
+          const supabase = createClient(supabaseUrl, supabaseKey);
+
+          async function pingDatabase() {
+            try {
+              console.log('🔄 Pinging Supabase database...');
+
+              // Query calculator_rates table (main table used frequently)
+              const { data, error } = await supabase
+                .from('calculator_rates')
+                .select('id')
+                .limit(1);
+
+              if (error) {
+                console.error('❌ Database query failed:', error.message);
+                process.exit(1);
+              }
+
+              console.log('✅ Database pinged successfully!');
+              console.log(`📊 Response received - Database is active`);
+              process.exit(0);
+
+            } catch (err) {
+              console.error('❌ Unexpected error:', err.message);
+              process.exit(1);
+            }
+          }
+
+          pingDatabase();
+          EOF
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "⚠️ Database ping failed. Check the logs above for details."
+          echo "This might indicate:"
+          echo "  - Incorrect GitHub Secrets configuration"
+          echo "  - Supabase project issues"
+          echo "  - Network connectivity problems"
