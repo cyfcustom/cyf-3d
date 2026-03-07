@@ -1,0 +1,25 @@
+project: cyf-customs-3d-configurator
+active_branch: main
+proactive_commits: true
+created: 2026-03-07T00:00:00Z
+
+branches: {}
+
+file_tree:
+  src/app/components/configurator/:
+    - Canvas3D.tsx (current - to be replaced)
+    - ToolsPanel.tsx
+    - ConfiguratorHeader.tsx
+    - BabylonCanvas.tsx (planned)
+    - BabylonScene.ts (planned)
+    - ProductModelLoader.ts (planned)
+    - TextureComposer.ts (planned)
+    - ProductSelector.tsx (planned)
+    - DesignControls.tsx (planned)
+  public/models/:
+    - (planned: tshirt.glb, cap.glb, mug.glb, etc.)
+
+dependencies_to_add:
+  - "@babylonjs/core"
+  - "@babylonjs/loaders"
+  - "@babylonjs/materials"

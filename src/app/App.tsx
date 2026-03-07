@@ -1,9 +1,14 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from './components/ui/sonner';
 import { LandingPage } from './pages/LandingPage';
-import { ConfiguratorWorkspace } from './components/ConfiguratorWorkspace';
 import { MobileDemo } from './pages/MobileDemo';
+
+// Lazy load heavy components (Babylon.js ~5MB)
+const ConfiguratorWorkspace = lazy(() =>
+  import('./components/ConfiguratorWorkspace').then(m => ({ default: m.ConfiguratorWorkspace }))
+);
 import { CalculatorSuitePage } from './pages/CalculatorSuitePage';
 import { AdminLogin } from './pages/AdminLogin';
 import { AdminDashboard } from './pages/AdminDashboard';
@@ -106,7 +111,16 @@ export default function App() {
             path="/configurator"
             element={
               <ProtectedRoute>
-                <ConfiguratorWorkspace />
+                <Suspense fallback={
+                  <div className="h-screen flex items-center justify-center bg-background">
+                    <div className="text-center space-y-4">
+                      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                      <p className="text-muted-foreground font-medium">Cargando configurador 3D...</p>
+                    </div>
+                  </div>
+                }>
+                  <ConfiguratorWorkspace />
+                </Suspense>
               </ProtectedRoute>
             }
           />
