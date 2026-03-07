@@ -1,10 +1,20 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Engine, Scene, ArcRotateCamera, HemisphericLight, Vector3, Color3, Color4, MeshBuilder, PBRMaterial, Mesh } from '@babylonjs/core';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useAtom } from 'jotai';
+import {
+  Engine, Scene, ArcRotateCamera, HemisphericLight, DirectionalLight,
+  Vector3, Color3, Color4,
+  PBRMaterial, DynamicTexture, AbstractMesh, SceneLoader,
+} from '@babylonjs/core';
+import '@babylonjs/loaders/glTF';
+import { layersAtom, Layer } from '../../store/atoms';
+
+// Texture for image overlay
+const TEX_SIZE = 1024;
+const IMG_BASE_SIZE = 400;
 
 interface BabylonCanvasProps {
   selectedColor: string;
-  productType: string;
+  modelUrl: string;
 }
 
 function hexToColor3(hex: string): Color3 {
@@ -14,126 +24,67 @@ function hexToColor3(hex: string): Color3 {
   return new Color3(r, g, b);
 }
 
-function createMug(scene: Scene): Mesh {
-  // Outer cylinder (body)
-  const outer = MeshBuilder.CreateCylinder('mug-body', {
-    height: 2.4,
-    diameter: 1.6,
-    tessellation: 48,
-  }, scene);
+function redrawTexture(
+  texture: DynamicTexture,
+  color: string,
+  layers: Layer[],
+  side: 'front' | 'back',
+  imagesCache: Map<string, HTMLImageElement>
+) {
+  const ctx = texture.getContext();
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, TEX_SIZE, TEX_SIZE);
 
-  // Inner cylinder (hollow inside)
-  const inner = MeshBuilder.CreateCylinder('mug-inner', {
-    height: 2.3,
-    diameter: 1.4,
-    tessellation: 48,
-  }, scene);
-  inner.position.y = 0.05;
+  const sideLayers = layers.filter(l => (l.side || 'front') === side);
+  for (const layer of sideLayers) {
+    const img = imagesCache.get(layer.id);
+    if (!img) continue;
 
-  // Bottom disc
-  const bottom = MeshBuilder.CreateDisc('mug-bottom', {
-    radius: 0.7,
-    tessellation: 48,
-  }, scene);
-  bottom.rotation.x = Math.PI / 2;
-  bottom.position.y = -1.2;
+    const scale = layer.scale ?? 1;
+    const imgAspect = img.width / img.height;
+    let w: number, h: number;
+    if (imgAspect >= 1) {
+      w = IMG_BASE_SIZE * scale;
+      h = w / imgAspect;
+    } else {
+      h = IMG_BASE_SIZE * scale;
+      w = h * imgAspect;
+    }
 
-  // Handle - torus
-  const handle = MeshBuilder.CreateTorus('mug-handle', {
-    diameter: 1.0,
-    thickness: 0.15,
-    tessellation: 32,
-  }, scene);
-  handle.scaling = new Vector3(0.7, 1, 0.4);
-  handle.position.x = 0.95;
-  handle.position.y = 0.1;
-
-  // Merge into single mesh
-  const mug = Mesh.MergeMeshes(
-    [outer, inner, bottom, handle],
-    true, true, undefined, false, true
-  );
-
-  if (mug) {
-    mug.name = 'mug';
-    mug.position.y = 0;
+    const cx = (layer.x ?? 0.5) * TEX_SIZE;
+    const cy = (layer.y ?? 0.4) * TEX_SIZE;
+    ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
   }
 
-  return mug!;
+  texture.update();
 }
 
-function createTShirt(scene: Scene): Mesh {
-  // Simplified t-shirt: flat box representing the body + sleeves
-  const body = MeshBuilder.CreateBox('tshirt-body', {
-    width: 2.0,
-    height: 2.8,
-    depth: 0.15,
-  }, scene);
-
-  // Left sleeve
-  const leftSleeve = MeshBuilder.CreateBox('tshirt-left-sleeve', {
-    width: 0.8,
-    height: 0.7,
-    depth: 0.12,
-  }, scene);
-  leftSleeve.position.x = -1.3;
-  leftSleeve.position.y = 0.9;
-  leftSleeve.rotation.z = 0.4;
-
-  // Right sleeve
-  const rightSleeve = MeshBuilder.CreateBox('tshirt-right-sleeve', {
-    width: 0.8,
-    height: 0.7,
-    depth: 0.12,
-  }, scene);
-  rightSleeve.position.x = 1.3;
-  rightSleeve.position.y = 0.9;
-  rightSleeve.rotation.z = -0.4;
-
-  // Collar (small torus)
-  const collar = MeshBuilder.CreateTorus('tshirt-collar', {
-    diameter: 0.7,
-    thickness: 0.08,
-    tessellation: 24,
-  }, scene);
-  collar.position.y = 1.4;
-  collar.scaling = new Vector3(1, 0.3, 0.5);
-
-  const tshirt = Mesh.MergeMeshes(
-    [body, leftSleeve, rightSleeve, collar],
-    true, true, undefined, false, true
-  );
-
-  if (tshirt) {
-    tshirt.name = 'tshirt';
-  }
-
-  return tshirt!;
-}
-
-function createProductMesh(scene: Scene, productType: string): Mesh {
-  switch (productType) {
-    case 'mug':
-      return createMug(scene);
-    case 'tshirt':
-    default:
-      return createTShirt(scene);
-  }
-}
-
-export function BabylonCanvas({ selectedColor, productType }: BabylonCanvasProps) {
+export function BabylonCanvas({ selectedColor, modelUrl }: BabylonCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const sceneRef = useRef<Scene | null>(null);
-  const materialRef = useRef<PBRMaterial | null>(null);
-  const meshRef = useRef<Mesh | null>(null);
-  const { t } = useTranslation('configurator');
+  const meshesRef = useRef<AbstractMesh[]>([]);
+  const bodyMaterialRef = useRef<PBRMaterial | null>(null);
+  const bodyTextureRef = useRef<DynamicTexture | null>(null);
+  const solidMaterialRef = useRef<PBRMaterial | null>(null);
+  const imagesCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  const [layers] = useAtom(layersAtom);
+  const [textureReady, setTextureReady] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const initScene = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Engine
+    // Cleanup previous
+    if (engineRef.current) {
+      engineRef.current.dispose();
+    }
+    bodyTextureRef.current = null;
+    bodyMaterialRef.current = null;
+    solidMaterialRef.current = null;
+    meshesRef.current = [];
+
     const engine = new Engine(canvas, true, {
       preserveDrawingBuffer: true,
       stencil: true,
@@ -141,72 +92,183 @@ export function BabylonCanvas({ selectedColor, productType }: BabylonCanvasProps
     });
     engineRef.current = engine;
 
-    // Scene
     const scene = new Scene(engine);
-    scene.clearColor = new Color4(0, 0, 0, 0); // Transparent background
+    scene.clearColor = new Color4(0, 0, 0, 0);
     sceneRef.current = scene;
 
     // Camera
     const camera = new ArcRotateCamera(
-      'camera',
-      -Math.PI / 2,  // alpha (horizontal rotation)
-      Math.PI / 2.5,  // beta (vertical angle)
-      5,              // radius (distance)
-      Vector3.Zero(),
-      scene
+      'camera', -Math.PI / 2, Math.PI / 2.5, 5,
+      Vector3.Zero(), scene
     );
-    camera.lowerRadiusLimit = 2.5;
-    camera.upperRadiusLimit = 10;
+    camera.lowerRadiusLimit = 1;
+    camera.upperRadiusLimit = 15;
     camera.wheelDeltaPercentage = 0.01;
     camera.pinchDeltaPercentage = 0.01;
     camera.attachControl(canvas, true);
 
-    // Lights
-    const light1 = new HemisphericLight('light-top', new Vector3(0, 1, 0), scene);
-    light1.intensity = 0.9;
+    // Lighting
+    const hemiLight = new HemisphericLight('hemi', new Vector3(0, 1, 0), scene);
+    hemiLight.intensity = 0.8;
+    const dirLight = new DirectionalLight('dir', new Vector3(-1, -2, 1), scene);
+    dirLight.intensity = 0.6;
 
-    const light2 = new HemisphericLight('light-front', new Vector3(0, 0, 1), scene);
-    light2.intensity = 0.5;
+    // Materials
+    const bodyTexture = new DynamicTexture('body-tex', { width: TEX_SIZE, height: TEX_SIZE }, scene, false);
+    bodyTextureRef.current = bodyTexture;
 
-    // Material
-    const material = new PBRMaterial('product-material', scene);
-    material.albedoColor = hexToColor3(selectedColor);
-    material.metallic = 0.0;
-    material.roughness = 0.6;
-    materialRef.current = material;
+    const bodyMat = new PBRMaterial('body-mat', scene);
+    bodyMat.albedoTexture = bodyTexture;
+    bodyMat.metallic = 0;
+    bodyMat.roughness = 0.85;
+    bodyMaterialRef.current = bodyMat;
 
-    // Create product mesh
-    const mesh = createProductMesh(scene, productType);
-    mesh.material = material;
-    meshRef.current = mesh;
+    const solidMat = new PBRMaterial('solid-mat', scene);
+    solidMat.albedoColor = hexToColor3('#FFFFFF');
+    solidMat.metallic = 0;
+    solidMat.roughness = 0.85;
+    solidMaterialRef.current = solidMat;
 
-    // Render loop
-    engine.runRenderLoop(() => {
-      scene.render();
+    // Initial texture fill
+    const ctx = bodyTexture.getContext();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, TEX_SIZE, TEX_SIZE);
+    bodyTexture.update();
+
+    // Load GLB model
+    // Split URL into base path + filename for SceneLoader
+    const lastSlash = modelUrl.lastIndexOf('/');
+    const modelBase = modelUrl.substring(0, lastSlash + 1);
+    const modelFilename = modelUrl.substring(lastSlash + 1);
+    setLoading(true);
+
+    SceneLoader.ImportMeshAsync('', modelBase, modelFilename, scene).then((result) => {
+      const loadedMeshes = result.meshes.filter(m => m.getTotalVertices() > 0);
+      meshesRef.current = loadedMeshes;
+
+      if (loadedMeshes.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      // Find bounding info to normalize the model
+      let min = new Vector3(Infinity, Infinity, Infinity);
+      let max = new Vector3(-Infinity, -Infinity, -Infinity);
+      for (const mesh of loadedMeshes) {
+        mesh.computeWorldMatrix(true);
+        const bounds = mesh.getBoundingInfo().boundingBox;
+        min = Vector3.Minimize(min, bounds.minimumWorld);
+        max = Vector3.Maximize(max, bounds.maximumWorld);
+      }
+
+      const center = Vector3.Center(min, max);
+      const size = max.subtract(min);
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const targetSize = 3.5;
+      const scaleFactor = targetSize / maxDim;
+
+      // Find root transform node
+      const rootNode = result.meshes[0]; // __root__ node
+      rootNode.position = center.negate().scale(scaleFactor);
+      rootNode.scaling = new Vector3(scaleFactor, scaleFactor, scaleFactor);
+
+      // Find the largest mesh (body) and assign materials
+      let largestMesh: AbstractMesh | null = null;
+      let largestVertCount = 0;
+      for (const mesh of loadedMeshes) {
+        const verts = mesh.getTotalVertices();
+        if (verts > largestVertCount) {
+          largestVertCount = verts;
+          largestMesh = mesh;
+        }
+      }
+
+      // Apply materials
+      for (const mesh of loadedMeshes) {
+        if (mesh === largestMesh) {
+          mesh.material = bodyMat;
+        } else {
+          mesh.material = solidMat;
+        }
+      }
+
+      // Adjust camera to fit
+      camera.target = Vector3.Zero();
+      camera.radius = targetSize * 1.8;
+
+      setLoading(false);
+      setTextureReady(v => v + 1);
+    }).catch((err) => {
+      console.error('Failed to load model:', err);
+      setLoading(false);
     });
 
-    // Resize handler
+    engine.runRenderLoop(() => scene.render());
+
     const handleResize = () => engine.resize();
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
       engine.dispose();
+      bodyTextureRef.current = null;
+      bodyMaterialRef.current = null;
+      solidMaterialRef.current = null;
+      sceneRef.current = null;
+      meshesRef.current = [];
     };
-  }, [productType]); // Only re-init when product type changes
+  }, [modelUrl]);
 
-  // Init scene on mount
+  // Init scene
   useEffect(() => {
     const cleanup = initScene();
     return cleanup;
   }, [initScene]);
 
-  // Update color without re-creating the scene
+  // Update solid material color (secondary meshes)
   useEffect(() => {
-    if (materialRef.current) {
-      materialRef.current.albedoColor = hexToColor3(selectedColor);
+    if (solidMaterialRef.current) {
+      solidMaterialRef.current.albedoColor = hexToColor3(selectedColor);
     }
   }, [selectedColor]);
+
+  // Load images + redraw body texture
+  useEffect(() => {
+    const texture = bodyTextureRef.current;
+    if (!texture) return;
+
+    let cancelled = false;
+    const cache = imagesCacheRef.current;
+
+    const loadAndRedraw = async () => {
+      const newLayers = layers.filter(l => !cache.has(l.id));
+      if (newLayers.length > 0) {
+        await Promise.all(newLayers.map(l => new Promise<void>(resolve => {
+          const img = new Image();
+          img.onload = () => {
+            if (!cancelled) cache.set(l.id, img);
+            resolve();
+          };
+          img.onerror = () => resolve();
+          img.src = l.thumbnail;
+        })));
+      }
+
+      const activeIds = new Set(layers.map(l => l.id));
+      for (const id of cache.keys()) {
+        if (!activeIds.has(id)) cache.delete(id);
+      }
+
+      if (!cancelled) {
+        // For now, draw front layers on the single texture
+        // TODO: separate front/back when UV mapping is understood per model
+        redrawTexture(texture, selectedColor, layers, 'front', cache);
+      }
+    };
+
+    loadAndRedraw();
+    return () => { cancelled = true; };
+  }, [layers, selectedColor, textureReady]);
 
   return (
     <div className="relative w-full h-full flex items-center justify-center bg-muted/30">
@@ -216,17 +278,20 @@ export function BabylonCanvas({ selectedColor, productType }: BabylonCanvasProps
         style={{ touchAction: 'none' }}
       />
 
-      {/* Product type indicator */}
-      <div className="absolute top-4 left-4 px-4 py-2 rounded-lg bg-card/90 backdrop-blur-sm shadow-md border border-border">
-        <span className="text-sm font-semibold text-foreground">
-          {t('canvas.viewLabel', { view: productType === 'mug' ? 'Taza' : 'Franela' })}
-        </span>
-      </div>
+      {/* Loading overlay */}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/60 backdrop-blur-sm">
+          <div className="text-center space-y-3">
+            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-sm font-semibold text-foreground">Cargando modelo 3D...</p>
+          </div>
+        </div>
+      )}
 
-      {/* Hint */}
+      {/* Controls hint */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-card/80 backdrop-blur-sm border border-border">
         <span className="text-xs text-muted-foreground font-medium">
-          {t('canvas.rotate', { defaultValue: 'Arrastra para rotar | Scroll para zoom' })}
+          Arrastra para rotar · Scroll para zoom
         </span>
       </div>
     </div>

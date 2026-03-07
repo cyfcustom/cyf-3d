@@ -14,7 +14,7 @@ Reemplazar el configurador 2D actual (imagen estatica + CSS flip) con un visuali
 
 ## Phases
 
-### Fase 0 - Fundamentos [IN PROGRESS]
+### Fase 0 - Fundamentos [COMPLETE - 5729a8a]
 - Instalar Babylon.js
 - Crear BabylonCanvas.tsx que reemplace Canvas3D.tsx
 - Cargar modelo .glb de prueba con iluminacion y ArcRotateCamera
@@ -47,6 +47,7 @@ Reemplazar el configurador 2D actual (imagen estatica + CSS flip) con un visuali
 
 ## Milestones
 - [M001] 2026-03-07 - Plan completo definido y guardado en GCC
+- [M002] 2026-03-07 - Fase 0 completada: Babylon.js integrado, lazy loading, procedural meshes (5729a8a)
 
 ## Active Branches
 (none)

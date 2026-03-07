@@ -8,6 +8,9 @@ export interface Layer {
   thumbnail: string;
   rotation?: number;
   scale?: number;
+  x?: number;       // 0-1 horizontal position, default 0.5
+  y?: number;       // 0-1 vertical position, default 0.4
+  side?: 'front' | 'back'; // which side of the product, default 'front'
 }
 
 // Product configuration

@@ -1,5 +1,5 @@
-import { Upload, X, RotateCw, Maximize2, Cloud } from 'lucide-react';
-import { useState } from 'react';
+import { X, Cloud, Palette } from 'lucide-react';
+import { useState, useRef } from 'react';
 import { useAtom } from 'jotai';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +19,7 @@ interface ToolsPanelProps {
   selectedColor: string;
 }
 
-const COLOR_KEYS = [
+const PRESET_COLORS = [
   { key: 'white', value: '#FFFFFF' },
   { key: 'black', value: '#000000' },
   { key: 'blue', value: '#0F172A' },
@@ -27,36 +27,33 @@ const COLOR_KEYS = [
   { key: 'gray', value: '#6B7280' },
   { key: 'green', value: '#16A34A' },
   { key: 'yellow', value: '#FFD600' },
-  { key: 'pink', value: '#EC4899' },
 ];
 
 export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
   const { t } = useTranslation('configurator');
-  const [activePart, setActivePart] = useState<'body' | 'sleeves' | 'collar'>('body');
+  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [layers, setLayers] = useAtom(layersAtom);
   const [isDragging, setIsDragging] = useState(false);
+  const [customColor, setCustomColor] = useState('#EC4899');
   const [, setLoadingState] = useAtom(loadingStateAtom);
   const [, setShowSuccessModal] = useAtom(showSuccessModalAtom);
   const [, setDesignPreview] = useAtom(designPreviewAtom);
   const [, setSelectedColorName] = useAtom(selectedColorNameAtom);
   const [productConfig, setProductConfig] = useAtom(productConfigAtom);
+  const colorInputRef = useRef<HTMLInputElement>(null);
+
+  const updateLayer = (id: string, updates: Partial<Layer>) => {
+    setLayers(layers.map(l => l.id === id ? { ...l, ...updates } : l));
+  };
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-
     const file = files[0];
 
-    // Show loading
-    setLoadingState({
-      isLoading: true,
-      message: t('upload.uploading'),
-    });
-
-    // Simulate upload delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setLoadingState({ isLoading: true, message: t('upload.uploading') });
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const reader = new FileReader();
-
     reader.onload = (e) => {
       const newLayer: Layer = {
         id: Date.now().toString(),
@@ -64,18 +61,14 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
         thumbnail: e.target?.result as string,
         rotation: 0,
         scale: 1,
+        x: 0.5,
+        y: 0.4,
+        side: activeSide,
       };
       setLayers([...layers, newLayer]);
-
-      // Hide loading
-      setLoadingState({
-        isLoading: false,
-        message: '',
-      });
-
-      // Show success toast
-      toast.success(`✅ ${t('upload.success')}`, {
-        duration: 3000,
+      setLoadingState({ isLoading: false, message: '' });
+      toast.success(t('upload.success', { defaultValue: 'Imagen cargada' }), {
+        duration: 2000,
         style: {
           background: '#0F172A',
           color: 'white',
@@ -85,7 +78,6 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
         },
       });
     };
-
     reader.readAsDataURL(file);
   };
 
@@ -95,18 +87,9 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
     handleFileUpload(e.dataTransfer.files);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
   const removeLayer = (id: string) => {
     setLayers(layers.filter(layer => layer.id !== id));
-    toast(`🗑️ ${t('upload.layerRemoved')}`, {
+    toast(t('upload.layerRemoved', { defaultValue: 'Capa eliminada' }), {
       duration: 2000,
       style: {
         background: '#0F172A',
@@ -128,40 +111,32 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
     });
   };
 
+  const handleCustomColor = (color: string) => {
+    setCustomColor(color);
+    handleColorChange(color, 'Personalizado');
+  };
+
   const handleFinishOrder = async () => {
-    // Show loading while generating preview
-    setLoadingState({
-      isLoading: true,
-      message: t('upload.rendering'),
-    });
-
-    // Simulate screenshot generation
+    setLoadingState({ isLoading: true, message: t('upload.rendering') });
     await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Set a mock preview (in real app, this would be a canvas screenshot)
     const mockPreview = 'https://images.unsplash.com/photo-1574180566232-aaad1b5b8450?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3aGl0ZSUyMHQtc2hpcnQlMjBtb2NrdXB8ZW58MXx8fHwxNzY2OTMxMzM2fDA&ixlib=rb-4.1.0&q=80&w=1080';
     setDesignPreview(mockPreview);
-
-    // Hide loading
-    setLoadingState({
-      isLoading: false,
-      message: '',
-    });
-
-    // Show success modal
+    setLoadingState({ isLoading: false, message: '' });
     setShowSuccessModal(true);
   };
+
+  const isCustomActive = !PRESET_COLORS.some(c => c.value === selectedColor);
 
   return (
     <div
       className="h-full bg-card flex flex-col border-l border-border"
       style={{
         boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.06)',
-        padding: '24px 20px' // Reduced padding for mobile
+        padding: '24px 20px',
       }}
     >
       {/* Header */}
-      <div className="mb-4 lg:mb-8">
+      <div className="mb-4 lg:mb-6">
         <h2 className="text-xl lg:text-2xl mb-2 font-bold text-foreground">
           {t('toolsPanel.title')}
         </h2>
@@ -171,80 +146,102 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto space-y-4 lg:space-y-8 pr-2">
-        {/* Part Selector */}
+      <div className="flex-1 overflow-y-auto space-y-4 lg:space-y-6 pr-2">
+
+        {/* Side Selector (Front / Back) */}
         <div>
-          <h3 className="text-xs lg:text-sm mb-2 lg:mb-3 font-semibold text-muted-foreground uppercase">
-            {t('toolsPanel.selectPart')}
+          <h3 className="text-xs lg:text-sm mb-2 font-semibold text-muted-foreground uppercase">
+            Lado del dise&ntilde;o
           </h3>
           <div className="flex gap-2">
             <button
-              onClick={() => setActivePart('body')}
+              onClick={() => setActiveSide('front')}
               className={`flex-1 py-2 lg:py-3 px-3 lg:px-4 rounded-xl transition-all text-sm lg:text-base font-semibold ${
-                activePart === 'body'
+                activeSide === 'front'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-foreground hover:bg-accent'
               }`}
             >
-              {t('parts.body')}
+              Frente
             </button>
             <button
-              onClick={() => setActivePart('sleeves')}
+              onClick={() => setActiveSide('back')}
               className={`flex-1 py-2 lg:py-3 px-3 lg:px-4 rounded-xl transition-all text-sm lg:text-base font-semibold ${
-                activePart === 'sleeves'
+                activeSide === 'back'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-foreground hover:bg-accent'
               }`}
             >
-              {t('parts.sleeves')}
-            </button>
-            <button
-              onClick={() => setActivePart('collar')}
-              className={`flex-1 py-2 lg:py-3 px-3 lg:px-4 rounded-xl transition-all text-sm lg:text-base font-semibold ${
-                activePart === 'collar'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-foreground hover:bg-accent'
-              }`}
-            >
-              {t('parts.collar')}
+              Atr&aacute;s
             </button>
           </div>
         </div>
 
         {/* Color Picker */}
         <div>
-          <h3 className="text-xs lg:text-sm mb-2 lg:mb-3 font-semibold text-muted-foreground uppercase">
+          <h3 className="text-xs lg:text-sm mb-2 font-semibold text-muted-foreground uppercase">
             {t('toolsPanel.baseColor')}
           </h3>
-          <div className="grid grid-cols-4 gap-2 lg:gap-3">
-            {COLOR_KEYS.map((color) => (
+          <div className="flex flex-wrap gap-2">
+            {PRESET_COLORS.map((color) => (
               <button
                 key={color.value}
                 onClick={() => handleColorChange(color.value, t(`colors.${color.key}`))}
-                className={`relative aspect-square rounded-full transition-all hover:scale-110 active:scale-95 ${
+                className={`w-10 h-10 rounded-full transition-all hover:scale-110 active:scale-95 ${
                   color.value === '#FFFFFF' ? 'border-2 border-border' : ''
                 }`}
                 style={{
                   backgroundColor: color.value,
-                  boxShadow: selectedColor === color.value ? `0 0 0 3px var(--primary)` : '0 2px 4px rgba(0,0,0,0.1)'
+                  boxShadow: selectedColor === color.value
+                    ? '0 0 0 3px var(--primary)'
+                    : '0 2px 4px rgba(0,0,0,0.1)',
                 }}
                 title={t(`colors.${color.key}`)}
               />
             ))}
+
+            {/* Custom color picker */}
+            <div className="relative">
+              <button
+                onClick={() => colorInputRef.current?.click()}
+                className="w-10 h-10 rounded-full transition-all hover:scale-110 active:scale-95 flex items-center justify-center"
+                style={{
+                  background: isCustomActive
+                    ? customColor
+                    : 'conic-gradient(#f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)',
+                  boxShadow: isCustomActive
+                    ? '0 0 0 3px var(--primary)'
+                    : '0 2px 4px rgba(0,0,0,0.1)',
+                }}
+                title="Color personalizado"
+              >
+                {!isCustomActive && (
+                  <Palette size={16} className="text-white drop-shadow-md" />
+                )}
+              </button>
+              <input
+                ref={colorInputRef}
+                type="color"
+                value={customColor}
+                onChange={(e) => handleCustomColor(e.target.value)}
+                className="absolute inset-0 w-0 h-0 opacity-0"
+                tabIndex={-1}
+              />
+            </div>
           </div>
         </div>
 
         {/* Upload Area */}
         <div>
-          <h3 className="text-xs lg:text-sm mb-2 lg:mb-3 font-semibold text-muted-foreground uppercase">
+          <h3 className="text-xs lg:text-sm mb-2 font-semibold text-muted-foreground uppercase">
             {t('toolsPanel.designLogo')}
           </h3>
 
           <div
             onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            className={`relative rounded-2xl p-6 lg:p-8 text-center cursor-pointer transition-all border-2 border-dashed ${
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            className={`relative rounded-2xl p-5 lg:p-6 text-center cursor-pointer transition-all border-2 border-dashed ${
               isDragging ? 'border-primary bg-accent' : 'border-border bg-card'
             }`}
           >
@@ -254,59 +251,135 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
               onChange={(e) => handleFileUpload(e.target.files)}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-
             <div className="pointer-events-none">
-              <Cloud size={40} className="mx-auto mb-3 lg:mb-4 lg:w-12 lg:h-12 text-muted-foreground" />
-              <p className="mb-1 text-sm lg:text-base font-semibold text-foreground">
-                {t('upload.title')}
+              <Cloud size={32} className="mx-auto mb-2 text-muted-foreground" />
+              <p className="mb-1 text-sm font-semibold text-foreground">
+                {t('upload.title', { defaultValue: 'Sube tu imagen' })}
               </p>
-              <p className="text-xs lg:text-sm text-muted-foreground font-medium">
-                {t('upload.hint')}
+              <p className="text-xs text-muted-foreground font-medium">
+                Se aplicar&aacute; al lado: <strong>{activeSide === 'front' ? 'Frente' : 'Atr\u00e1s'}</strong>
               </p>
             </div>
           </div>
 
-          {/* Layers List */}
+          {/* Layers List with Controls */}
           {layers.length > 0 && (
-            <div className="mt-3 lg:mt-4 space-y-2">
-              <h4 className="text-xs lg:text-sm mb-2 font-semibold text-muted-foreground uppercase">
-                {t('toolsPanel.layers')}
+            <div className="mt-3 space-y-3">
+              <h4 className="text-xs lg:text-sm font-semibold text-muted-foreground uppercase">
+                {t('toolsPanel.layers', { defaultValue: 'Capas' })} ({layers.length})
               </h4>
+
               {layers.map((layer) => (
-                <div
-                  key={layer.id}
-                  className="flex items-center gap-2 lg:gap-3 p-2 lg:p-3 bg-muted rounded-xl"
-                >
-                  <img
-                    src={layer.thumbnail}
-                    alt={layer.name}
-                    className="w-10 h-10 lg:w-12 lg:h-12 object-cover rounded-lg"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs lg:text-sm truncate font-semibold text-foreground">
-                      {layer.name}
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      className="p-1.5 lg:p-2 hover:bg-accent active:bg-accent/80 rounded-lg transition-colors"
-                      title={t('toolsPanel.rotate')}
-                    >
-                      <RotateCw size={14} className="lg:w-4 lg:h-4 text-foreground" />
-                    </button>
-                    <button
-                      className="p-1.5 lg:p-2 hover:bg-accent active:bg-accent/80 rounded-lg transition-colors"
-                      title={t('toolsPanel.scale')}
-                    >
-                      <Maximize2 size={14} className="lg:w-4 lg:h-4 text-foreground" />
-                    </button>
+                <div key={layer.id} className="p-3 bg-muted rounded-xl space-y-3">
+                  {/* Header: thumbnail + name + side badge + delete */}
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={layer.thumbnail}
+                      alt={layer.name}
+                      className="w-10 h-10 object-cover rounded-lg flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs truncate font-semibold text-foreground">
+                        {layer.name}
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                      {(layer.side || 'front') === 'front' ? 'Frente' : 'Atr\u00e1s'}
+                    </span>
                     <button
                       onClick={() => removeLayer(layer.id)}
-                      className="p-1.5 lg:p-2 hover:bg-red-100 active:bg-red-200 rounded-lg transition-colors"
-                      title={t('toolsPanel.delete')}
+                      className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors flex-shrink-0"
+                      title="Eliminar"
                     >
-                      <X size={14} className="lg:w-4 lg:h-4" style={{ color: '#DC2626' }} />
+                      <X size={14} style={{ color: '#DC2626' }} />
                     </button>
+                  </div>
+
+                  {/* Side toggle */}
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => updateLayer(layer.id, { side: 'front' })}
+                      className={`flex-1 py-1 text-xs font-semibold rounded-lg transition-all ${
+                        (layer.side || 'front') === 'front'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-card text-muted-foreground hover:bg-accent'
+                      }`}
+                    >
+                      Frente
+                    </button>
+                    <button
+                      onClick={() => updateLayer(layer.id, { side: 'back' })}
+                      className={`flex-1 py-1 text-xs font-semibold rounded-lg transition-all ${
+                        layer.side === 'back'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-card text-muted-foreground hover:bg-accent'
+                      }`}
+                    >
+                      Atr&aacute;s
+                    </button>
+                  </div>
+
+                  {/* Scale slider */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                        Tama&ntilde;o
+                      </span>
+                      <span className="text-[10px] font-mono text-muted-foreground">
+                        {Math.round((layer.scale ?? 1) * 100)}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="2.5"
+                      step="0.05"
+                      value={layer.scale ?? 1}
+                      onChange={(e) => updateLayer(layer.id, { scale: parseFloat(e.target.value) })}
+                      className="w-full h-1.5 accent-primary rounded-full cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Position sliders */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                          Pos. X
+                        </span>
+                        <span className="text-[10px] font-mono text-muted-foreground">
+                          {Math.round((layer.x ?? 0.5) * 100)}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.1"
+                        max="0.9"
+                        step="0.01"
+                        value={layer.x ?? 0.5}
+                        onChange={(e) => updateLayer(layer.id, { x: parseFloat(e.target.value) })}
+                        className="w-full h-1.5 accent-primary rounded-full cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                          Pos. Y
+                        </span>
+                        <span className="text-[10px] font-mono text-muted-foreground">
+                          {Math.round((layer.y ?? 0.4) * 100)}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.05"
+                        max="0.95"
+                        step="0.01"
+                        value={layer.y ?? 0.4}
+                        onChange={(e) => updateLayer(layer.id, { y: parseFloat(e.target.value) })}
+                        className="w-full h-1.5 accent-primary rounded-full cursor-pointer"
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -315,18 +388,15 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
         </div>
       </div>
 
-      {/* Footer CTA - Sticky on mobile */}
+      {/* Footer CTA */}
       <div className="mt-4 lg:mt-6 pt-4 lg:pt-6 border-t border-border sticky bottom-0 bg-card lg:static">
         <button
-          className="w-full py-4 lg:py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 lg:hover:scale-105 shadow-lg touch-manipulation font-bold"
-          style={{
-            backgroundColor: '#FFD600',
-            color: '#000000',
-          }}
+          className="w-full py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 lg:hover:scale-105 shadow-lg touch-manipulation font-bold"
+          style={{ backgroundColor: '#FFD600', color: '#000000' }}
           onClick={handleFinishOrder}
         >
           <span className="text-base lg:text-lg">{t('toolsPanel.finishOrder')}</span>
-          <span className="text-xl lg:text-2xl">📲</span>
+          <span className="text-xl lg:text-2xl">{'\uD83D\uDCF2'}</span>
         </button>
         <p className="text-xs text-center mt-2 lg:mt-3 text-muted-foreground font-medium">
           {t('toolsPanel.whatsAppNote')}

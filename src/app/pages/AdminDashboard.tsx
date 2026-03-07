@@ -1,6 +1,6 @@
 import { useAuth } from '@/app/hooks/useAuth';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, Calculator, Palette, Shield, Settings, ExternalLink, ChevronRight, Users, History, FileText, Sliders } from 'lucide-react';
+import { LogOut, Calculator, Palette, Shield, Settings, ExternalLink, ChevronRight, Users, History, FileText, Sliders, Package } from 'lucide-react';
 import { useState } from 'react';
 import { MFASetupDialog } from '@/app/components/admin/MFASetupDialog';
 import { motion } from 'framer-motion';
@@ -91,7 +91,7 @@ export function AdminDashboard() {
           </motion.div>
 
           {/* Admin Tools Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-12">
             <motion.div variants={itemVariants}>
               <Link
                 to="/admin/config"
@@ -103,6 +103,20 @@ export function AdminDashboard() {
                 <h3 className="text-lg font-bold mb-1">{t('cards.config.title')}</h3>
                 <p className="text-sm text-muted-foreground mb-4">{t('cards.config.description')}</p>
                 <span className="mt-auto text-[10px] font-bold text-[#FF6B35] uppercase tracking-widest">{t('cards.config.action')}</span>
+              </Link>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <Link
+                to="/admin/models"
+                className="group flex flex-col bg-card border border-border/40 hover:border-[#FFD600]/50 rounded-[24px] p-6 shadow-sm hover:shadow-xl transition-all duration-300 h-full"
+              >
+                <div className="w-12 h-12 bg-[#FFD600]/10 rounded-2xl flex items-center justify-center group-hover:bg-[#FFD600] transition-all mb-4">
+                  <Package className="w-6 h-6 text-[#FFD600] group-hover:text-slate-900" />
+                </div>
+                <h3 className="text-lg font-bold mb-1">{t('cards.models.title')}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{t('cards.models.description')}</p>
+                <span className="mt-auto text-[10px] font-bold text-[#FFD600] uppercase tracking-widest">{t('cards.models.action')}</span>
               </Link>
             </motion.div>
 

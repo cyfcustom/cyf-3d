@@ -29,6 +29,11 @@
       "title": "Cálculos",
       "description": "Historial de cálculos de usuarios.",
       "action": "Ver Historial"
+    },
+    "models": {
+      "title": "Modelos 3D",
+      "description": "Catálogo de productos y modelos 3D.",
+      "action": "Gestionar"
     }
   },
   "quickActions": {

@@ -17,6 +17,7 @@ import { AdminConfigEditor } from './pages/admin/AdminConfigEditor';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminAuditPage } from './pages/admin/AdminAuditPage';
 import { AdminHistoryPage } from './pages/admin/AdminHistoryPage';
+import { AdminModelsPage } from './pages/admin/AdminModelsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider } from './providers/AuthProvider';
 
@@ -102,6 +103,18 @@ export default function App() {
                 <div className="min-h-screen bg-background font-urbanist text-foreground">
                   <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
                     <AdminHistoryPage />
+                  </div>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/models"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <div className="min-h-screen bg-background font-urbanist text-foreground">
+                  <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+                    <AdminModelsPage />
                   </div>
                 </div>
               </ProtectedRoute>
