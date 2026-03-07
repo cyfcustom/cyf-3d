@@ -48,6 +48,7 @@ Reemplazar el configurador 2D actual (imagen estatica + CSS flip) con un visuali
 ## Milestones
 - [M001] 2026-03-07 - Plan completo definido y guardado en GCC
 - [M002] 2026-03-07 - Fase 0 completada: Babylon.js integrado, lazy loading, procedural meshes (5729a8a)
+- [M003] 2026-03-07 - Fases 1-3 combinadas: modelos .glb desde Supabase, catálogo con categorías, galería de productos, admin CRUD, sistema de colores mejorado, controles de diseño (c366996)
 
 ## Active Branches
 (none)
