@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import { useAtom } from 'jotai';
 import {
   Engine, Scene, ArcRotateCamera, HemisphericLight, DirectionalLight,
@@ -75,6 +76,9 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
   const [layers] = useAtom(layersAtom);
   const [textureReady, setTextureReady] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showHint, setShowHint] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useImperativeHandle(ref, () => ({
     takeScreenshot: () => {
@@ -93,6 +97,30 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
       });
     },
   }));
+
+  // Auto-hide controls hint after 4 seconds
+  useEffect(() => {
+    if (!loading && showHint) {
+      const timer = setTimeout(() => setShowHint(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, showHint]);
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      containerRef.current.requestFullscreen();
+    }
+  };
 
   const initScene = useCallback(() => {
     const canvas = canvasRef.current;
@@ -293,7 +321,7 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
   }, [layers, selectedColor, textureReady]);
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center bg-muted/30">
+    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center bg-muted/30">
       <canvas
         ref={canvasRef}
         className="w-full h-full outline-none"
@@ -310,12 +338,30 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
         </div>
       )}
 
-      {/* Controls hint */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-card/80 backdrop-blur-sm border border-border">
-        <span className="text-xs text-muted-foreground font-medium">
-          Arrastra para rotar · Scroll para zoom
-        </span>
-      </div>
+      {/* Fullscreen toggle */}
+      <button
+        onClick={toggleFullscreen}
+        className="absolute top-3 right-3 p-2.5 rounded-xl bg-card/80 backdrop-blur-sm border border-border hover:bg-card transition-colors"
+        title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+      >
+        {isFullscreen ? (
+          <Minimize2 size={18} className="text-foreground" />
+        ) : (
+          <Maximize2 size={18} className="text-foreground" />
+        )}
+      </button>
+
+      {/* Controls hint — auto-hides */}
+      {showHint && !loading && (
+        <div
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-card/80 backdrop-blur-sm border border-border transition-opacity duration-700"
+          style={{ animation: 'fadeInUp 0.5s ease-out' }}
+        >
+          <span className="text-xs text-muted-foreground font-medium">
+            Arrastra para rotar · Scroll para zoom · Pellizca para acercar
+          </span>
+        </div>
+      )}
     </div>
   );
 });

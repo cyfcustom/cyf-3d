@@ -1,9 +1,22 @@
 import { useState } from 'react';
 import { Package, ChevronRight } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useProductCatalog, ProductModel } from '../../hooks/useProductCatalog';
 
 interface ProductGalleryProps {
   onSelectModel: (model: ProductModel) => void;
+}
+
+function SkeletonCard() {
+  return (
+    <div className="bg-card rounded-2xl border border-border overflow-hidden animate-pulse">
+      <div className="aspect-square bg-muted/50" />
+      <div className="p-3 space-y-2">
+        <div className="h-4 bg-muted rounded-lg w-3/4" />
+        <div className="h-3 bg-muted/50 rounded-lg w-1/2" />
+      </div>
+    </div>
+  );
 }
 
 export function ProductGallery({ onSelectModel }: ProductGalleryProps) {
@@ -17,52 +30,64 @@ export function ProductGallery({ onSelectModel }: ProductGalleryProps) {
 
   const currentModels = activeCategory ? getModelsByCategory(activeCategory) : [];
 
-  if (loading) {
-    return (
-      <div className="h-full flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground font-medium">Cargando productos...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <div className="px-6 lg:px-12 pt-8 pb-4">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="px-6 lg:px-12 pt-8 pb-4"
+      >
         <h1 className="text-2xl lg:text-3xl font-extrabold text-foreground">
           Elige tu producto
         </h1>
         <p className="text-sm text-muted-foreground mt-1 font-medium">
           Selecciona el producto que quieres personalizar
         </p>
-      </div>
+      </motion.div>
 
       {/* Category tabs */}
       <div className="px-6 lg:px-12 pb-4">
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
-                activeCategory === cat.id
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-muted text-foreground hover:bg-accent'
-              }`}
-            >
-              <span>{cat.icon}</span>
-              <span>{cat.name}</span>
-            </button>
-          ))}
+          {loading ? (
+            // Skeleton tabs
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-10 w-28 bg-muted rounded-xl animate-pulse flex-shrink-0" />
+              ))}
+            </>
+          ) : (
+            categories.map((cat, i) => (
+              <motion.button
+                key={cat.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
+                  activeCategory === cat.id
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'bg-muted text-foreground hover:bg-accent'
+                }`}
+              >
+                <span>{cat.icon}</span>
+                <span>{cat.name}</span>
+              </motion.button>
+            ))
+          )}
         </div>
       </div>
 
       {/* Product grid */}
       <div className="flex-1 overflow-y-auto px-6 lg:px-12 pb-8">
-        {currentModels.length === 0 ? (
+        {loading ? (
+          // Skeleton grid
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : currentModels.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
             <Package size={48} className="mb-4 opacity-50" />
             <p className="font-semibold">No hay modelos en esta categoria</p>
@@ -70,11 +95,14 @@ export function ProductGallery({ onSelectModel }: ProductGalleryProps) {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {currentModels.map((model) => (
-              <button
+            {currentModels.map((model, i) => (
+              <motion.button
                 key={model.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06, type: 'spring', stiffness: 300, damping: 25 }}
                 onClick={() => onSelectModel(model)}
-                className="group relative bg-card rounded-2xl border border-border overflow-hidden transition-all hover:shadow-lg hover:border-primary/50 hover:scale-[1.02] active:scale-[0.98]"
+                className="group relative bg-card rounded-2xl border border-border overflow-hidden transition-all hover:shadow-lg hover:border-primary/50 hover:scale-[1.02] active:scale-[0.98] text-left"
               >
                 {/* Thumbnail */}
                 <div className="aspect-square bg-muted/50 flex items-center justify-center p-4">
@@ -108,7 +136,7 @@ export function ProductGallery({ onSelectModel }: ProductGalleryProps) {
                 <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <ChevronRight size={16} className="text-primary" />
                 </div>
-              </button>
+              </motion.button>
             ))}
           </div>
         )}

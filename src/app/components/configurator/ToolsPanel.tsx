@@ -241,6 +241,28 @@ export function ToolsPanel({ onColorChange, selectedColor, modelName, onTakeScre
           </div>
         </div>
 
+        {/* Size Selector */}
+        <div>
+          <h3 className="text-xs lg:text-sm mb-2 font-semibold text-muted-foreground uppercase">
+            Talla
+          </h3>
+          <div className="flex gap-2">
+            {(['S', 'M', 'L', 'XL'] as const).map((size) => (
+              <button
+                key={size}
+                onClick={() => setProductConfig(prev => ({ ...prev, size }))}
+                className={`flex-1 py-2 lg:py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  productConfig.size === size
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'bg-muted text-foreground hover:bg-accent'
+                }`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Upload Area */}
         <div>
           <h3 className="text-xs lg:text-sm mb-2 font-semibold text-muted-foreground uppercase">
