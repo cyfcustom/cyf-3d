@@ -42,3 +42,8 @@
 - Observation: Fase 4 implemented: BabylonCanvas exposes takeScreenshot via forwardRef. SuccessModal captures real 3D screenshot. Company info centralized in Supabase (company_info table). Phone corrected to 584124553107. Footer + SuccessModal now use useCompanyInfo hook.
 - Thought: Web Share API on macOS Chrome opens system share sheet (AirDrop, Messages) instead of WhatsApp. The fallback (Supabase upload + wa.me) also problematic because user expects direct WhatsApp flow. Better approach: create order in DB, send link via WhatsApp.
 - Action: Created orders table. SuccessModal now: uploads screenshot to Supabase Storage, creates order row, opens wa.me with link to /pedido/:id. OrderViewPage shows design, product details, status, expiration notice, and WhatsApp CTA. GCC branch ecommerce-features created (PARKED) documenting future ideas: carrito, wishlist, client accounts, order history.
+
+## [L007] 2026-03-07 | main
+- Observation: Fase 5 UX polish needed: loading states, transitions, touch controls, fullscreen.
+- Thought: Focus on highest-impact items: skeleton loading replaces blank screens, animated transitions make gallery-to-customizer feel smooth, fullscreen toggle is essential for 3D viewing, size selector was missing from the order flow.
+- Action: Implemented all Fase 5 items. ProductGallery: skeleton cards + staggered entry animations. ConfiguratorWorkspace: AnimatePresence with slide transitions. BabylonCanvas: fullscreen toggle (Maximize2/Minimize2), auto-hiding hint (4s). ToolsPanel: S/M/L/XL size selector. Committed 800d492. ALL 6 PHASES COMPLETE.
