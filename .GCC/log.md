@@ -37,3 +37,8 @@
 - Root cause: redrawTexture() draws images at fixed canvas coordinates assuming a flat UV layout. Real .glb models have arbitrary UV unwrapping from their 3D modeling software. The texture renders correctly as a solid color fill but positioned image overlays fall outside visible UV islands.
 - Possible fixes: (a) Standardize UV layouts in Blender before export, (b) Use decal projection instead of DynamicTexture, (c) Detect UV islands and map image placement accordingly.
 - Files: src/app/components/configurator/BabylonCanvas.tsx (redrawTexture function, ~line 27-60)
+
+## [L006] 2026-03-07 | main
+- Observation: Fase 4 implemented: BabylonCanvas exposes takeScreenshot via forwardRef. SuccessModal captures real 3D screenshot. Company info centralized in Supabase (company_info table). Phone corrected to 584124553107. Footer + SuccessModal now use useCompanyInfo hook.
+- Thought: Web Share API on macOS Chrome opens system share sheet (AirDrop, Messages) instead of WhatsApp. The fallback (Supabase upload + wa.me) also problematic because user expects direct WhatsApp flow. Better approach: create order in DB, send link via WhatsApp.
+- Action: Created orders table. SuccessModal now: uploads screenshot to Supabase Storage, creates order row, opens wa.me with link to /pedido/:id. OrderViewPage shows design, product details, status, expiration notice, and WhatsApp CTA. GCC branch ecommerce-features created (PARKED) documenting future ideas: carrito, wishlist, client accounts, order history.

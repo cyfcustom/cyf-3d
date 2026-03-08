@@ -17,6 +17,8 @@ import {
 interface ToolsPanelProps {
   onColorChange: (color: string) => void;
   selectedColor: string;
+  modelName?: string;
+  onTakeScreenshot?: () => Promise<string | null>;
 }
 
 const PRESET_COLORS = [
@@ -29,7 +31,7 @@ const PRESET_COLORS = [
   { key: 'yellow', value: '#FFD600' },
 ];
 
-export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
+export function ToolsPanel({ onColorChange, selectedColor, modelName, onTakeScreenshot }: ToolsPanelProps) {
   const { t } = useTranslation('configurator');
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [layers, setLayers] = useAtom(layersAtom);
@@ -118,9 +120,17 @@ export function ToolsPanel({ onColorChange, selectedColor }: ToolsPanelProps) {
 
   const handleFinishOrder = async () => {
     setLoadingState({ isLoading: true, message: t('upload.rendering') });
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    const mockPreview = 'https://images.unsplash.com/photo-1574180566232-aaad1b5b8450?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3aGl0ZSUyMHQtc2hpcnQlMjBtb2NrdXB8ZW58MXx8fHwxNzY2OTMxMzM2fDA&ixlib=rb-4.1.0&q=80&w=1080';
-    setDesignPreview(mockPreview);
+
+    let screenshotData: string | null = null;
+    if (onTakeScreenshot) {
+      screenshotData = await onTakeScreenshot();
+    }
+
+    if (modelName) {
+      setProductConfig(prev => ({ ...prev, type: 'tshirt', baseColor: selectedColor, baseColorName: modelName }));
+    }
+
+    setDesignPreview(screenshotData);
     setLoadingState({ isLoading: false, message: '' });
     setShowSuccessModal(true);
   };

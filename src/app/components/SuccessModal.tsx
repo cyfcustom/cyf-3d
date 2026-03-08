@@ -1,27 +1,80 @@
+import { useState } from 'react';
 import { useAtom } from 'jotai';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Check } from 'lucide-react';
+import { X, Check, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { showSuccessModalAtom, designPreviewAtom, productConfigAtom } from '../store/atoms';
+import { useCompanyInfo } from '../hooks/useCompanyInfo';
+import { supabase } from '../lib/supabase';
+
+/** Convert a base64 data URL to a File object */
+function dataUrlToFile(dataUrl: string, filename: string): File {
+  const [header, base64] = dataUrl.split(',');
+  const mime = header.match(/:(.*?);/)?.[1] || 'image/png';
+  const bytes = atob(base64);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  return new File([arr], filename, { type: mime });
+}
 
 export function SuccessModal() {
   const [showModal, setShowModal] = useAtom(showSuccessModalAtom);
   const [designPreview] = useAtom(designPreviewAtom);
   const [productConfig] = useAtom(productConfigAtom);
   const { t } = useTranslation('configurator');
+  const { info } = useCompanyInfo();
+  const [sending, setSending] = useState(false);
 
-  const handleWhatsAppOrder = () => {
-    const phoneNumber = '584121234567'; // Replace with actual WhatsApp number
-    const productName = t('success.product');
-    const message = t('success.whatsAppMessage', { product: productName, size: productConfig.size, color: productConfig.baseColorName });
-    
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    
-    // Open WhatsApp in new tab
-    window.open(whatsappUrl, '_blank');
-    
-    // Close modal
-    setShowModal(false);
+  const handleWhatsAppOrder = async () => {
+    setSending(true);
+
+    try {
+      // 1. Upload screenshot if available
+      let screenshotUrl: string | undefined;
+      if (designPreview) {
+        const file = dataUrlToFile(designPreview, `cyf-diseno-${Date.now()}.png`);
+        const path = `orders/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.png`;
+        const { error: uploadErr } = await supabase.storage
+          .from('order-screenshots')
+          .upload(path, file, { contentType: 'image/png' });
+
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage
+            .from('order-screenshots')
+            .getPublicUrl(path);
+          screenshotUrl = urlData.publicUrl;
+        }
+      }
+
+      // 2. Create order in database
+      const productName = productConfig.baseColorName || 'Producto';
+      const { data: order, error: orderErr } = await supabase
+        .from('orders')
+        .insert({
+          product_name: productName,
+          product_color: productConfig.baseColor,
+          product_size: productConfig.size,
+          screenshot_url: screenshotUrl || null,
+        })
+        .select('id')
+        .single();
+
+      if (orderErr) throw orderErr;
+
+      // 3. Build WhatsApp message with order link
+      const orderUrl = `${window.location.origin}/pedido/${order.id}`;
+      const message = `${info.whatsapp_message_template}\n\nQuiero hacer un pedido:\n📦 Producto: ${productName}\n🎨 Color: ${productConfig.baseColor}\n📐 Talla: ${productConfig.size}\n\n🔗 Ver mi diseño: ${orderUrl}\n\n¡Gracias!`;
+
+      const whatsappUrl = `https://wa.me/${info.phone}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+      setShowModal(false);
+    } catch (err) {
+      console.error('Failed to create order:', err);
+      toast.error('Error creando el pedido. Intenta de nuevo.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -60,7 +113,7 @@ export function SuccessModal() {
 
               {/* Content */}
               <div className="p-6 lg:p-8 text-center overflow-y-auto" style={{ maxHeight: '90vh' }}>
-                {/* Success Icon with Animation */}
+                {/* Success Icon */}
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -71,7 +124,7 @@ export function SuccessModal() {
                   <Check size={32} className="lg:w-10 lg:h-10" color="white" strokeWidth={3} />
                 </motion.div>
 
-                {/* Confetti Effect - Simple dots */}
+                {/* Confetti */}
                 {[...Array(12)].map((_, i) => (
                   <motion.div
                     key={i}
@@ -122,8 +175,8 @@ export function SuccessModal() {
                 {/* Product Summary */}
                 <div className="mb-4 lg:mb-6 p-3 lg:p-4 rounded-xl bg-muted">
                   <p className="text-sm lg:text-base font-semibold text-foreground">
-                    {t('success.product')} • {t('success.size')}{' '}
-                    {productConfig.size} • {productConfig.baseColorName}
+                    {productConfig.baseColorName || t('success.product')} • {t('success.size')}{' '}
+                    {productConfig.size}
                   </p>
                 </div>
 
@@ -132,20 +185,30 @@ export function SuccessModal() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleWhatsAppOrder}
-                  className="w-full py-4 lg:py-5 px-6 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl touch-manipulation font-bold"
+                  disabled={sending}
+                  className="w-full py-4 lg:py-5 px-6 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl touch-manipulation font-bold disabled:opacity-70"
                   style={{
                     backgroundColor: '#FFD600',
                     color: '#000000',
                     fontSize: '1rem',
                   }}
                 >
-                  <span className="lg:text-lg">{t('success.sendWhatsApp')}</span>
-                  <span className="text-xl lg:text-2xl">📲</span>
+                  {sending ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      <span className="lg:text-lg">Creando pedido...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="lg:text-lg">{t('success.sendWhatsApp')}</span>
+                      <span className="text-xl lg:text-2xl">📲</span>
+                    </>
+                  )}
                 </motion.button>
 
                 {/* Helper Text */}
                 <p className="text-xs mt-3 lg:mt-4 text-muted-foreground font-medium">
-                  {t('success.whatsAppHint')}
+                  Se crear&aacute; un pedido con tu dise&ntilde;o y se enviar&aacute; el link por WhatsApp
                 </p>
               </div>
             </div>

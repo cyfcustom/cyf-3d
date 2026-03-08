@@ -18,6 +18,7 @@ import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminAuditPage } from './pages/admin/AdminAuditPage';
 import { AdminHistoryPage } from './pages/admin/AdminHistoryPage';
 import { AdminModelsPage } from './pages/admin/AdminModelsPage';
+import { OrderViewPage } from './pages/OrderViewPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider } from './providers/AuthProvider';
 
@@ -35,6 +36,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/mobile-demo" element={<MobileDemo />} />
+          <Route path="/pedido/:id" element={<OrderViewPage />} />
 
           {/* Hidden Admin Login Route */}
           <Route path="/cyf-admin-access" element={<AdminLogin />} />

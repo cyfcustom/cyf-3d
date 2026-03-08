@@ -34,3 +34,22 @@
 - Known bugs:
   - Image upload on loaded .glb models not working (DynamicTexture applied to largest mesh but images don't render on real models)
   - Back-face image mirror on procedural box meshes (less relevant now with real .glb models)
+
+## [C004] 2026-03-07
+- Branch: main
+- Purpose: Fase 4 - Preview to Quote + Order System
+- Previous: Fases 1-3 complete (C003). Models load, colors work, admin CRUD done.
+- Contribution:
+  - BabylonCanvas: added forwardRef + useImperativeHandle exposing takeScreenshot() via Tools.CreateScreenshotUsingRenderTarget (800x800).
+  - ConfiguratorWorkspace: passes canvasRef and modelName/onTakeScreenshot to ToolsPanel.
+  - ToolsPanel: handleFinishOrder now captures real 3D screenshot instead of mock image.
+  - company_info table: centralized business contact data in Supabase. Phone corrected to 584124553107. useCompanyInfo hook with caching + offline fallback.
+  - Footer: all contact info (phone, email, Instagram, Facebook) now from company_info table.
+  - orders table: stores pedidos with product_name, color, size, screenshot_url, status, expires_at (24h).
+  - order-screenshots storage bucket: public upload for order screenshots.
+  - SuccessModal: creates order in DB, uploads screenshot to Supabase Storage, opens wa.me with link to /pedido/:id.
+  - OrderViewPage (new): public page showing order details, screenshot, product info, status badge, expiration notice, WhatsApp CTA.
+  - Route /pedido/:id added to App.tsx (public, no auth required).
+  - GCC branch ecommerce-features created (PARKED) for future: carrito, wishlist, client accounts.
+- Files touched: BabylonCanvas.tsx, ConfiguratorWorkspace.tsx, ToolsPanel.tsx, SuccessModal.tsx, Footer.tsx, App.tsx, OrderViewPage.tsx (new), useCompanyInfo.ts (new)
+- Supabase: company_info table + orders table + order-screenshots bucket

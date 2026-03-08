@@ -1,12 +1,16 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { useAtom } from 'jotai';
 import {
   Engine, Scene, ArcRotateCamera, HemisphericLight, DirectionalLight,
-  Vector3, Color3, Color4,
+  Vector3, Color3, Color4, Tools,
   PBRMaterial, DynamicTexture, AbstractMesh, SceneLoader,
 } from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
 import { layersAtom, Layer } from '../../store/atoms';
+
+export interface BabylonCanvasHandle {
+  takeScreenshot: () => Promise<string | null>;
+}
 
 // Texture for image overlay
 const TEX_SIZE = 1024;
@@ -59,7 +63,7 @@ function redrawTexture(
   texture.update();
 }
 
-export function BabylonCanvas({ selectedColor, modelUrl }: BabylonCanvasProps) {
+export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>(function BabylonCanvas({ selectedColor, modelUrl }, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const sceneRef = useRef<Scene | null>(null);
@@ -71,6 +75,24 @@ export function BabylonCanvas({ selectedColor, modelUrl }: BabylonCanvasProps) {
   const [layers] = useAtom(layersAtom);
   const [textureReady, setTextureReady] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  useImperativeHandle(ref, () => ({
+    takeScreenshot: () => {
+      return new Promise<string | null>((resolve) => {
+        const engine = engineRef.current;
+        const scene = sceneRef.current;
+        if (!engine || !scene) {
+          resolve(null);
+          return;
+        }
+        // Render one frame to ensure latest state
+        scene.render();
+        Tools.CreateScreenshotUsingRenderTarget(engine, scene.activeCamera!, { width: 800, height: 800 }, (data) => {
+          resolve(data);
+        });
+      });
+    },
+  }));
 
   const initScene = useCallback(() => {
     const canvas = canvasRef.current;
@@ -296,4 +318,4 @@ export function BabylonCanvas({ selectedColor, modelUrl }: BabylonCanvasProps) {
       </div>
     </div>
   );
-}
+});

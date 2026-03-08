@@ -1,8 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { Instagram, Facebook, Mail, Phone } from 'lucide-react';
+import { useCompanyInfo } from '../hooks/useCompanyInfo';
 
 export function Footer() {
   const { t } = useTranslation();
+  const { info } = useCompanyInfo();
 
   return (
     <footer className="w-full bg-card border-t border-border py-8 sm:py-12 px-4">
@@ -39,20 +41,20 @@ export function Footer() {
               {t('footer.contact')}
             </h4>
             <div className="space-y-3 mb-4">
-              <a href="mailto:contacto@cyfcustoms.com" className="flex items-center gap-2 text-sm sm:text-base text-muted-foreground font-medium transition-colors hover:text-primary">
+              <a href={`mailto:${info.email}`} className="flex items-center gap-2 text-sm sm:text-base text-muted-foreground font-medium transition-colors hover:text-primary">
                 <Mail size={18} />
-                contacto@cyfcustoms.com
+                {info.email}
               </a>
-              <a href="tel:+584241234567" className="flex items-center gap-2 text-sm sm:text-base text-muted-foreground font-medium transition-colors hover:text-primary">
+              <a href={`https://wa.me/${info.phone}`} className="flex items-center gap-2 text-sm sm:text-base text-muted-foreground font-medium transition-colors hover:text-primary">
                 <Phone size={18} />
-                +58 (424) 123-4567
+                +{info.phone.slice(0, 2)} ({info.phone.slice(2, 5)}) {info.phone.slice(5, 8)}-{info.phone.slice(8)}
               </a>
             </div>
 
             {/* Social Media */}
             <div className="flex gap-3">
               <a
-                href="https://instagram.com/cyfcustoms"
+                href={info.instagram_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2.5 rounded-lg bg-muted transition-all hover:scale-110 hover:bg-accent"
@@ -61,7 +63,7 @@ export function Footer() {
                 <Instagram size={20} style={{ color: 'var(--vibrant-orange)' }} />
               </a>
               <a
-                href="https://facebook.com/cyfcustoms"
+                href={info.facebook_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2.5 rounded-lg bg-muted transition-all hover:scale-110 hover:bg-accent"

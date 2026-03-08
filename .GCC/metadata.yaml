@@ -3,23 +3,35 @@ active_branch: main
 proactive_commits: true
 created: 2026-03-07T00:00:00Z
 
-branches: {}
+branches:
+  ecommerce-features:
+    status: parked
+    parent: main
+    created: 2026-03-07
+    purpose: "E-commerce completo: carrito, wishlist, historial, clientes registrados"
 
 file_tree:
   src/app/components/configurator/:
-    - Canvas3D.tsx (current - to be replaced)
+    - BabylonCanvas.tsx
     - ToolsPanel.tsx
     - ConfiguratorHeader.tsx
-    - BabylonCanvas.tsx (planned)
-    - BabylonScene.ts (planned)
-    - ProductModelLoader.ts (planned)
-    - TextureComposer.ts (planned)
-    - ProductSelector.tsx (planned)
-    - DesignControls.tsx (planned)
-  public/models/:
-    - (planned: tshirt.glb, cap.glb, mug.glb, etc.)
+    - ProductGallery.tsx
+  src/app/components/:
+    - ConfiguratorWorkspace.tsx
+    - SuccessModal.tsx
+    - Footer.tsx
+  src/app/hooks/:
+    - useProductCatalog.ts
+    - useCompanyInfo.ts
+  src/app/pages/:
+    - OrderViewPage.tsx
+  src/app/pages/admin/:
+    - AdminModelsPage.tsx
 
-dependencies_to_add:
-  - "@babylonjs/core"
-  - "@babylonjs/loaders"
-  - "@babylonjs/materials"
+supabase_tables:
+  - product_categories
+  - product_models
+  - company_info
+  - orders
+  - order-screenshots (storage bucket)
+  - models (storage bucket)
