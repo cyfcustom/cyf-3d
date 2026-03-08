@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const STORAGE_BASE = 'https://jushzjpeetegcjyikclb.supabase.co/storage/v1/object/public/models';
+const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/models`;
 
 interface Category {
   id: string;
