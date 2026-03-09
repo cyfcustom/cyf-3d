@@ -47,3 +47,8 @@
 - Observation: Fase 5 UX polish needed: loading states, transitions, touch controls, fullscreen.
 - Thought: Focus on highest-impact items: skeleton loading replaces blank screens, animated transitions make gallery-to-customizer feel smooth, fullscreen toggle is essential for 3D viewing, size selector was missing from the order flow.
 - Action: Implemented all Fase 5 items. ProductGallery: skeleton cards + staggered entry animations. ConfiguratorWorkspace: AnimatePresence with slide transitions. BabylonCanvas: fullscreen toggle (Maximize2/Minimize2), auto-hiding hint (4s). ToolsPanel: S/M/L/XL size selector. Committed 800d492. ALL 6 PHASES COMPLETE.
+
+## [L008] 2026-03-07 | main
+- Observation: Supabase URL and anon key were hardcoded in supabase.ts and AdminModelsPage.tsx. .gitignore was missing .env and dist entries.
+- Thought: Even though anon keys are "public", best practice is env vars for portability and to avoid accidental leaks of project IDs. Also needed .env.example for collaborators.
+- Action: Created .env with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY. Updated supabase.ts to use import.meta.env with validation. AdminModelsPage STORAGE_BASE derived from env var. Updated .gitignore. Created .env.example. Ran security audit: no other hardcoded secrets found. GCC commit C005.

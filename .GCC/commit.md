@@ -53,3 +53,20 @@
   - GCC branch ecommerce-features created (PARKED) for future: carrito, wishlist, client accounts.
 - Files touched: BabylonCanvas.tsx, ConfiguratorWorkspace.tsx, ToolsPanel.tsx, SuccessModal.tsx, Footer.tsx, App.tsx, OrderViewPage.tsx (new), useCompanyInfo.ts (new)
 - Supabase: company_info table + orders table + order-screenshots bucket
+
+## [C005] 2026-03-07
+- Branch: main
+- Purpose: Fase 5 - UX Polish + Security hardening
+- Previous: Fase 4 complete (C004). Orders, screenshots, WhatsApp flow working.
+- Contribution:
+  - ProductGallery: skeleton loading cards + staggered entry animations with motion/react.
+  - ConfiguratorWorkspace: AnimatePresence with slide transitions between gallery and customizer.
+  - BabylonCanvas: fullscreen toggle button (Maximize2/Minimize2), auto-hiding controls hint (4s timer).
+  - ToolsPanel: size selector (S/M/L/XL) between color picker and upload area, updates productConfig atom.
+  - theme.css: added fadeInUp keyframe animation.
+  - Environment variables: moved Supabase URL + anon key from hardcoded strings to .env (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY). supabase.ts uses import.meta.env with runtime validation. AdminModelsPage STORAGE_BASE derived from env var.
+  - .gitignore: added .env, .env.local, .env.*.local, dist.
+  - .env.example: created for collaborator reference (no real values).
+  - Security audit: verified no other hardcoded secrets in codebase. MFA secrets in MFASetupDialog are runtime-generated, not static.
+  - Git commits: 800d492 (UX polish), 321069f (GCC update).
+- Files touched: ProductGallery.tsx, ConfiguratorWorkspace.tsx, BabylonCanvas.tsx, ToolsPanel.tsx, theme.css, supabase.ts, AdminModelsPage.tsx, .gitignore, .env (new), .env.example (new)
