@@ -1,166 +1,220 @@
-# CLAUDE.md
+# Claude Code Configuration — aiyou-dev
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Behavioral Rules (Always Enforced)
 
-## Project Overview
+- Do what has been asked; nothing more, nothing less
+- NEVER create files unless they're absolutely necessary for achieving your goal
+- ALWAYS prefer editing an existing file to creating a new one
+- NEVER proactively create documentation files (*.md) or README files unless explicitly requested
+- NEVER save working files, text/mds, or tests to the root folder
+- Never continuously check status after spawning a swarm — wait for results
+- ALWAYS read a file before editing it
+- NEVER commit secrets, credentials, or .env files
 
-**CYF Customs** is a "Phygital" (Physical + Digital) customization studio web application for Mérida, Venezuela. It combines a landing page, a 3D product configurator, and a suite of pricing calculators for various printing services.
+## File Organization
 
-**Brand Mission**: "Amor para ayudar" (Love to help) - democratizing professional design tools for everyone with accessible pricing and empathetic service.
+- NEVER save to root folder — use the directories below
+- Use `/src` for source code files
+- Use `/tests` for test files
+- Use `/docs` for documentation and markdown files
+- Use `/config` for configuration files
+- Use `/scripts` for utility scripts
+- Use `/examples` for example code
 
-## Development Commands
+## Project Architecture
 
-- `npm run dev` - Start Vite development server
-- `npm run build` - Build production bundle
-- `npm i` - Install dependencies
+- Follow Domain-Driven Design with bounded contexts
+- Keep files under 500 lines
+- Use typed interfaces for all public APIs
+- Prefer TDD London School (mock-first) for new code
+- Use event sourcing for state changes
+- Ensure input validation at system boundaries
 
-Note: The project uses npm but has a bun.lock file present.
+### Project Config
 
-## Tech Stack
+- **Topology**: hierarchical-mesh
+- **Max Agents**: 15
+- **Memory**: hybrid
+- **HNSW**: Enabled
+- **Neural**: Enabled
 
-- **Build Tool**: Vite 6.3.5
-- **Framework**: React 18.3.1
-- **Language**: TypeScript (strict mode disabled)
-- **Routing**: React Router Dom v7
-- **State Management**: Jotai (atomic state management)
-- **Styling**: Tailwind CSS v4
-- **UI Components**: Radix UI primitives + custom components
-- **Animations**: Motion (Framer Motion)
-- **Notifications**: Sonner (toast notifications)
-- **Backend**: Supabase (PostgreSQL database)
-- **Icons**: Lucide React, Material UI Icons
+## Build & Test
 
-## Architecture
+```bash
+# Build
+npm run build
 
-### Application Structure
+# Test
+npm test
 
-The app has three main sections accessible via routes:
-
-1. **Landing Page** (`/`) - Product showcase with brand identity
-2. **3D Configurator** (`/configurador`) - Interactive product customization workspace
-3. **Calculator Suite** (`/calculadoras`) - Pricing calculators for printing services
-4. **Mobile Demo** (`/mobile-demo`) - iPhone frame demo of configurator
-
-### State Management (Jotai)
-
-Global state is managed via atoms in `/src/app/store/atoms.ts`:
-
-- `layersAtom` - User-uploaded images/layers for customization
-- `selectedColorAtom` / `selectedColorNameAtom` - Base product color
-- `productConfigAtom` - Current product configuration (type, size, color)
-- `loadingStateAtom` - Loading state with messages
-- `showSuccessModalAtom` - Success modal visibility
-- `designPreviewAtom` - Final design preview for WhatsApp
-
-**Key Pattern**: State is atomized rather than using a single store. Components import and use only the atoms they need.
-
-### Import Aliases
-
-Use `@/` alias for imports from `src/`:
-```typescript
-import { supabase } from '@/app/lib/supabase';
-import { ProductConfig } from '@/app/types/supabase';
+# Lint
+npm run lint
 ```
 
-### Component Organization
+- ALWAYS run tests after making code changes
+- ALWAYS verify build succeeds before committing
 
+## Security Rules
+
+- NEVER hardcode API keys, secrets, or credentials in source files
+- NEVER commit .env files or any file containing secrets
+- Always validate user input at system boundaries
+- Always sanitize file paths to prevent directory traversal
+- Run `npx @aiyou-dev/cli@latest security scan` after security-related changes
+
+## Concurrency: 1 MESSAGE = ALL RELATED OPERATIONS
+
+- All operations MUST be concurrent/parallel in a single message
+- Use Claude Code's Task tool for spawning agents, not just MCP
+- ALWAYS batch ALL todos in ONE TodoWrite call (5-10+ minimum)
+- ALWAYS spawn ALL agents in ONE message with full instructions via Task tool
+- ALWAYS batch ALL file reads/writes/edits in ONE message
+- ALWAYS batch ALL Bash commands in ONE message
+
+## Swarm Orchestration
+
+- MUST initialize the swarm using CLI tools when starting complex tasks
+- MUST spawn concurrent agents using Claude Code's Task tool
+- Never use CLI tools alone for execution — Task tool agents do the actual work
+- MUST call CLI tools AND Task tool in ONE message for complex work
+
+### 3-Tier Model Routing (ADR-026)
+
+| Tier | Handler | Latency | Cost | Use Cases |
+|------|---------|---------|------|-----------|
+| **1** | Agent Booster (WASM) | <1ms | $0 | Simple transforms (var→const, add types) — Skip LLM |
+| **2** | Haiku | ~500ms | $0.0002 | Simple tasks, low complexity (<30%) |
+| **3** | Sonnet/Opus | 2-5s | $0.003-0.015 | Complex reasoning, architecture, security (>30%) |
+
+- Always check for `[AGENT_BOOSTER_AVAILABLE]` or `[TASK_MODEL_RECOMMENDATION]` before spawning agents
+- Use Edit tool directly when `[AGENT_BOOSTER_AVAILABLE]`
+
+## Swarm Configuration & Anti-Drift
+
+- ALWAYS use hierarchical topology for coding swarms
+- Keep maxAgents at 6-8 for tight coordination
+- Use specialized strategy for clear role boundaries
+- Use `raft` consensus for hive-mind (leader maintains authoritative state)
+- Run frequent checkpoints via `post-task` hooks
+- Keep shared memory namespace for all agents
+
+```bash
+npx @aiyou-dev/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized
 ```
-src/app/
-├── components/
-│   ├── ui/              # Radix-based UI primitives (buttons, dialogs, etc.)
-│   ├── calculator/      # Calculator modules (etiquetas, vinil, sublimacion, etc.)
-│   ├── configurator/    # 3D configurator components
-│   ├── figma/          # Figma-generated components
-│   └── faq/            # FAQ components
-├── pages/              # Route-level page components
-├── hooks/              # Custom React hooks (calculator logic)
-├── lib/                # Utilities (supabase client, money formatting)
-├── store/              # Jotai atoms
-└── types/              # TypeScript types (auto-generated from Supabase)
+
+## Swarm Execution Rules
+
+- ALWAYS use `run_in_background: true` for all agent Task calls
+- ALWAYS put ALL agent Task calls in ONE message for parallel execution
+- After spawning, STOP — do NOT add more tool calls or check status
+- Never poll TaskOutput or check swarm status — trust agents to return
+- When agent results arrive, review ALL results before proceeding
+
+## V3 CLI Commands
+
+### Core Commands
+
+| Command | Subcommands | Description |
+|---------|-------------|-------------|
+| `init` | 4 | Project initialization |
+| `agent` | 8 | Agent lifecycle management |
+| `swarm` | 6 | Multi-agent swarm coordination |
+| `memory` | 11 | AgentDB memory with HNSW search |
+| `task` | 6 | Task creation and lifecycle |
+| `session` | 7 | Session state management |
+| `hooks` | 17 | Self-learning hooks + 12 workers |
+| `hive-mind` | 6 | Byzantine fault-tolerant consensus |
+
+### Quick CLI Examples
+
+```bash
+npx @aiyou-dev/cli@latest init --wizard
+npx @aiyou-dev/cli@latest agent spawn -t coder --name my-coder
+npx @aiyou-dev/cli@latest swarm init --v3-mode
+npx @aiyou-dev/cli@latest memory search --query "authentication patterns"
+npx @aiyou-dev/cli@latest doctor --fix
 ```
 
-### Calculator Architecture
+## Available Agents (60+ Types)
 
-Each calculator module (papeleria, sublimacion, vinil, etiquetas, empaques, esferas, envios, dtf) follows this pattern:
+### Core Development
+`coder`, `reviewer`, `tester`, `planner`, `researcher`
 
-- Custom hook in `/src/app/hooks/` (e.g., `usePapeleriaCalculator.ts`) handles logic
-- Components in `/src/app/components/calculator/[module]/` for UI
-- **Local Storage**: All calculators save state to localStorage for persistence
-- **Supabase Integration**: Rates fetched from `calculator_rates` table
+### Specialized
+`security-architect`, `security-auditor`, `memory-specialist`, `performance-engineer`
 
-### Supabase Setup
+### Swarm Coordination
+`hierarchical-coordinator`, `mesh-coordinator`, `adaptive-coordinator`
 
-- Client configured in `/src/app/lib/supabase.ts`
-- Database types auto-generated in `/src/app/types/supabase.ts`
-- Tables: `products`, `calculator_rates`, `calculator_rates_history`
-- **Important**: Supabase URL and anon key are hardcoded (public credentials)
+### GitHub & Repository
+`pr-manager`, `code-review-swarm`, `issue-tracker`, `release-manager`
 
-## Design System
+### SPARC Methodology
+`sparc-coord`, `sparc-coder`, `specification`, `pseudocode`, `architecture`
 
-### Color Palette
+## Memory Commands Reference
 
-Defined in CYF brand manifesto (organic/boutique aesthetic):
+```bash
+# Store (REQUIRED: --key, --value; OPTIONAL: --namespace, --ttl, --tags)
+npx @aiyou-dev/cli@latest memory store --key "pattern-auth" --value "JWT with refresh" --namespace patterns
 
-- **Primary Text**: `#0F172A` (Deep Slate Blue)
-- **CYF Yellow**: `#FFD600` (Primary CTA color)
-- **Vibrant Orange**: `#FF6B35`
-- **Electric Blue**: `#00B4D8`
-- **Light Background**: `#F8F9FA`
-- **Success Green**: `#10B981`
-- **Danger Red**: `#DC2626`
+# Search (REQUIRED: --query; OPTIONAL: --namespace, --limit, --threshold)
+npx @aiyou-dev/cli@latest memory search --query "authentication patterns"
 
-**Brand Colors** (from manifesto): Olive, Rose, Beige (calm, natural, warm)
+# List (OPTIONAL: --namespace, --limit)
+npx @aiyou-dev/cli@latest memory list --namespace patterns --limit 10
 
-### Typography
+# Retrieve (REQUIRED: --key; OPTIONAL: --namespace)
+npx @aiyou-dev/cli@latest memory retrieve --key "pattern-auth" --namespace patterns
+```
 
-- **Font**: Urbanist (Google Fonts)
-- **Weights**: 400 (Regular), 500 (Medium), 600 (SemiBold), 700 (Bold), 800 (ExtraBold)
+## Context Management (GCC) — Default Behavior
 
-## Key Features
+GCC (Git Context Controller) provides structured, versioned memory. These are **mandatory behaviors**:
 
-### 3D Configurator Workflow
+### Session Start
+- ALWAYS run `gcc_context --full` at the beginning of every session to recover prior context
+- If `.aiyou-dev/gcc/` does not exist, initialize with `gcc_init`
 
-1. User navigates to `/configurador`
-2. Selects base color and product type (tshirt, mug, baby-body, thermo)
-3. Uploads images, adjusts layers (rotation, scale)
-4. Clicks "Finalizar y Pedir" button
-5. Loading overlay appears (2s delay simulation)
-6. Success modal shows with design preview
-7. "Enviar Pedido a WhatsApp" button opens WhatsApp with pre-formatted message
+### During Work
+- COMMIT after completing any coherent unit of work (function, bug fix, exploration phase)
+- Record OTA entries at significant decision points (not every action)
+- BRANCH before exploring risky or experimental alternatives
+- MERGE when an experiment succeeds; abandon when it fails
 
-**Responsive Design**:
-- Mobile (<1024px): Vertical stack - Canvas top 50%, Tools bottom 50%
-- Desktop (≥1024px): Horizontal split - Canvas left 70%, Tools right 30%
+### Session End
+- COMMIT final progress before ending the session
+- Include files touched and technical reasoning in every commit
 
-### Calculator Modules
+### Commands
+| Action | Tool | When |
+|--------|------|------|
+| Save milestone | `gcc_commit` | After completing meaningful work |
+| Try alternative | `gcc_branch` | Before experimental changes |
+| Integrate results | `gcc_merge` | When experiment succeeds/fails |
+| Recover context | `gcc_context --full` | At session start |
+| Log decision | `gcc_log` | At significant decision points |
 
-Each calculator provides real-time pricing for specific services:
+### Token Optimization
+- Use TOON format (`@toon-format/toon`) for structured data when available (~40% fewer tokens)
+- Keep commit contributions concise but technically complete
+- OTA logs: observation + thought + action in 1-2 sentences each
 
-- **Papelería**: Business cards, flyers, etc.
-- **Sublimación**: Heat transfer printing
-- **Vinil**: Vinyl cutting/printing
-- **Etiquetas**: Stickers/labels
-- **DTF**: Direct-to-film transfers
-- **Empaques**: Packaging materials
-- **Esferas**: Spherical products
-- **Envíos**: Shipping cost calculator
+## Quick Setup
 
-All calculators use `localStorage` for state persistence across sessions.
+```bash
+claude mcp add aiyou-dev -- npx -y @aiyou-dev/cli@latest
+npx @aiyou-dev/cli@latest daemon start
+npx @aiyou-dev/cli@latest doctor --fix
+```
 
-## Important Notes
+## Claude Code vs CLI Tools
 
-- **TypeScript**: `strict: false` in tsconfig - be mindful of type safety
-- **Theme**: Dark/light mode support via `next-themes` (stored in `cyf-customs-theme`)
-- **Toasts**: Positioned `top-center`, use Sonner for notifications
-- **WhatsApp Integration**: Phone number placeholder is `584121234567` (update for production)
-- **Loading States**: Simulated delays (1.5-2s) - replace with real async operations
-- **Design Preview**: Uses mock image - should be replaced with actual 3D canvas screenshot
+- Claude Code's Task tool handles ALL execution: agents, file ops, code generation, git
+- CLI tools handle coordination via Bash: swarm init, memory, hooks, routing
+- NEVER use CLI tools as a substitute for Task tool agents
 
-## Brand Voice & UX
+## Support
 
-Per the brand manifesto, maintain:
-
-- **Tone**: Cercano pero experto (Close but expert), optimistic, transparent
-- **No corporate jargon**: Avoid "we are leaders" - use "let us help you create"
-- **Empathy First**: Products represent memories, dreams, identity
-- **Visual Feel**: Like entering a modern design boutique, not a noisy workshop
+- Documentation: https://github.com/ruvnet/aiyou-dev
+- Issues: https://github.com/ruvnet/aiyou-dev/issues

@@ -15,6 +15,7 @@ export function ConfiguratorWorkspace() {
   const [selectedColor, setSelectedColor] = useAtom(selectedColorAtom);
   const [loadingState] = useAtom(loadingStateAtom);
   const [selectedModel, setSelectedModel] = useState<ProductModel | null>(null);
+  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const canvasRef = useRef<BabylonCanvasHandle>(null);
 
   const handleSelectModel = (model: ProductModel) => {
@@ -31,7 +32,6 @@ export function ConfiguratorWorkspace() {
 
       <AnimatePresence mode="wait">
         {!selectedModel ? (
-          /* Step 1: Product Gallery */
           <motion.div
             key="gallery"
             initial={{ opacity: 0 }}
@@ -43,7 +43,6 @@ export function ConfiguratorWorkspace() {
             <ProductGallery onSelectModel={handleSelectModel} />
           </motion.div>
         ) : (
-          /* Step 2: 3D Customizer */
           <motion.div
             key="customizer"
             initial={{ opacity: 0, x: 30 }}
@@ -52,7 +51,7 @@ export function ConfiguratorWorkspace() {
             transition={{ duration: 0.3, type: 'spring', stiffness: 300, damping: 30 }}
             className="flex-1 flex flex-col overflow-hidden"
           >
-            {/* Back to gallery button */}
+            {/* Back to gallery */}
             <div className="px-4 py-2 border-b border-border bg-card/50">
               <button
                 onClick={handleBackToGallery}
@@ -60,7 +59,7 @@ export function ConfiguratorWorkspace() {
               >
                 <ArrowLeft size={16} />
                 <span>Cambiar producto</span>
-                <span className="text-foreground">· {selectedModel.name}</span>
+                <span className="text-foreground">&middot; {selectedModel.name}</span>
               </button>
             </div>
 
@@ -77,6 +76,8 @@ export function ConfiguratorWorkspace() {
                   onColorChange={setSelectedColor}
                   selectedColor={selectedColor}
                   modelName={selectedModel.name}
+                  activeSide={activeSide}
+                  onActiveSideChange={setActiveSide}
                   onTakeScreenshot={() => canvasRef.current?.takeScreenshot() ?? Promise.resolve(null)}
                 />
               </div>

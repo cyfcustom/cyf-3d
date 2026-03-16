@@ -18,6 +18,8 @@ interface ToolsPanelProps {
   onColorChange: (color: string) => void;
   selectedColor: string;
   modelName?: string;
+  activeSide: 'front' | 'back';
+  onActiveSideChange: (side: 'front' | 'back') => void;
   onTakeScreenshot?: () => Promise<string | null>;
 }
 
@@ -31,9 +33,8 @@ const PRESET_COLORS = [
   { key: 'yellow', value: '#FFD600' },
 ];
 
-export function ToolsPanel({ onColorChange, selectedColor, modelName, onTakeScreenshot }: ToolsPanelProps) {
+export function ToolsPanel({ onColorChange, selectedColor, modelName, activeSide, onActiveSideChange, onTakeScreenshot }: ToolsPanelProps) {
   const { t } = useTranslation('configurator');
-  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [layers, setLayers] = useAtom(layersAtom);
   const [isDragging, setIsDragging] = useState(false);
   const [customColor, setCustomColor] = useState('#EC4899');
@@ -165,7 +166,7 @@ export function ToolsPanel({ onColorChange, selectedColor, modelName, onTakeScre
           </h3>
           <div className="flex gap-2">
             <button
-              onClick={() => setActiveSide('front')}
+              onClick={() => onActiveSideChange('front')}
               className={`flex-1 py-2 lg:py-3 px-3 lg:px-4 rounded-xl transition-all text-sm lg:text-base font-semibold ${
                 activeSide === 'front'
                   ? 'bg-primary text-primary-foreground'
@@ -175,7 +176,7 @@ export function ToolsPanel({ onColorChange, selectedColor, modelName, onTakeScre
               Frente
             </button>
             <button
-              onClick={() => setActiveSide('back')}
+              onClick={() => onActiveSideChange('back')}
               className={`flex-1 py-2 lg:py-3 px-3 lg:px-4 rounded-xl transition-all text-sm lg:text-base font-semibold ${
                 activeSide === 'back'
                   ? 'bg-primary text-primary-foreground'

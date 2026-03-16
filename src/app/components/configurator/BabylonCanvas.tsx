@@ -5,15 +5,16 @@ import {
   Engine, Scene, ArcRotateCamera, HemisphericLight, DirectionalLight,
   Vector3, Color3, Color4, Tools,
   PBRMaterial, DynamicTexture, AbstractMesh, SceneLoader,
+  Mesh, ShadowGenerator,
 } from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
+import { ShadowOnlyMaterial } from '@babylonjs/materials';
 import { layersAtom, Layer } from '../../store/atoms';
 
 export interface BabylonCanvasHandle {
   takeScreenshot: () => Promise<string | null>;
 }
 
-// Texture for image overlay
 const TEX_SIZE = 1024;
 const IMG_BASE_SIZE = 400;
 
@@ -89,7 +90,6 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
           resolve(null);
           return;
         }
-        // Render one frame to ensure latest state
         scene.render();
         Tools.CreateScreenshotUsingRenderTarget(engine, scene.activeCamera!, { width: 800, height: 800 }, (data) => {
           resolve(data);
@@ -98,7 +98,6 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
     },
   }));
 
-  // Auto-hide controls hint after 4 seconds
   useEffect(() => {
     if (!loading && showHint) {
       const timer = setTimeout(() => setShowHint(false), 4000);
@@ -106,7 +105,6 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
     }
   }, [loading, showHint]);
 
-  // Listen for fullscreen changes
   useEffect(() => {
     const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFsChange);
@@ -126,7 +124,6 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Cleanup previous
     if (engineRef.current) {
       engineRef.current.dispose();
     }
@@ -159,9 +156,24 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
 
     // Lighting
     const hemiLight = new HemisphericLight('hemi', new Vector3(0, 1, 0), scene);
-    hemiLight.intensity = 0.8;
-    const dirLight = new DirectionalLight('dir', new Vector3(-1, -2, 1), scene);
-    dirLight.intensity = 0.6;
+    hemiLight.intensity = 0.6;
+
+    const dirLight = new DirectionalLight('dir', new Vector3(0.25, -5, -0.25), scene);
+    dirLight.intensity = 3;
+    dirLight.position = new Vector3(0, 10, 0);
+
+    // Shadow generator
+    const shadowGen = new ShadowGenerator(1024, dirLight);
+    shadowGen.useBlurExponentialShadowMap = true;
+    shadowGen.blurKernel = 32;
+
+    // Shadow ground
+    const ground = Mesh.CreateGround('shadowGround', 10, 10, 1, scene);
+    const shadowMat = new ShadowOnlyMaterial('shadowMat', scene);
+    shadowMat.activeLight = dirLight;
+    ground.material = shadowMat;
+    ground.receiveShadows = true;
+    ground.position.y = -2;
 
     // Materials
     const bodyTexture = new DynamicTexture('body-tex', { width: TEX_SIZE, height: TEX_SIZE }, scene, false);
@@ -186,7 +198,6 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
     bodyTexture.update();
 
     // Load GLB model
-    // Split URL into base path + filename for SceneLoader
     const lastSlash = modelUrl.lastIndexOf('/');
     const modelBase = modelUrl.substring(0, lastSlash + 1);
     const modelFilename = modelUrl.substring(lastSlash + 1);
@@ -217,8 +228,7 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
       const targetSize = 3.5;
       const scaleFactor = targetSize / maxDim;
 
-      // Find root transform node
-      const rootNode = result.meshes[0]; // __root__ node
+      const rootNode = result.meshes[0];
       rootNode.position = center.negate().scale(scaleFactor);
       rootNode.scaling = new Vector3(scaleFactor, scaleFactor, scaleFactor);
 
@@ -233,16 +243,18 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
         }
       }
 
-      // Apply materials
       for (const mesh of loadedMeshes) {
         if (mesh === largestMesh) {
           mesh.material = bodyMat;
         } else {
           mesh.material = solidMat;
         }
+        shadowGen.addShadowCaster(mesh);
       }
 
-      // Adjust camera to fit
+      // Position ground below model
+      ground.position.y = min.y * scaleFactor - center.y * scaleFactor - 0.05;
+
       camera.target = Vector3.Zero();
       camera.radius = targetSize * 1.8;
 
@@ -269,7 +281,6 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
     };
   }, [modelUrl]);
 
-  // Init scene
   useEffect(() => {
     const cleanup = initScene();
     return cleanup;
@@ -310,8 +321,6 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
       }
 
       if (!cancelled) {
-        // For now, draw front layers on the single texture
-        // TODO: separate front/back when UV mapping is understood per model
         redrawTexture(texture, selectedColor, layers, 'front', cache);
       }
     };
@@ -328,7 +337,6 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
         style={{ touchAction: 'none' }}
       />
 
-      {/* Loading overlay */}
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/60 backdrop-blur-sm">
           <div className="text-center space-y-3">
@@ -338,7 +346,6 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
         </div>
       )}
 
-      {/* Fullscreen toggle */}
       <button
         onClick={toggleFullscreen}
         className="absolute top-3 right-3 p-2.5 rounded-xl bg-card/80 backdrop-blur-sm border border-border hover:bg-card transition-colors"
@@ -351,7 +358,6 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
         )}
       </button>
 
-      {/* Controls hint — auto-hides */}
       {showHint && !loading && (
         <div
           className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-card/80 backdrop-blur-sm border border-border transition-opacity duration-700"

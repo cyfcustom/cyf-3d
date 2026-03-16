@@ -64,3 +64,8 @@ export const isAuthenticatedAtom = atomWithStorage<boolean>(
 
 // MFA required is session-only (not persisted)
 export const mfaRequiredAtom = atom<boolean>(false);
+
+// 3D Configurator — print areas & design textures
+export const activePrintAreaAtom = atom<string | null>(null);
+export const designTexturesAtom = atom<Record<string, string>>({});
+export const activeSideAtom = atom<'front' | 'back'>('front');
