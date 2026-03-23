@@ -22,6 +22,10 @@ import { cn } from '../components/ui/utils';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
+// PERF-1: module-level product cache (5-min TTL)
+const _productCache = new Map<string, { data: Product; at: number }>();
+const PRODUCT_CACHE_TTL = 5 * 60 * 1000;
+
 // ─── Availability label map ────────────────────────────────────────────────
 
 const AVAIL_LABEL: Record<string, string> = {
@@ -111,7 +115,7 @@ function ProductCarousel({ images, name }: { images: string[]; name: string }) {
       <div ref={emblaRef} className="overflow-hidden">
         <div className="flex">
           {images.map((src, i) => (
-            <div key={i} className="flex-[0_0_100%] aspect-square">
+            <div key={src || i} className="flex-[0_0_100%] aspect-square">
               <img
                 src={src}
                 alt={`${name} - imagen ${i + 1}`}
@@ -141,12 +145,14 @@ function ProductCarousel({ images, name }: { images: string[]; name: string }) {
             <ChevronRight size={18} />
           </button>
 
-          {/* Dots */}
+          {/* Dots — A11Y-2: aria-label + aria-current */}
           <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
-            {images.map((_, i) => (
+            {images.map((src, i) => (
               <button
-                key={i}
+                key={src || i}
                 onClick={() => emblaApi?.scrollTo(i)}
+                aria-label={`Imagen ${i + 1} de ${images.length}`}
+                aria-current={i === selectedIndex ? 'true' : undefined}
                 className={cn(
                   'w-1.5 h-1.5 rounded-full transition-all',
                   i === selectedIndex ? 'bg-white w-4' : 'bg-white/50'
@@ -196,11 +202,19 @@ export function ProductDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
-  // Fetch product
+  // Fetch product — PERF-1: use module-level cache
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
 
+    const cached = _productCache.get(id);
+    if (cached && Date.now() - cached.at < PRODUCT_CACHE_TTL) {
+      setProduct(cached.data);
+      setQuantity(cached.data.min_order_qty ?? 1);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     supabase
       .from('products')
       .select('*')
@@ -210,6 +224,7 @@ export function ProductDetailPage() {
         if (error || !data) {
           setNotFound(true);
         } else {
+          _productCache.set(id, { data, at: Date.now() });
           setProduct(data);
           setQuantity(data.min_order_qty ?? 1);
         }
@@ -284,7 +299,7 @@ export function ProductDetailPage() {
   const availClass = AVAIL_CLASS[product.availability ?? 'available'];
 
   return (
-    <div className="min-h-screen bg-background font-urbanist text-foreground pb-28 lg:pb-0">
+    <div className="min-h-screen bg-background font-urbanist text-foreground pb-[calc(7rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
 
