@@ -10,6 +10,9 @@ export interface CompanyInfo {
   facebook_url: string;
   whatsapp_message_template: string;
   address: string;
+  // UX-2: payment info fields
+  zelle_email: string;
+  bank_rif: string;
 }
 
 const DEFAULTS: CompanyInfo = {
@@ -21,6 +24,8 @@ const DEFAULTS: CompanyInfo = {
   facebook_url: 'https://facebook.com/cyfcustoms',
   whatsapp_message_template: '¡Hola CYF Custom! 👋',
   address: 'Mérida, Venezuela',
+  zelle_email: 'pagos@cyfcustoms.com',
+  bank_rif: 'J-000000000',
 };
 
 let cached: CompanyInfo | null = null;
@@ -39,7 +44,8 @@ export function useCompanyInfo() {
       .single()
       .then(({ data }) => {
         if (data) {
-          cached = data as CompanyInfo;
+          // UX-2: merge with DEFAULTS so missing DB columns fall back gracefully
+          cached = { ...DEFAULTS, ...(data as Partial<CompanyInfo>) } as CompanyInfo;
           setInfo(cached);
         }
         setLoading(false);

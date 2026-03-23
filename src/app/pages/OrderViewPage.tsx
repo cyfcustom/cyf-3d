@@ -126,7 +126,14 @@ const STEPS = [
 function OrderStepper({ currentStep }: { currentStep: number }) {
   if (currentStep === 0) return null;
   return (
-    <div className="flex items-center gap-0 w-full">
+    <div
+      className="flex items-center gap-0 w-full"
+      role="progressbar"
+      aria-valuenow={currentStep}
+      aria-valuemin={1}
+      aria-valuemax={6}
+      aria-label="Progreso del pedido"
+    >
       {STEPS.map((s, i) => {
         const done = s.step < currentStep;
         const active = s.step === currentStep;
@@ -160,7 +167,16 @@ function OrderStepper({ currentStep }: { currentStep: number }) {
 
 // ─── Payment info card ─────────────────────────────────────────────────────
 
-function PaymentInfoCard({ phone }: { phone: string }) {
+// UX-2: accept dynamic payment fields from company info instead of hardcoding
+function PaymentInfoCard({
+  phone,
+  zelleEmail,
+  bankRif,
+}: {
+  phone: string;
+  zelleEmail: string;
+  bankRif: string;
+}) {
   const cleanPhone = phone.replace(/\D/g, '');
   return (
     <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
@@ -168,12 +184,12 @@ function PaymentInfoCard({ phone }: { phone: string }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="rounded-xl bg-muted/40 p-3 space-y-0.5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Zelle</p>
-          <p className="text-sm font-semibold text-foreground">pagos@cyfcustoms.com</p>
+          <p className="text-sm font-semibold text-foreground">{zelleEmail}</p>
         </div>
         <div className="rounded-xl bg-muted/40 p-3 space-y-0.5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Pago Móvil</p>
           <p className="text-sm font-semibold text-foreground">0414-{cleanPhone.slice(-7)}</p>
-          <p className="text-xs text-muted-foreground">Banco: Banesco · J-000000000</p>
+          <p className="text-xs text-muted-foreground">Banco: Banesco · {bankRif}</p>
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
@@ -359,7 +375,11 @@ export function OrderViewPage() {
         {/* Payment info + upload zone */}
         {showPayment && (
           <div className="space-y-4">
-            <PaymentInfoCard phone={info.phone} />
+            <PaymentInfoCard
+              phone={info.phone}
+              zelleEmail={info.zelle_email}
+              bankRif={info.bank_rif}
+            />
 
             <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
               <h3 className="text-sm font-bold text-foreground">Subir comprobante de pago</h3>
