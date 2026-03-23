@@ -259,19 +259,20 @@ function ChannelsTab() {
                     <p className="text-xs text-muted-foreground truncate">{ch.value}</p>
                   </div>
 
-                  {/* Active toggle */}
-                  <Badge
-                    variant="outline"
+                  {/* A11Y-8: active toggle as accessible switch button */}
+                  <button
+                    role="switch"
+                    aria-checked={ch.active}
                     onClick={() => handleToggleActive(ch)}
                     className={cn(
-                      'cursor-pointer text-[10px] font-bold select-none shrink-0',
+                      'shrink-0 px-2 py-0.5 rounded-full border text-[10px] font-bold transition-colors select-none',
                       ch.active
-                        ? 'border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30'
-                        : 'border-muted-foreground/30 text-muted-foreground bg-muted/50',
+                        ? 'border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100'
+                        : 'border-muted-foreground/30 text-muted-foreground bg-muted/50 hover:bg-muted',
                     )}
                   >
                     {ch.active ? 'Activo' : 'Oculto'}
-                  </Badge>
+                  </button>
 
                   {/* Reorder */}
                   <div className="flex flex-col gap-0.5 shrink-0">
@@ -431,11 +432,15 @@ export function AdminContactPage() {
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      {/* A11Y-5: tab bar with ARIA roles */}
+      <div role="tablist" className="flex gap-1 border-b border-border">
         {([['channels', 'Canales'], ['submissions', 'Mensajes']] as [TabId, string][]).map(([id, label]) => (
           <button
             key={id}
+            role="tab"
+            aria-selected={tab === id}
+            aria-controls={`tabpanel-${id}`}
+            id={`tab-${id}`}
             onClick={() => setTab(id)}
             className={cn(
               'px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors -mb-px',
@@ -449,8 +454,16 @@ export function AdminContactPage() {
         ))}
       </div>
 
-      {tab === 'channels'     && <ChannelsTab />}
-      {tab === 'submissions'  && <SubmissionsTab />}
+      {tab === 'channels' && (
+        <div role="tabpanel" id="tabpanel-channels" aria-labelledby="tab-channels">
+          <ChannelsTab />
+        </div>
+      )}
+      {tab === 'submissions' && (
+        <div role="tabpanel" id="tabpanel-submissions" aria-labelledby="tab-submissions">
+          <SubmissionsTab />
+        </div>
+      )}
     </div>
   );
 }

@@ -56,7 +56,7 @@ function CartLineItem({ item }: { item: CartItem }) {
             <button
               onClick={() => updateQty(-1)}
               className="w-6 h-6 flex items-center justify-center rounded border border-border hover:bg-muted transition-colors"
-              aria-label="Reducir"
+              aria-label={`Reducir cantidad de ${item.productName}`}
             >
               <Minus size={11} />
             </button>
@@ -64,7 +64,7 @@ function CartLineItem({ item }: { item: CartItem }) {
             <button
               onClick={() => updateQty(1)}
               className="w-6 h-6 flex items-center justify-center rounded border border-border hover:bg-muted transition-colors"
-              aria-label="Aumentar"
+              aria-label={`Aumentar cantidad de ${item.productName}`}
             >
               <Plus size={11} />
             </button>
@@ -77,7 +77,7 @@ function CartLineItem({ item }: { item: CartItem }) {
             <button
               onClick={remove}
               className="text-muted-foreground hover:text-destructive transition-colors"
-              aria-label="Eliminar"
+              aria-label={`Eliminar ${item.productName} del carrito`}
             >
               <Trash2 size={14} />
             </button>

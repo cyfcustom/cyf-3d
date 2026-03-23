@@ -17,9 +17,9 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+            <Link to="/" className="text-xl sm:text-2xl font-bold text-foreground hover:opacity-80 transition-opacity">
               CYF Custom
-            </h1>
+            </Link>
           </div>
 
           {/* Right actions */}

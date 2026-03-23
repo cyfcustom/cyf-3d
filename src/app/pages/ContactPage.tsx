@@ -46,6 +46,7 @@ function ChannelButton({ channel }: { channel: ContactChannel }) {
       href={href}
       target={isExternal ? '_blank' : undefined}
       rel={isExternal ? 'noopener noreferrer' : undefined}
+      aria-label={isExternal ? `${channel.label} (abre en nueva pestaña)` : channel.label}
       className="group flex items-center gap-4 w-full px-5 py-4 rounded-2xl border border-border bg-card hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
     >
       {/* Colored icon badge */}
@@ -53,17 +54,18 @@ function ChannelButton({ channel }: { channel: ContactChannel }) {
         className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
         style={{ backgroundColor: meta.color }}
       >
-        <Icon size={18} className="text-white" />
+        <Icon size={18} className="text-white" aria-hidden="true" />
       </div>
 
       {/* Label */}
-      <span className="flex-1 text-sm font-bold text-foreground">
+      <span className="flex-1 text-sm font-bold text-foreground" aria-hidden="true">
         {channel.label}
       </span>
 
       {/* External indicator */}
       <ExternalLink
         size={14}
+        aria-hidden="true"
         className="text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0"
       />
     </a>
