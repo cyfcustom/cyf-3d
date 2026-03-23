@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -123,20 +123,9 @@ export function CheckoutPage() {
     resolver: zodResolver(checkoutSchema),
   });
 
-  // Redirect if cart is empty
+  // UX-3: redirect with Navigate so URL changes to /#productos
   if (cart.length === 0) {
-    return (
-      <div className="min-h-screen bg-background font-urbanist text-foreground flex flex-col items-center justify-center gap-4 px-4">
-        <ShoppingBag size={48} className="text-muted-foreground" />
-        <h1 className="text-2xl font-bold">Tu carrito está vacío</h1>
-        <Link
-          to="/#productos"
-          className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          Ver productos
-        </Link>
-      </div>
-    );
+    return <Navigate to="/#productos" replace />;
   }
 
   async function onSubmit(values: CheckoutFormValues) {
