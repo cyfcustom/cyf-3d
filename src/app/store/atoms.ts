@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import { atomWithStorage } from 'jotai/utils';
+import { atomWithStorage } from 'jotai/utils'; // still used by cartAtom
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────
 
@@ -78,16 +78,11 @@ export interface AuthUser {
   role?: string;
 }
 
-// Persist auth state in localStorage
-export const authUserAtom = atomWithStorage<AuthUser | null>(
-  'cyf-Custom-auth-user',
-  null
-);
+// SEC-7: session-only auth state — not persisted in localStorage
+// ProtectedRoute has isChecking=true state that prevents flash redirect on reload
+export const authUserAtom = atom<AuthUser | null>(null);
 
-export const isAuthenticatedAtom = atomWithStorage<boolean>(
-  'cyf-Custom-is-authenticated',
-  false
-);
+export const isAuthenticatedAtom = atom<boolean>(false);
 
 // MFA required is session-only (not persisted)
 export const mfaRequiredAtom = atom<boolean>(false);
