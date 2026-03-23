@@ -2,48 +2,23 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
 import { fetchAllOrders, type Order, type OrderStatus } from '@/app/lib/api/ordersApi';
+import { STATUS_LABEL, STATUS_CLASS } from '@/app/lib/orderStatusConfig';
 import { Badge } from '@/app/components/ui/badge';
 import { toast } from 'sonner';
 
-// ─── Status config ─────────────────────────────────────────────────────────
+// ─── Status filter pills ────────────────────────────────────────────────────
 
 const ALL_STATUSES: Array<{ value: OrderStatus | ''; label: string }> = [
-  { value: '', label: 'Todos' },
-  { value: 'pending_payment', label: 'Esperando pago' },
-  { value: 'payment_proof_submitted', label: 'Comprobante enviado' },
-  { value: 'payment_verified', label: 'Pago verificado' },
-  { value: 'in_production', label: 'En producción' },
-  { value: 'shipped', label: 'Enviado' },
-  { value: 'delivered', label: 'Entregado' },
-  { value: 'proof_rejected', label: 'Rechazado' },
-  { value: 'cancelled', label: 'Cancelado' },
+  { value: '',                        label: 'Todos' },
+  { value: 'pending_payment',         label: STATUS_LABEL.pending_payment },
+  { value: 'payment_proof_submitted', label: STATUS_LABEL.payment_proof_submitted },
+  { value: 'payment_verified',        label: STATUS_LABEL.payment_verified },
+  { value: 'in_production',           label: STATUS_LABEL.in_production },
+  { value: 'shipped',                 label: STATUS_LABEL.shipped },
+  { value: 'delivered',               label: STATUS_LABEL.delivered },
+  { value: 'proof_rejected',          label: STATUS_LABEL.proof_rejected },
+  { value: 'cancelled',               label: STATUS_LABEL.cancelled },
 ];
-
-const STATUS_CLASS: Record<string, string> = {
-  pending_payment: 'border-amber-300 text-amber-700 bg-amber-50 dark:bg-amber-950/30',
-  payment_proof_submitted: 'border-blue-300 text-blue-700 bg-blue-50 dark:bg-blue-950/30',
-  payment_verified: 'border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30',
-  in_production: 'border-violet-300 text-violet-700 bg-violet-50 dark:bg-violet-950/30',
-  shipped: 'border-blue-300 text-blue-700 bg-blue-50 dark:bg-blue-950/30',
-  delivered: 'border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30',
-  proof_rejected: 'border-destructive/40 text-destructive bg-destructive/10',
-  cancelled: 'border-muted-foreground/30 text-muted-foreground bg-muted/50',
-  pending: 'border-amber-300 text-amber-700 bg-amber-50 dark:bg-amber-950/30',
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  pending_payment: 'Esperando pago',
-  payment_proof_submitted: 'Comprobante enviado',
-  payment_verified: 'Pago verificado',
-  in_production: 'En producción',
-  shipped: 'Enviado',
-  delivered: 'Entregado',
-  proof_rejected: 'Rechazado',
-  cancelled: 'Cancelado',
-  pending: 'Pendiente',
-  confirmed: 'Confirmado',
-  completed: 'Completado',
-};
 
 const PAGE_SIZE = 20;
 

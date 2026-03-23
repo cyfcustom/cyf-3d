@@ -7,8 +7,10 @@ import {
 import { toast } from 'sonner';
 import {
   fetchOrderById, fetchOrderItems, fetchOrderStatusHistory,
-  updateOrderStatus, type Order, type OrderItem, type OrderStatusHistoryEntry,
+  updateOrderStatus,
+  type Order, type OrderItem, type OrderStatusHistoryEntry, type OrderStatus,
 } from '@/app/lib/api/ordersApi';
+import { STATUS_LABEL, STATUS_CLASS } from '@/app/lib/orderStatusConfig';
 import {
   fetchProofsForOrder, getProofSignedUrl, approveProof, rejectProof,
   type PaymentProof,
@@ -16,33 +18,7 @@ import {
 import { Badge } from '@/app/components/ui/badge';
 import { Skeleton } from '@/app/components/ui/skeleton';
 
-// ─── Status helpers ────────────────────────────────────────────────────────
-
-const STATUS_LABEL: Record<string, string> = {
-  pending_payment: 'Esperando pago',
-  payment_proof_submitted: 'Comprobante enviado',
-  payment_verified: 'Pago verificado',
-  in_production: 'En producción',
-  shipped: 'Enviado',
-  delivered: 'Entregado',
-  proof_rejected: 'Comprobante rechazado',
-  cancelled: 'Cancelado',
-  pending: 'Pendiente',
-  confirmed: 'Confirmado',
-  completed: 'Completado',
-};
-
-const STATUS_CLASS: Record<string, string> = {
-  pending_payment: 'border-amber-300 text-amber-700 bg-amber-50 dark:bg-amber-950/30',
-  payment_proof_submitted: 'border-blue-300 text-blue-700 bg-blue-50 dark:bg-blue-950/30',
-  payment_verified: 'border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30',
-  in_production: 'border-violet-300 text-violet-700 bg-violet-50 dark:bg-violet-950/30',
-  shipped: 'border-blue-300 text-blue-700 bg-blue-50 dark:bg-blue-950/30',
-  delivered: 'border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30',
-  proof_rejected: 'border-destructive/40 text-destructive bg-destructive/10',
-  cancelled: 'border-muted-foreground/30 text-muted-foreground bg-muted/50',
-  pending: 'border-amber-300 text-amber-700 bg-amber-50 dark:bg-amber-950/30',
-};
+// STATUS_LABEL and STATUS_CLASS imported from @/app/lib/orderStatusConfig
 
 // ─── Info row ──────────────────────────────────────────────────────────────
 
@@ -233,10 +209,11 @@ function ProofCard({
 
 // ─── Status transition ─────────────────────────────────────────────────────
 
-const NEXT_STATUSES: Record<string, Array<{ value: string; label: string }>> = {
+// SEC-5: typed with OrderStatus — eliminates the need for `as any` casts
+const NEXT_STATUSES: Record<string, Array<{ value: OrderStatus; label: string }>> = {
   payment_verified: [{ value: 'in_production', label: 'Marcar en producción' }],
-  in_production: [{ value: 'shipped', label: 'Marcar como enviado' }],
-  shipped: [{ value: 'delivered', label: 'Marcar como entregado' }],
+  in_production:   [{ value: 'shipped',        label: 'Marcar como enviado' }],
+  shipped:         [{ value: 'delivered',       label: 'Marcar como entregado' }],
 };
 
 function StatusActions({ order, onUpdated }: { order: Order; onUpdated: () => void }) {
@@ -254,7 +231,7 @@ function StatusActions({ order, onUpdated }: { order: Order; onUpdated: () => vo
           onClick={async () => {
             setActing(true);
             try {
-              await updateOrderStatus(order.id, a.value as any);
+              await updateOrderStatus(order.id, a.value);
               toast.success(`Estado actualizado: ${STATUS_LABEL[a.value] ?? a.value}`);
               onUpdated();
             } catch { toast.error('Error al actualizar estado'); }
@@ -300,6 +277,7 @@ export function AdminOrderDetailPage() {
   const [history, setHistory] = useState<OrderStatusHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Full initial load
   const load = useCallback(async () => {
     if (!id) return;
     const [o, its, prs, hist] = await Promise.all([
@@ -313,6 +291,30 @@ export function AdminOrderDetailPage() {
     setProofs(prs);
     setHistory(hist);
     setLoading(false);
+  }, [id]);
+
+  // PERF-2: targeted reload after proof review (order + proofs + history change)
+  const reloadAfterProofReview = useCallback(async () => {
+    if (!id) return;
+    const [o, prs, hist] = await Promise.all([
+      fetchOrderById(id),
+      fetchProofsForOrder(id),
+      fetchOrderStatusHistory(id),
+    ]);
+    if (o) setOrder(o);
+    setProofs(prs);
+    setHistory(hist);
+  }, [id]);
+
+  // PERF-2: targeted reload after status transition (order + history change)
+  const reloadAfterStatusChange = useCallback(async () => {
+    if (!id) return;
+    const [o, hist] = await Promise.all([
+      fetchOrderById(id),
+      fetchOrderStatusHistory(id),
+    ]);
+    if (o) setOrder(o);
+    setHistory(hist);
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
@@ -368,7 +370,7 @@ export function AdminOrderDetailPage() {
       </div>
 
       {/* Status actions */}
-      <StatusActions order={order} onUpdated={load} />
+      <StatusActions order={order} onUpdated={reloadAfterStatusChange} />
 
       {/* Customer info */}
       <div className="rounded-2xl border border-border bg-card p-5">
@@ -379,7 +381,7 @@ export function AdminOrderDetailPage() {
         <InfoRow label="Nombre" value={order.guest_name} />
         <InfoRow label="Teléfono" value={order.guest_phone} />
         <InfoRow label="Email" value={order.guest_email} />
-        <InfoRow label="Dirección" value={(order.delivery_address as any)?.address} />
+        <InfoRow label="Dirección" value={(order.delivery_address as Record<string, string> | null)?.address} />
         <InfoRow label="Notas" value={order.delivery_notes} />
         <InfoRow
           label="Total"
@@ -429,7 +431,7 @@ export function AdminOrderDetailPage() {
             )}
           </h3>
           {proofs.map((p) => (
-            <ProofCard key={p.id} proof={p} orderId={order.id} onReviewed={load} />
+            <ProofCard key={p.id} proof={p} orderId={order.id} onReviewed={reloadAfterProofReview} />
           ))}
         </div>
       )}
