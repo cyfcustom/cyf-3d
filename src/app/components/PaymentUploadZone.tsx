@@ -1,12 +1,12 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { Upload, Camera, FileCheck2, X, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { uploadPaymentProof } from '../lib/api/paymentProofsApi';
 import { cn } from './ui/utils';
 
-const MAX_MB = 10;
+const MAX_MB    = 10;
 const MAX_BYTES = MAX_MB * 1024 * 1024;
-const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+const ALLOWED   = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const ALLOWED_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf';
 
 interface Props {
@@ -20,21 +20,35 @@ interface FilePreview {
   name: string;
   size: number;
   type: string;
-  objectUrl: string | null; // null for PDF
+  objectUrl: string | null; // null for PDFs
 }
 
 export function PaymentUploadZone({ orderId, onSuccess, rejectionNote }: Props) {
-  const [dragging, setDragging] = useState(false);
-  const [preview, setPreview] = useState<FilePreview | null>(null);
+  const [dragging, setDragging]       = useState(false);
+  const [preview, setPreview]         = useState<FilePreview | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading]     = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef   = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  // COR-7: track the current object URL so we can revoke on unmount
+  const objectUrlRef   = useRef<string | null>(null);
 
-  function pickFile(file: File) {
+  // COR-7: revoke any object URL when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+    };
+  }, []);
+
+  // COR-8: stable pickFile reference so handleDrop dependency is correct
+  const pickFile = useCallback((file: File) => {
     setUploadError(null);
+
     if (file.size > MAX_BYTES) {
       setUploadError(`El archivo es demasiado grande. Máximo ${MAX_MB}MB.`);
       return;
@@ -43,24 +57,40 @@ export function PaymentUploadZone({ orderId, onSuccess, rejectionNote }: Props) 
       setUploadError('Tipo no permitido. Usa JPG, PNG, WEBP o PDF.');
       return;
     }
-    const objectUrl = file.type !== 'application/pdf' ? URL.createObjectURL(file) : null;
+
+    // Revoke previous object URL before creating a new one
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+
+    const objectUrl = file.type !== 'application/pdf'
+      ? URL.createObjectURL(file)
+      : null;
+
+    if (objectUrl) objectUrlRef.current = objectUrl;
+
     setPreview({ name: file.name, size: file.size, type: file.type, objectUrl });
     setSelectedFile(file);
-  }
+  }, []);
 
   function clearSelection() {
-    if (preview?.objectUrl) URL.revokeObjectURL(preview.objectUrl);
+    if (preview?.objectUrl) {
+      URL.revokeObjectURL(preview.objectUrl);
+      objectUrlRef.current = null;
+    }
     setPreview(null);
     setSelectedFile(null);
     setUploadError(null);
   }
 
+  // COR-8: include pickFile in deps — no stale closure
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) pickFile(file);
-  }, []);
+  }, [pickFile]);
 
   async function handleUpload() {
     if (!selectedFile) return;
@@ -73,8 +103,8 @@ export function PaymentUploadZone({ orderId, onSuccess, rejectionNote }: Props) 
       });
       clearSelection();
       onSuccess();
-    } catch (err: any) {
-      const msg = err?.message ?? 'Error al subir el comprobante.';
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al subir el comprobante.';
       setUploadError(msg);
       toast.error('No se pudo subir el comprobante', { description: msg });
     } finally {
@@ -83,7 +113,9 @@ export function PaymentUploadZone({ orderId, onSuccess, rejectionNote }: Props) 
   }
 
   const fmtSize = (b: number) =>
-    b < 1024 * 1024 ? `${(b / 1024).toFixed(1)} KB` : `${(b / (1024 * 1024)).toFixed(1)} MB`;
+    b < 1024 * 1024
+      ? `${(b / 1024).toFixed(1)} KB`
+      : `${(b / (1024 * 1024)).toFixed(1)} MB`;
 
   return (
     <div className="flex flex-col gap-4">
@@ -101,17 +133,28 @@ export function PaymentUploadZone({ orderId, onSuccess, rejectionNote }: Props) 
 
       {!preview ? (
         <>
-          {/* Drop zone */}
+          {/* Drop zone — A11Y-1: keyboard accessible, MIN-5: onDragEnter added */}
           <div
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            role="button"
+            tabIndex={0}
+            aria-label="Subir comprobante de pago — arrastra un archivo o presiona Enter para seleccionar"
+            onDragEnter={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragOver={(e)  => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
             className={cn(
               'flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed cursor-pointer transition-all select-none',
               dragging
                 ? 'border-primary bg-primary/5 scale-[1.01]'
-                : 'border-border bg-muted/30 hover:border-primary/50 hover:bg-muted/50'
+                : 'border-border bg-muted/30 hover:border-primary/50 hover:bg-muted/50',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
             )}
           >
             <div className="w-12 h-12 rounded-full bg-background flex items-center justify-center border border-border">
@@ -130,7 +173,7 @@ export function PaymentUploadZone({ orderId, onSuccess, rejectionNote }: Props) 
             </span>
           </div>
 
-          {/* Camera button (shows on mobile, useful for taking photo directly) */}
+          {/* Camera button */}
           <button
             type="button"
             onClick={() => cameraInputRef.current?.click()}
@@ -158,9 +201,7 @@ export function PaymentUploadZone({ orderId, onSuccess, rejectionNote }: Props) 
           />
         </>
       ) : (
-        /* Preview */
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
-          {/* Image preview */}
           {preview.objectUrl ? (
             <div className="relative bg-muted max-h-64 overflow-hidden">
               <img
@@ -177,7 +218,6 @@ export function PaymentUploadZone({ orderId, onSuccess, rejectionNote }: Props) 
               </button>
             </div>
           ) : (
-            /* PDF preview */
             <div className="flex items-center gap-3 p-4 bg-muted/30">
               <FileCheck2 size={32} className="text-primary shrink-0" />
               <div className="flex-1 min-w-0">
@@ -194,7 +234,6 @@ export function PaymentUploadZone({ orderId, onSuccess, rejectionNote }: Props) 
             </div>
           )}
 
-          {/* File info + upload button */}
           <div className="p-4 flex items-center justify-between gap-3 border-t border-border">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground truncate">{preview.name}</p>
@@ -206,11 +245,9 @@ export function PaymentUploadZone({ orderId, onSuccess, rejectionNote }: Props) 
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-bold text-sm shrink-0 transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ backgroundColor: 'var(--vibrant-orange)' }}
             >
-              {uploading ? (
-                <><Loader2 size={15} className="animate-spin" />Subiendo…</>
-              ) : (
-                <><Upload size={15} />Enviar</>
-              )}
+              {uploading
+                ? <><Loader2 size={15} className="animate-spin" />Subiendo…</>
+                : <><Upload size={15} />Enviar</>}
             </button>
           </div>
         </div>

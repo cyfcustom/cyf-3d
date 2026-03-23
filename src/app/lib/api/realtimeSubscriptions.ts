@@ -16,7 +16,6 @@ export function subscribeToConfigChanges(
         filter: `module_name=eq.${moduleName}`,
       },
       (payload) => {
-        console.log(`[Realtime] Config updated for ${moduleName}:`, payload);
         callback(payload.new);
       }
     )
