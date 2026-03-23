@@ -63,7 +63,7 @@ export function SuccessModal() {
       if (orderErr) throw orderErr;
 
       // 3. Build WhatsApp message with order link
-      const orderUrl = `${window.location.origin}/pedido/${order.id}`;
+      const orderUrl = `${window.location.origin}/order/${order.id}`;
       const message = `${info.whatsapp_message_template}\n\nQuiero hacer un pedido:\n📦 Producto: ${productName}\n🎨 Color: ${productConfig.baseColor}\n📐 Talla: ${productConfig.size}\n\n🔗 Ver mi diseño: ${orderUrl}\n\n¡Gracias!`;
 
       const whatsappUrl = `https://wa.me/${info.phone}?text=${encodeURIComponent(message)}`;

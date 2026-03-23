@@ -161,6 +161,20 @@ export function AdminDashboard() {
                 <span className="mt-auto text-[10px] font-bold text-[#06B6D4] uppercase tracking-widest">{t('cards.calculations.action')}</span>
               </Link>
             </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <Link
+                to="/admin/orders"
+                className="group flex flex-col bg-card border border-border/40 hover:border-[#F59E0B]/50 rounded-[24px] p-6 shadow-sm hover:shadow-xl transition-all duration-300 h-full"
+              >
+                <div className="w-12 h-12 bg-[#F59E0B]/10 rounded-2xl flex items-center justify-center group-hover:bg-[#F59E0B] transition-all mb-4">
+                  <Package className="w-6 h-6 text-[#F59E0B] group-hover:text-white" />
+                </div>
+                <h3 className="text-lg font-bold mb-1">Pedidos</h3>
+                <p className="text-sm text-muted-foreground mb-4">Gestiona pedidos, verifica comprobantes de pago y actualiza estados.</p>
+                <span className="mt-auto text-[10px] font-bold text-[#F59E0B] uppercase tracking-widest">Ver pedidos →</span>
+              </Link>
+            </motion.div>
           </div>
 
           {/* Quick Actions Grid */}

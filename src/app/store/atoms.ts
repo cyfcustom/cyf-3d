@@ -1,6 +1,33 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 
+// ─── Cart ─────────────────────────────────────────────────────────────────────
+
+export interface CartItem {
+  productId: string;
+  productName: string;
+  productImageUrl: string | null;
+  unitPriceUsd: number;
+  quantity: number;
+  /** 'sublimacion' | 'dtf' | 'vinil' | etc. */
+  printTechnique: string | null;
+  size: string | null;
+  color: string | null;
+  minOrderQty: number;
+}
+
+export const cartAtom = atomWithStorage<CartItem[]>('cyf-cart-v1', []);
+
+export const cartOpenAtom = atom<boolean>(false);
+
+export const cartCountAtom = atom((get) =>
+  get(cartAtom).reduce((sum, item) => sum + item.quantity, 0)
+);
+
+export const cartTotalAtom = atom((get) =>
+  get(cartAtom).reduce((sum, item) => sum + item.unitPriceUsd * item.quantity, 0)
+);
+
 // Layer interface
 export interface Layer {
   id: string;
@@ -53,12 +80,12 @@ export interface AuthUser {
 
 // Persist auth state in localStorage
 export const authUserAtom = atomWithStorage<AuthUser | null>(
-  'cyf-customs-auth-user',
+  'cyf-Custom-auth-user',
   null
 );
 
 export const isAuthenticatedAtom = atomWithStorage<boolean>(
-  'cyf-customs-is-authenticated',
+  'cyf-Custom-is-authenticated',
   false
 );
 

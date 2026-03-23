@@ -14,7 +14,7 @@ export function Footer() {
           {/* Brand Section */}
           <div>
             <h3 className="text-2xl mb-3 font-bold text-foreground">
-              CYF Customs
+              CYF Custom
             </h3>
             <p className="text-sm sm:text-base text-muted-foreground font-medium">
               {t('footer.brandDescription')}
