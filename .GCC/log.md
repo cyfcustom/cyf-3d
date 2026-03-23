@@ -1,5 +1,10 @@
 # OTA Log - main
 
+## [L010] 2026-03-23 | main
+- Observation: Ecommerce fases 2-7 completadas. Layout inconsistente en admin (solo /admin/models tenía botón back). Botón Contact en Navbar sin destino. Rutas en español (mis-pedidos, pedido/:id).
+- Thought: Diseñar un sistema de layout unificado para admin (sidebar+bottom-nav) y consumer (Navbar+CartDrawer). Ruta /contact standalone estilo Linktree con gestión desde /admin/config. Todas las rutas a inglés.
+- Action: AdminLayout + ConsumerLayout creados. ContactPage + AdminContactPage + contactApi + migración 003. App.tsx reescrito con layouts + rutas EN. 4 commits en main (feat×3 + chore). GCC sincronizado.
+
 ## [L009] 2026-03-22 | main
 - Observation: La rama `ecommerce-features` nunca existió en git (solo en GCC). La tabla `orders` no existía aunque el código la referenciaba. Todos los tipos Cart/Customer/Payment faltaban. UI libs necesarias (vaul, sonner, embla, radix) ya instaladas. Solo falta `zod`.
 - Thought: Arrancar con capa de datos (0 riesgo de regresión en UI existente). No crear ramas git — producto pre-alpha, un solo desarrollador. Guest checkout desde el schema para mercado LatAm.

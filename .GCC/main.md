@@ -94,5 +94,26 @@ Side-states: `proof_rejected`, `cancelled`
 - **Fase 6** — Tracking de pedido (cliente) con Realtime
 - **Fase 7** — Admin de pedidos
 
+## Ecommerce — Fases 2–7 [COMPLETE - 2026-03-23 | c19f671]
+- ProductGrid con availability badges + skeleton loading
+- ProductDetailPage con Embla carousel, quantity stepper, add-to-cart
+- CartDrawer (Sheet), CheckoutPage (react-hook-form + zod)
+- MyOrdersPage, OrderViewPage con Realtime + PaymentUploadZone
+- AdminOrdersPage + AdminOrderDetailPage (proof viewer, status transitions)
+- Rutas todas en inglés: `/order/:id`, `/my-orders`, `/product/:id`, `/checkout`
+
+## Layout System [COMPLETE - 2026-03-23 | 0cca8d0]
+- AdminLayout: sidebar desktop (w-56) + bottom-nav mobile + Sheet drawer
+- ConsumerLayout: wrapper Navbar + CartDrawer para rutas consumer
+- CartDrawer movido de global App a ConsumerLayout scope
+
+## Contact Page [COMPLETE - 2026-03-23 | e04fcbb]
+- `/contact` — Linktree-style standalone page con brand header, botones
+  de canal con ícono/color de marca, formulario de contacto
+- AdminContactPage (`/admin/config/contact`): tabs Canales + Mensajes
+- contactApi: fetchActiveChannels, submitContactForm, CRUD admin, buildChannelHref
+- Migración 003: contact_channels + contact_form_submissions, RLS, seed desde company_info
+- Botón Contact en Navbar ahora es `<Link to="/contact">`
+
 ## Active Branches (GCC)
-- **ecommerce-fase1** — Capa de datos completa (migración SQL, API layer, tipos TS). Completada 2026-03-22.
+- **main** — Activo. Ecommerce completo + layout system + contact page integrados.
