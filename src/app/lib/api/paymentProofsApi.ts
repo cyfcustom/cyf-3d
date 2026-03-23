@@ -48,38 +48,44 @@ export async function uploadPaymentProof({
 }: UploadProofPayload): Promise<PaymentProof> {
   validateFile(file);
 
+  // COR-3: resolve user once at the start rather than inline inside insert
+  const { data: { user } } = await supabase.auth.getUser();
+
   const ext = file.name.split('.').pop() ?? 'jpg';
   const filename = `${crypto.randomUUID()}.${ext}`;
   const storagePath = `${orderId}/${filename}`;
 
-  // Upload to Supabase Storage
+  // 1 — Upload file to Storage
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(storagePath, file, {
-      contentType: file.type,
-      upsert: false,
-    });
+    .upload(storagePath, file, { contentType: file.type, upsert: false });
 
   if (uploadError) throw uploadError;
 
-  // Insert metadata row
+  // 2 — Insert metadata row
   const { data, error: dbError } = await supabase
     .from('payment_proofs')
     .insert({
-      order_id: orderId,
+      order_id:    orderId,
       storage_path: storagePath,
-      file_name: file.name,
-      file_size: file.size,
-      mime_type: file.type,
-      uploaded_by: (await supabase.auth.getUser()).data.user?.id ?? null,
+      file_name:   file.name,
+      file_size:   file.size,
+      mime_type:   file.type,
+      uploaded_by: user?.id ?? null,   // null for guest (anon) uploads
     })
     .select()
     .single();
 
-  if (dbError) throw dbError;
+  if (dbError) {
+    // COR-2: rollback — remove orphaned storage file on DB failure
+    await supabase.storage.from(BUCKET).remove([storagePath]).catch(() => {});
+    throw dbError;
+  }
 
-  // Advance order status
-  await updateOrderStatus(orderId, 'payment_proof_submitted');
+  // 3 — Advance order status (non-fatal: proof is saved regardless)
+  await updateOrderStatus(orderId, 'payment_proof_submitted').catch((e: Error) => {
+    console.warn('[PaymentProofsAPI] Could not advance order status:', e.message);
+  });
 
   return data as PaymentProof;
 }
@@ -116,17 +122,20 @@ export async function getProofSignedUrl(storagePath: string): Promise<string | n
 // ─── Admin mutations ──────────────────────────────────────────────────────────
 
 export async function approveProof(proofId: string, orderId: string): Promise<void> {
+  // COR-3: resolve user once with explicit error handling
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) throw new Error('Sesión no activa. Recarga la página.');
+
   const { error } = await supabase
     .from('payment_proofs')
     .update({
       review_status: 'approved',
-      reviewed_by: (await supabase.auth.getUser()).data.user?.id ?? null,
-      reviewed_at: new Date().toISOString(),
+      reviewed_by:   user.id,
+      reviewed_at:   new Date().toISOString(),
     })
     .eq('id', proofId);
 
   if (error) throw error;
-
   await updateOrderStatus(orderId, 'payment_verified');
 }
 
@@ -135,17 +144,20 @@ export async function rejectProof(
   orderId: string,
   rejectionNote: string
 ): Promise<void> {
+  // COR-3: resolve user once
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) throw new Error('Sesión no activa. Recarga la página.');
+
   const { error } = await supabase
     .from('payment_proofs')
     .update({
-      review_status: 'rejected',
+      review_status:  'rejected',
       rejection_note: rejectionNote,
-      reviewed_by: (await supabase.auth.getUser()).data.user?.id ?? null,
-      reviewed_at: new Date().toISOString(),
+      reviewed_by:    user.id,
+      reviewed_at:    new Date().toISOString(),
     })
     .eq('id', proofId);
 
   if (error) throw error;
-
   await updateOrderStatus(orderId, 'proof_rejected', rejectionNote);
 }

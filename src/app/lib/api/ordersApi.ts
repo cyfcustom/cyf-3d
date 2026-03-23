@@ -202,7 +202,12 @@ export async function createOrderWithItems(
     .insert(itemRows)
     .select();
 
-  if (itemsError) throw itemsError;
+  if (itemsError) {
+    // COR-1: rollback — delete the orphaned order to avoid leaking guest PII
+    await supabase.from('orders').delete().eq('id', order.id).catch(() => {});
+    throw itemsError;
+  }
+
   return { order, items: (createdItems ?? []) as OrderItem[] };
 }
 
