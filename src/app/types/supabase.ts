@@ -166,6 +166,232 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          id: string
+          order_number: string
+          user_id: string | null
+          guest_name: string | null
+          guest_phone: string | null
+          guest_email: string | null
+          status: 'pending_payment' | 'payment_proof_submitted' | 'payment_verified' | 'in_production' | 'shipped' | 'delivered' | 'proof_rejected' | 'cancelled'
+          subtotal_usd: number
+          subtotal_bs: number | null
+          exchange_rate_snapshot: Json | null
+          delivery_address: Json | null
+          delivery_notes: string | null
+          admin_notes: string | null
+          product_name: string | null
+          product_color: string | null
+          product_size: string | null
+          screenshot_url: string | null
+          expires_at: string | null
+          created_at: string | null
+          updated_at: string | null
+          confirmed_at: string | null
+          shipped_at: string | null
+          delivered_at: string | null
+        }
+        Insert: {
+          id?: string
+          order_number?: string
+          user_id?: string | null
+          guest_name?: string | null
+          guest_phone?: string | null
+          guest_email?: string | null
+          status?: 'pending_payment' | 'payment_proof_submitted' | 'payment_verified' | 'in_production' | 'shipped' | 'delivered' | 'proof_rejected' | 'cancelled'
+          subtotal_usd?: number
+          subtotal_bs?: number | null
+          exchange_rate_snapshot?: Json | null
+          delivery_address?: Json | null
+          delivery_notes?: string | null
+          admin_notes?: string | null
+          product_name?: string | null
+          product_color?: string | null
+          product_size?: string | null
+          screenshot_url?: string | null
+          expires_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          confirmed_at?: string | null
+          shipped_at?: string | null
+          delivered_at?: string | null
+        }
+        Update: {
+          id?: string
+          order_number?: string
+          user_id?: string | null
+          guest_name?: string | null
+          guest_phone?: string | null
+          guest_email?: string | null
+          status?: 'pending_payment' | 'payment_proof_submitted' | 'payment_verified' | 'in_production' | 'shipped' | 'delivered' | 'proof_rejected' | 'cancelled'
+          subtotal_usd?: number
+          subtotal_bs?: number | null
+          exchange_rate_snapshot?: Json | null
+          delivery_address?: Json | null
+          delivery_notes?: string | null
+          admin_notes?: string | null
+          product_name?: string | null
+          product_color?: string | null
+          product_size?: string | null
+          screenshot_url?: string | null
+          expires_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          confirmed_at?: string | null
+          shipped_at?: string | null
+          delivered_at?: string | null
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          id: string
+          order_id: string
+          product_id: string | null
+          saved_design_id: string | null
+          product_name: string
+          product_image_url: string | null
+          print_technique: string | null
+          size: string | null
+          color: string | null
+          custom_notes: string | null
+          quantity: number
+          unit_price_usd: number
+          total_price_usd: number
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          product_id?: string | null
+          saved_design_id?: string | null
+          product_name: string
+          product_image_url?: string | null
+          print_technique?: string | null
+          size?: string | null
+          color?: string | null
+          custom_notes?: string | null
+          quantity?: number
+          unit_price_usd?: number
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          saved_design_id?: string | null
+          product_name?: string
+          product_image_url?: string | null
+          print_technique?: string | null
+          size?: string | null
+          color?: string | null
+          custom_notes?: string | null
+          quantity?: number
+          unit_price_usd?: number
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_status_history: {
+        Row: {
+          id: string
+          order_id: string
+          from_status: string | null
+          to_status: string
+          changed_by: string | null
+          note: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          from_status?: string | null
+          to_status: string
+          changed_by?: string | null
+          note?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          from_status?: string | null
+          to_status?: string
+          changed_by?: string | null
+          note?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_proofs: {
+        Row: {
+          id: string
+          order_id: string
+          storage_path: string
+          file_name: string | null
+          file_size: number | null
+          mime_type: string | null
+          uploaded_by: string | null
+          uploaded_at: string | null
+          review_status: 'pending' | 'approved' | 'rejected'
+          rejection_note: string | null
+          reviewed_by: string | null
+          reviewed_at: string | null
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          storage_path: string
+          file_name?: string | null
+          file_size?: number | null
+          mime_type?: string | null
+          uploaded_by?: string | null
+          uploaded_at?: string | null
+          review_status?: 'pending' | 'approved' | 'rejected'
+          rejection_note?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          storage_path?: string
+          file_name?: string | null
+          file_size?: number | null
+          mime_type?: string | null
+          uploaded_by?: string | null
+          uploaded_at?: string | null
+          review_status?: 'pending' | 'approved' | 'rejected'
+          rejection_note?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_proofs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           base_price: number
@@ -178,6 +404,11 @@ export type Database = {
           model_3d_url: string | null
           name: string
           updated_at: string | null
+          availability: 'available' | 'made_to_order' | 'out_of_stock' | 'discontinued'
+          min_order_qty: number
+          lead_time_days: number | null
+          print_techniques: string[] | null
+          tags: string[] | null
         }
         Insert: {
           base_price?: number
@@ -190,6 +421,11 @@ export type Database = {
           model_3d_url?: string | null
           name: string
           updated_at?: string | null
+          availability?: 'available' | 'made_to_order' | 'out_of_stock' | 'discontinued'
+          min_order_qty?: number
+          lead_time_days?: number | null
+          print_techniques?: string[] | null
+          tags?: string[] | null
         }
         Update: {
           base_price?: number
@@ -202,6 +438,11 @@ export type Database = {
           model_3d_url?: string | null
           name?: string
           updated_at?: string | null
+          availability?: 'available' | 'made_to_order' | 'out_of_stock' | 'discontinued'
+          min_order_qty?: number
+          lead_time_days?: number | null
+          print_techniques?: string[] | null
+          tags?: string[] | null
         }
         Relationships: []
       }
@@ -435,6 +676,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contact_channels: {
+        Row: {
+          id: string
+          type: string
+          label: string
+          value: string
+          active: boolean
+          sort_order: number
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          type: string
+          label: string
+          value: string
+          active?: boolean
+          sort_order?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          type?: string
+          label?: string
+          value?: string
+          active?: boolean
+          sort_order?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      contact_form_submissions: {
+        Row: {
+          id: string
+          name: string
+          email: string | null
+          phone: string | null
+          message: string
+          read: boolean
+          admin_notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          email?: string | null
+          phone?: string | null
+          message: string
+          read?: boolean
+          admin_notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          email?: string | null
+          phone?: string | null
+          message?: string
+          read?: boolean
+          admin_notes?: string | null
+          created_at?: string
+        }
+        Relationships: []
       }
       calculation_history: {
         Row: {

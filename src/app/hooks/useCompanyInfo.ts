@@ -13,13 +13,13 @@ export interface CompanyInfo {
 }
 
 const DEFAULTS: CompanyInfo = {
-  name: 'CYF Customs',
+  name: 'CYF Custom',
   slogan: 'Amor para ayudar',
   phone: '584124553107',
   email: 'contacto@cyfcustoms.com',
   instagram_url: 'https://instagram.com/cyfcustoms',
   facebook_url: 'https://facebook.com/cyfcustoms',
-  whatsapp_message_template: '¡Hola CYF Customs! 👋',
+  whatsapp_message_template: '¡Hola CYF Custom! 👋',
   address: 'Mérida, Venezuela',
 };
 
