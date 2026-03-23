@@ -55,10 +55,26 @@ export function buildChannelHref(channel: ContactChannel): string {
   }
 }
 
+// ─── Module-level cache (PERF-5) ───────────────────────────────────────────
+
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+let _channelsCache: ContactChannel[] | null = null;
+let _channelsCacheAt = 0;
+
+function invalidateChannelsCache() {
+  _channelsCache = null;
+  _channelsCacheAt = 0;
+}
+
 // ─── Public queries ────────────────────────────────────────────────────────
 
 /** Returns only active channels, ordered by sort_order (for /contact page). */
 export async function fetchActiveChannels(): Promise<ContactChannel[]> {
+  if (_channelsCache && Date.now() - _channelsCacheAt < CACHE_TTL_MS) {
+    return _channelsCache;
+  }
+
   const { data, error } = await supabase
     .from('contact_channels')
     .select('*')
@@ -66,7 +82,10 @@ export async function fetchActiveChannels(): Promise<ContactChannel[]> {
     .order('sort_order', { ascending: true });
 
   if (error) throw error;
-  return (data ?? []) as ContactChannel[];
+
+  _channelsCache = (data ?? []) as ContactChannel[];
+  _channelsCacheAt = Date.now();
+  return _channelsCache;
 }
 
 /** Submit a contact form message (anyone, no auth required). */
@@ -106,6 +125,7 @@ export async function createChannel(
     .single();
 
   if (error) throw error;
+  invalidateChannelsCache();
   return data as ContactChannel;
 }
 
@@ -119,6 +139,7 @@ export async function updateChannel(
     .eq('id', id);
 
   if (error) throw error;
+  invalidateChannelsCache();
 }
 
 export async function deleteChannel(id: string): Promise<void> {
@@ -128,6 +149,7 @@ export async function deleteChannel(id: string): Promise<void> {
     .eq('id', id);
 
   if (error) throw error;
+  invalidateChannelsCache();
 }
 
 /** Move a channel one position up or down in sort_order. */
