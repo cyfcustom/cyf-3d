@@ -7,7 +7,7 @@ This GitHub Action automatically pings your Supabase database to prevent it from
 ### Step 1: Get Your Supabase Service Role Key
 
 1. Go to your Supabase Dashboard: https://supabase.com/dashboard
-2. Select your project: **CYF Customs** (jushzjpeetegcjyikclb)
+2. Select your project: **CYF Custom** (jushzjpeetegcjyikclb)
 3. Navigate to **Settings** → **API**
 4. Copy the `service_role` key (⚠️ **NOT** the `anon` key)
    - ⚠️ **Important**: This key has admin privileges - keep it secret!

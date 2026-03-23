@@ -193,7 +193,7 @@ export function MFASetupDialog({ isOpen, onClose }: MFASetupDialogProps) {
                     </button>
                   </div>
                   <p className="text-xs text-slate-500">
-                    Nombre de la cuenta: CYF Customs Admin
+                    Nombre de la cuenta: CYF Custom Admin
                   </p>
                 </div>
 

@@ -1,4 +1,4 @@
-# 🔐 Sistema de Administración CYF Customs
+# 🔐 Sistema de Administración CYF Custom
 
 ## 📊 Resumen de Cambios
 
@@ -31,7 +31,7 @@ Se ha implementado un sistema completo de autenticación con las siguientes cara
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    CYF Customs Web App                      │
+│                    CYF Custom Web App                      │
 └─────────────────────────────────────────────────────────────┘
 
 🌐 RUTAS PÚBLICAS

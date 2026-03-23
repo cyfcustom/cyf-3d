@@ -72,12 +72,12 @@ export function AdminLogin() {
             <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full" />
             <img
               src="/CYF CUSTOM_isotipo circular negro.png"
-              alt="CYF Customs"
+              alt="CYF Custom"
               className="w-28 h-28 mx-auto relative z-10 drop-shadow-xl dark:invert"
             />
           </motion.div>
           <h1 className="text-4xl font-extrabold text-foreground tracking-tighter mb-2">
-            CYF CUSTOMS
+            CYF Custom
           </h1>
           <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs">
             {t('login.panelTitle')}

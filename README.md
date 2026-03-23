@@ -1,7 +1,7 @@
 
-  # Landing Page CYF Customs
+  # Landing Page CYF Custom
 
-  This is a code bundle for Landing Page CYF Customs. The original project is available at https://www.figma.com/design/wYA1DFrZ0uk04bWHRBq1K9/Landing-Page-CYF-Customs.
+  This is a code bundle for Landing Page CYF Custom. The original project is available at https://www.figma.com/design/wYA1DFrZ0uk04bWHRBq1K9/Landing-Page-CYF-Custom.
 
   ## Running the code
 

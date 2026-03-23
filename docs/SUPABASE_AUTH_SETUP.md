@@ -2,7 +2,7 @@
 
 ## 📋 Resumen
 
-Este documento describe cómo configurar la autenticación y el usuario administrador en Supabase para CYF Customs.
+Este documento describe cómo configurar la autenticación y el usuario administrador en Supabase para CYF Custom.
 
 ## 🚀 Pasos de Configuración
 

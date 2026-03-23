@@ -22,7 +22,7 @@ export function ConfiguratorHeader() {
         {/* Logo */}
         <div className="flex items-center gap-2">
           <span className="text-lg font-semibold text-foreground">
-            CYF Customs
+            CYF Custom
           </span>
         </div>
 

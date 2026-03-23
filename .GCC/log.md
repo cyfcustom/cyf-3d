@@ -1,5 +1,10 @@
 # OTA Log - main
 
+## [L009] 2026-03-22 | main
+- Observation: La rama `ecommerce-features` nunca existió en git (solo en GCC). La tabla `orders` no existía aunque el código la referenciaba. Todos los tipos Cart/Customer/Payment faltaban. UI libs necesarias (vaul, sonner, embla, radix) ya instaladas. Solo falta `zod`.
+- Thought: Arrancar con capa de datos (0 riesgo de regresión en UI existente). No crear ramas git — producto pre-alpha, un solo desarrollador. Guest checkout desde el schema para mercado LatAm.
+- Action: Creada migración 002_ecommerce_orders.sql, ordersApi.ts, paymentProofsApi.ts, tipos TS actualizados. GCC milestone registrado. Próximo: Fase 2 (cartAtom + ProductGrid availability).
+
 ## [L001] 2026-03-07 | main
 - Observation: Current Canvas3D.tsx is purely 2D - static image with CSS rotateY for front/back toggle. No actual 3D rendering. Rotate/zoom buttons are decorative.
 - Thought: Need full replacement with Babylon.js. Keep ToolsPanel and Jotai state management, replace only the canvas component.

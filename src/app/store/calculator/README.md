@@ -1,6 +1,6 @@
 # Calculator Store - Arquitectura Jotai
 
-Sistema centralizado de gestión de estado para todas las calculadoras de CYF Customs usando Jotai.
+Sistema centralizado de gestión de estado para todas las calculadoras de CYF Custom usando Jotai.
 
 ## 🎯 Características
 

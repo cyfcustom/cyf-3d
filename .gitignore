@@ -5,3 +5,9 @@ dist
 .env
 .env.local
 .env.*.local
+
+# Local tooling & logs
+.aiyou-dev/
+GEMINI.md
+firebase-debug.log
+pnpm-lock.yaml

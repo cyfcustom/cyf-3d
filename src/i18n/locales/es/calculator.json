@@ -1,7 +1,7 @@
 {
   "dashboard": {
     "title": "Suite de Calculadoras",
-    "heading": "Calculadoras CYF Customs",
+    "heading": "Calculadoras CYF Custom",
     "description": "Herramientas profesionales para calcular costos, gestionar presupuestos y optimizar tus proyectos de personalización",
     "stats": {
       "available": "Calculadoras Disponibles",
@@ -274,8 +274,8 @@
     "delete": "Eliminar"
   },
   "suite": {
-    "title": "Calculadoras CYF Customs",
-    "subtitle": "Suite CYF Customs",
+    "title": "Calculadoras CYF Custom",
+    "subtitle": "Suite CYF Custom",
     "expenses": "Calculadoras de gastos"
   },
   "summary": {

@@ -3,7 +3,7 @@
     "title": "CYF ADMIN",
     "logout": "Cerrar Sesión",
     "welcome": "Bienvenido, <highlight>{{name}}</highlight>",
-    "subtitle": "Gestiona el universo digital de <bold>CYF Customs</bold> desde tu centro de control privado.",
+    "subtitle": "Gestiona el universo digital de <bold>CYF Custom</bold> desde tu centro de control privado.",
     "users": "Usuarios",
     "calculationHistory": "Historial de cálculos de usuarios.",
     "operativeSummary": "Resumen Operativo",
@@ -177,6 +177,6 @@
       "back": "VOLVER"
     },
     "restricted": "Acceso Restringido • Personal Autorizado",
-    "copyright": "© {{year}} CYF CUSTOMS VENEZUELA"
+    "copyright": "© {{year}} CYF Custom VENEZUELA"
   }
 }

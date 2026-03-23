@@ -1,5 +1,5 @@
 -- =====================================================
--- CYF Customs - Dynamic Calculator Configuration
+-- CYF Custom - Dynamic Calculator Configuration
 -- Migration: 001_calculator_dynamic_config
 -- =====================================================
 -- Creates tables for:

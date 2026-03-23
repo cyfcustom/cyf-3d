@@ -1,5 +1,5 @@
 -- =====================================================
--- CYF Customs - Admin User Setup Script
+-- CYF Custom - Admin User Setup Script
 -- =====================================================
 -- Este script crea el usuario administrador inicial
 -- Email: francisco.august.fa@gmail.com

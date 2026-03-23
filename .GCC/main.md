@@ -1,4 +1,4 @@
-# Configurador 3D con Babylon.js - CYF Customs
+# Configurador 3D con Babylon.js - CYF Custom
 
 ## Objective
 Reemplazar el configurador 2D actual (imagen estatica + CSS flip) con un visualizador 3D real usando Babylon.js. Permitir a los clientes personalizar 7 tipos de productos con colores, imagenes/logos, y obtener cotizacion automatica.
@@ -52,5 +52,47 @@ Reemplazar el configurador 2D actual (imagen estatica + CSS flip) con un visuali
 - [M004] 2026-03-07 - Fase 4: screenshot real 3D, sistema de pedidos (orders table), company_info centralizada, OrderViewPage publica, WhatsApp con link de pedido
 - [M005] 2026-03-07 - Fase 5: UX polish - skeleton loading, animated transitions, fullscreen toggle, auto-hide hint, size selector (800d492)
 
-## Active Branches
-- **ecommerce-features** (PARKED) — Carrito, lista de deseos, historial de pedidos, registro de clientes. Documentado para sprint futuro.
+## Ecommerce — Fase 1 [COMPLETE - 2026-03-22]
+
+### Scope
+Capa de datos para ecommerce minimalista sin pagos integrados. Flujo LatAm: comprobante de pago manual (Zelle / Pago Móvil / transferencia).
+
+### Decisiones clave
+- No se crean ramas git — trabajo directo en main (producto pre-alpha, un solo desarrollador)
+- No se integran pasarelas de pago — solo UI de datos de pago + upload de comprobante
+- Cart: local-first con `atomWithStorage` (Fases 2+)
+- Guest checkout soportado desde el schema
+
+### Archivos creados
+- `supabase/migrations/002_ecommerce_orders.sql` — migración completa
+- `src/app/lib/api/ordersApi.ts` — CRUD de órdenes
+- `src/app/lib/api/paymentProofsApi.ts` — upload + revisión de comprobantes
+- `src/app/types/supabase.ts` — tipos actualizados (orders, order_items, order_status_history, payment_proofs, products extendido)
+
+### Schema agregado
+| Tabla | Descripción |
+|-------|-------------|
+| `orders` | Órdenes con soporte guest + legacy fields del configurador |
+| `order_items` | Items por orden con snapshot de precio |
+| `order_status_history` | Audit trail automático via trigger |
+| `payment_proofs` | Metadatos de comprobantes (Storage bucket: `payment-proofs`) |
+| `products` (extendido) | + availability, min_order_qty, lead_time_days, print_techniques, tags |
+
+### Estados de orden
+`pending_payment → payment_proof_submitted → payment_verified → in_production → shipped → delivered`
+Side-states: `proof_rejected`, `cancelled`
+
+### Pendiente (manual en Supabase dashboard)
+- Crear bucket `payment-proofs` (private, 10MB limit, MIME: jpg/png/webp/pdf)
+- Aplicar RLS policies del bucket (documentadas al final de la migración SQL)
+
+### Próximas fases
+- **Fase 2** — `cartAtom` + badge de disponibilidad en ProductGrid
+- **Fase 3** — Página de detalle de producto `/product/:id`
+- **Fase 4** — Cart drawer + formulario de checkout
+- **Fase 5** — Pantalla de upload de comprobante post-orden
+- **Fase 6** — Tracking de pedido (cliente) con Realtime
+- **Fase 7** — Admin de pedidos
+
+## Active Branches (GCC)
+- **ecommerce-fase1** — Capa de datos completa (migración SQL, API layer, tipos TS). Completada 2026-03-22.

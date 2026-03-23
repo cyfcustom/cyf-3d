@@ -81,7 +81,7 @@ export function useAuth() {
     try {
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
-        friendlyName: 'CYF Customs Admin',
+        friendlyName: 'CYF Custom Admin',
       });
 
       if (error) throw error;

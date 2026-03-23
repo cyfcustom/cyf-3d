@@ -10,7 +10,7 @@ main
 2026-03-07
 
 ## Key Hypotheses
-- Los clientes de CYF Customs se beneficiarian de tener cuentas donde guardar sus pedidos y disenos
+- Los clientes de CYF Custom se beneficiarian de tener cuentas donde guardar sus pedidos y disenos
 - Un sistema de carrito permitiria pedidos multiples en una sola transaccion
 - La lista de deseos aumentaria engagement y retorno de clientes
 - La auto-expiracion de 24h para pedidos no confirmados mantiene la base de datos limpia
