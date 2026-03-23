@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
 import { fetchAllOrders, type Order, type OrderStatus } from '@/app/lib/api/ordersApi';
@@ -75,7 +75,8 @@ export function AdminOrdersPage() {
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
 
-  async function load(s: OrderStatus | '', p: number) {
+  // COR-9: stable reference so useEffect deps are correct
+  const load = useCallback(async (s: OrderStatus | '', p: number) => {
     setLoading(true);
     try {
       const result = await fetchAllOrders(s || undefined, p, PAGE_SIZE);
@@ -86,9 +87,9 @@ export function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []); // state setters are stable
 
-  useEffect(() => { load(statusFilter, page); }, [statusFilter, page]);
+  useEffect(() => { load(statusFilter, page); }, [load, statusFilter, page]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 

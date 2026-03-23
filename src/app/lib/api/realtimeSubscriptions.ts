@@ -3,7 +3,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export function subscribeToConfigChanges(
   moduleName: string,
-  callback: (payload: any) => void
+  callback: (payload: Record<string, unknown>) => void
 ): RealtimeChannel {
   const channel = supabase
     .channel(`config-changes-${moduleName}`)
