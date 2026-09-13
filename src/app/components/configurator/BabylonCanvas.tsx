@@ -10,6 +10,7 @@ import {
 import '@babylonjs/loaders/glTF';
 import { ShadowOnlyMaterial } from '@babylonjs/materials';
 import { layersAtom, Layer } from '../../store/atoms';
+import type { Section, SectionId } from '../../types/sections';
 
 export interface BabylonCanvasHandle {
   takeScreenshot: () => Promise<string | null>;
@@ -19,8 +20,14 @@ const TEX_SIZE = 1024;
 const IMG_BASE_SIZE = 400;
 
 interface BabylonCanvasProps {
-  selectedColor: string;
   modelUrl: string;
+  /** Section definitions for the loaded model. */
+  sections: Section[];
+  /**
+   * Currently active section — used to know which section's color picker
+   * is selected. (Visual layers are per-section via Layer.side.)
+   */
+  activeSection?: SectionId;
 }
 
 function hexToColor3(hex: string): Color3 {
@@ -30,19 +37,19 @@ function hexToColor3(hex: string): Color3 {
   return new Color3(r, g, b);
 }
 
-function redrawTexture(
+function redrawSectionTexture(
   texture: DynamicTexture,
   color: string,
   layers: Layer[],
-  side: 'front' | 'back',
+  sectionId: SectionId,
   imagesCache: Map<string, HTMLImageElement>
 ) {
   const ctx = texture.getContext();
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, TEX_SIZE, TEX_SIZE);
 
-  const sideLayers = layers.filter(l => (l.side || 'front') === side);
-  for (const layer of sideLayers) {
+  const sectionLayers = layers.filter(l => (l.side || 'front') === sectionId);
+  for (const layer of sectionLayers) {
     const img = imagesCache.get(layer.id);
     if (!img) continue;
 
@@ -59,20 +66,37 @@ function redrawTexture(
 
     const cx = (layer.x ?? 0.5) * TEX_SIZE;
     const cy = (layer.y ?? 0.4) * TEX_SIZE;
-    ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
+    const rotationDeg = layer.rotation ?? 0;
+    const rotationRad = (rotationDeg * Math.PI) / 180;
+    // Image drawn in normal canvas orientation. UV flips (uScale=-1,
+    // vScale=-1 + invertY=true default) on the texture compensate for
+    // this model's UV authoring.
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rotationRad);
+    ctx.drawImage(img, -w / 2, -h / 2, w, h);
+    ctx.restore();
   }
 
   texture.update();
 }
 
-export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>(function BabylonCanvas({ selectedColor, modelUrl }, ref) {
+interface SectionResources {
+  texture: DynamicTexture;
+  material: PBRMaterial;
+}
+
+export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>(function BabylonCanvas({
+  modelUrl,
+  sections,
+  activeSection: _activeSection,
+}, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const sceneRef = useRef<Scene | null>(null);
   const meshesRef = useRef<AbstractMesh[]>([]);
-  const bodyMaterialRef = useRef<PBRMaterial | null>(null);
-  const bodyTextureRef = useRef<DynamicTexture | null>(null);
-  const solidMaterialRef = useRef<PBRMaterial | null>(null);
+  const sectionResourcesRef = useRef<Map<SectionId, SectionResources>>(new Map());
+  const solidMatRef = useRef<PBRMaterial | null>(null);
   const imagesCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const [layers] = useAtom(layersAtom);
   const [textureReady, setTextureReady] = useState(0);
@@ -127,16 +151,15 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
     if (engineRef.current) {
       engineRef.current.dispose();
     }
-    bodyTextureRef.current = null;
-    bodyMaterialRef.current = null;
-    solidMaterialRef.current = null;
+    sectionResourcesRef.current.clear();
+    solidMatRef.current = null;
     meshesRef.current = [];
 
     const engine = new Engine(canvas, true, {
       preserveDrawingBuffer: true,
       stencil: true,
       antialias: true,
-    });
+    } as any);
     engineRef.current = engine;
 
     const scene = new Scene(engine);
@@ -145,11 +168,11 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
 
     // Camera
     const camera = new ArcRotateCamera(
-      'camera', -Math.PI / 2, Math.PI / 2.5, 5,
+      'camera', -Math.PI / 2, Math.PI / 2.5, 8,
       Vector3.Zero(), scene
     );
-    camera.lowerRadiusLimit = 1;
-    camera.upperRadiusLimit = 15;
+    camera.lowerRadiusLimit = 2;
+    camera.upperRadiusLimit = 20;
     camera.wheelDeltaPercentage = 0.01;
     camera.pinchDeltaPercentage = 0.01;
     camera.attachControl(canvas, true);
@@ -160,7 +183,6 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
 
     const dirLight = new DirectionalLight('dir', new Vector3(0.25, -5, -0.25), scene);
     dirLight.intensity = 3;
-    dirLight.position = new Vector3(0, 10, 0);
 
     // Shadow generator
     const shadowGen = new ShadowGenerator(1024, dirLight);
@@ -175,27 +197,45 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
     ground.receiveShadows = true;
     ground.position.y = -2;
 
-    // Materials
-    const bodyTexture = new DynamicTexture('body-tex', { width: TEX_SIZE, height: TEX_SIZE }, scene, false);
-    bodyTextureRef.current = bodyTexture;
+    // ── Per-section textures + materials ───────────────────────────
+    // One DynamicTexture + PBRMaterial per section. Sections without a
+    // mesh_name (not present in the GLB) skip material creation.
+    const sectionResources = new Map<SectionId, SectionResources>();
+    for (const sec of sections) {
+      if (!sec.mesh_name) continue;
 
-    const bodyMat = new PBRMaterial('body-mat', scene);
-    bodyMat.albedoTexture = bodyTexture;
-    bodyMat.metallic = 0;
-    bodyMat.roughness = 0.85;
-    bodyMaterialRef.current = bodyMat;
+      const texture = new DynamicTexture(
+        `${sec.id}-tex`,
+        { width: TEX_SIZE, height: TEX_SIZE },
+        scene,
+        false
+      );
+      // UV flip: this GLB has UV axes pointing opposite to Babylon's
+      // default. Compensates so the canvas drawing maps right-side-up.
+      texture.uScale = -1; texture.uOffset = 1;
+      texture.vScale = -1; texture.vOffset = 1;
 
+      const material = new PBRMaterial(`${sec.id}-mat`, scene);
+      material.albedoTexture = texture;
+      material.metallic = 0;
+      material.roughness = 0.85;
+
+      sectionResources.set(sec.id, { texture, material });
+
+      // Initial fill with the section's color
+      const ctx = texture.getContext();
+      ctx.fillStyle = sec.color;
+      ctx.fillRect(0, 0, TEX_SIZE, TEX_SIZE);
+      texture.update();
+    }
+    sectionResourcesRef.current = sectionResources;
+
+    // Solid material (used for invisible / unassigned meshes)
     const solidMat = new PBRMaterial('solid-mat', scene);
     solidMat.albedoColor = hexToColor3('#FFFFFF');
     solidMat.metallic = 0;
     solidMat.roughness = 0.85;
-    solidMaterialRef.current = solidMat;
-
-    // Initial texture fill
-    const ctx = bodyTexture.getContext();
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, TEX_SIZE, TEX_SIZE);
-    bodyTexture.update();
+    solidMatRef.current = solidMat;
 
     // Load GLB model
     const lastSlash = modelUrl.lastIndexOf('/');
@@ -232,22 +272,18 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
       rootNode.position = center.negate().scale(scaleFactor);
       rootNode.scaling = new Vector3(scaleFactor, scaleFactor, scaleFactor);
 
-      // Find the largest mesh (body) and assign materials
-      let largestMesh: AbstractMesh | null = null;
-      let largestVertCount = 0;
+      // Assign materials based on mesh name + section visibility.
       for (const mesh of loadedMeshes) {
-        const verts = mesh.getTotalVertices();
-        if (verts > largestVertCount) {
-          largestVertCount = verts;
-          largestMesh = mesh;
-        }
-      }
-
-      for (const mesh of loadedMeshes) {
-        if (mesh === largestMesh) {
-          mesh.material = bodyMat;
+        const section = sections.find(s => s.mesh_name === mesh.name);
+        if (section && section.visible && sectionResources.has(section.id)) {
+          mesh.material = sectionResources.get(section.id)!.material;
+          mesh.isVisible = true;
+        } else if (section && !section.visible) {
+          mesh.material = solidMat;
+          mesh.isVisible = false;
         } else {
           mesh.material = solidMat;
+          mesh.isVisible = true;
         }
         shadowGen.addShadowCaster(mesh);
       }
@@ -256,7 +292,7 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
       ground.position.y = min.y * scaleFactor - center.y * scaleFactor - 0.05;
 
       camera.target = Vector3.Zero();
-      camera.radius = targetSize * 1.8;
+      camera.radius = targetSize * 3.0;
 
       setLoading(false);
       setTextureReady(v => v + 1);
@@ -273,12 +309,12 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
     return () => {
       window.removeEventListener('resize', handleResize);
       engine.dispose();
-      bodyTextureRef.current = null;
-      bodyMaterialRef.current = null;
-      solidMaterialRef.current = null;
+      sectionResourcesRef.current.clear();
+      solidMatRef.current = null;
       sceneRef.current = null;
       meshesRef.current = [];
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelUrl]);
 
   useEffect(() => {
@@ -286,17 +322,36 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
     return cleanup;
   }, [initScene]);
 
-  // Update solid material color (secondary meshes)
+  // Update per-section colors and visibility without rebuilding the scene.
   useEffect(() => {
-    if (solidMaterialRef.current) {
-      solidMaterialRef.current.albedoColor = hexToColor3(selectedColor);
+    const sectionResources = sectionResourcesRef.current;
+    for (const sec of sections) {
+      const res = sectionResources.get(sec.id);
+      if (res) {
+        // Repaint the texture's clear color (next redraw will fill correctly).
+        const ctx = res.texture.getContext();
+        ctx.fillStyle = sec.color;
+        ctx.fillRect(0, 0, TEX_SIZE, TEX_SIZE);
+        res.texture.update();
+      }
+      // Toggle mesh visibility
+      const mesh = meshesRef.current.find(m => m.name === sec.mesh_name);
+      if (mesh) {
+        mesh.isVisible = sec.visible;
+        if (sec.visible && res) {
+          mesh.material = res.material;
+        } else {
+          mesh.material = solidMatRef.current;
+        }
+      }
     }
-  }, [selectedColor]);
+    setTextureReady(v => v + 1);
+  }, [sections]);
 
-  // Load images + redraw body texture
+  // Load images + redraw every section texture
   useEffect(() => {
-    const texture = bodyTextureRef.current;
-    if (!texture) return;
+    const sectionResources = sectionResourcesRef.current;
+    if (sectionResources.size === 0) return;
 
     let cancelled = false;
     const cache = imagesCacheRef.current;
@@ -320,14 +375,16 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
         if (!activeIds.has(id)) cache.delete(id);
       }
 
-      if (!cancelled) {
-        redrawTexture(texture, selectedColor, layers, 'front', cache);
+      if (cancelled) return;
+      for (const sec of sections) {
+        const res = sectionResources.get(sec.id);
+        if (res) redrawSectionTexture(res.texture, sec.color, layers, sec.id, cache);
       }
     };
 
     loadAndRedraw();
     return () => { cancelled = true; };
-  }, [layers, selectedColor, textureReady]);
+  }, [layers, sections, textureReady]);
 
   return (
     <div ref={containerRef} className="relative w-full h-full flex items-center justify-center bg-muted/30">
