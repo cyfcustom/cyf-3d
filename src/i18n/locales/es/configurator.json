@@ -55,5 +55,23 @@
     "rotate": "Rotar",
     "zoom": "Zoom",
     "fullscreen": "Pantalla completa"
+  },
+  "designLibrary": {
+    "save": "Guardar diseño",
+    "savePlaceholder": "Nombre del diseño…",
+    "nameRequired": "Escribe un nombre para el diseño",
+    "myDesigns": "Mis diseños",
+    "empty": "Aún no has guardado diseños para este producto",
+    "load": "Cargar",
+    "loaded": "Diseño \"{{name}}\" cargado",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Eliminar este diseño?",
+    "deleted": "Diseño eliminado",
+    "saveError": "No se pudo guardar el diseño",
+    "storageFull": "Espacio de almacenamiento lleno. Elimina diseños viejos.",
+    "justNow": "ahora",
+    "minutesAgo": "hace {{n}} min",
+    "hoursAgo": "hace {{n}} h",
+    "daysAgo": "hace {{n}} d"
   }
 }

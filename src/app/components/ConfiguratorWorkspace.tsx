@@ -7,6 +7,7 @@ import { ConfiguratorHeader } from './configurator/ConfiguratorHeader';
 import { BabylonCanvas, BabylonCanvasHandle } from './configurator/BabylonCanvas';
 import { ToolsPanel } from './configurator/ToolsPanel';
 import { ProductGallery } from './configurator/ProductGallery';
+import { DesignLibrary } from './configurator/DesignLibrary';
 import { SuccessModal } from './SuccessModal';
 import { LoadingOverlay } from './LoadingOverlay';
 import { loadingStateAtom, modelSectionsMapAtom, activeSectionAtom, activeToolAtom } from '../store/atoms';
@@ -87,16 +88,27 @@ export function ConfiguratorWorkspace() {
             transition={{ duration: 0.3, type: 'spring', stiffness: 300, damping: 30 }}
             className="flex-1 flex flex-col overflow-hidden"
           >
-            {/* Back to gallery */}
+            {/* Back to gallery + design library */}
             <div className="px-4 py-2 border-b border-border bg-card/50">
-              <button
-                onClick={handleBackToGallery}
-                className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ArrowLeft size={16} />
-                <span>Cambiar producto</span>
-                <span className="text-foreground">&middot; {selectedModel.name}</span>
-              </button>
+              <div className="flex items-center justify-between gap-4">
+                <button
+                  onClick={handleBackToGallery}
+                  className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft size={16} />
+                  <span>Cambiar producto</span>
+                  <span className="text-foreground">&middot; {selectedModel.name}</span>
+                </button>
+
+                <DesignLibrary
+                  modelSlug={selectedModel.slug}
+                  modelName={selectedModel.name}
+                  sections={sections}
+                  takeScreenshot={() =>
+                    canvasRef.current?.takeScreenshot() ?? Promise.resolve(null)
+                  }
+                />
+              </div>
             </div>
 
             <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
@@ -116,7 +128,6 @@ export function ConfiguratorWorkspace() {
                   activeSection={activeSection}
                   onActiveSectionChange={setActiveSection}
                   sections={sections}
-                  setSections={setSections}
                   activeTool={activeTool}
                   onActiveToolChange={setActiveTool}
                   onTakeScreenshot={() => canvasRef.current?.takeScreenshot() ?? Promise.resolve(null)}

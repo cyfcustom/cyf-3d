@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import * as fabric from 'fabric';
 import { layersAtom, Layer } from '../../../store/atoms';
 import type { SectionId } from '../../../types/sections';
-import { getPrintArea } from './fabricConstants';
+import { getPrintArea, CANVAS_SIZE } from './fabricConstants';
 
 /**
  * Floating-toolbar action handlers for the FabricEditor.

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { useAtom } from 'jotai';
 import * as fabric from 'fabric';
-import { layersAtom, Layer } from '../../store/atoms';
+import { layersAtom } from '../../store/atoms';
 import type { SectionId } from '../../types/sections';
 import {
   CANVAS_SIZE,
