@@ -53,7 +53,7 @@ function redrawSectionTexture(
     const img = imagesCache.get(layer.id);
     if (!img) continue;
 
-    const scale = layer.scale ?? 1;
+    const scale = Math.max(0, layer.scale ?? 1);
     const imgAspect = img.width / img.height;
     let w: number, h: number;
     if (imgAspect >= 1) {
@@ -63,6 +63,12 @@ function redrawSectionTexture(
       h = IMG_BASE_SIZE * scale;
       w = h * imgAspect;
     }
+    // Hard floor: never render below ~5% of print area so a zero/negative
+    // scale doesn't make the image disappear entirely (and so accidental
+    // scale=0 doesn't drop the 3D projection to nothing).
+    const MIN_DIM = IMG_BASE_SIZE * 0.05;
+    if (w < MIN_DIM) w = MIN_DIM;
+    if (h < MIN_DIM) h = MIN_DIM;
 
     const cx = (layer.x ?? 0.5) * TEX_SIZE;
     const cy = (layer.y ?? 0.4) * TEX_SIZE;

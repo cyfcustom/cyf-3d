@@ -21,6 +21,18 @@ const PRINT_W = 400;
 const PRINT_H = 500;
 const PRINT_X = (CANVAS_SIZE - PRINT_W) / 2;
 const PRINT_Y = (CANVAS_SIZE - PRINT_H) / 2;
+// Floor on Fabric scaleX — keeps the image visible if the user collapses
+// a corner handle to 0 (which would otherwise render a 0×0 image and
+// make the 3D projection read as "microscopic").
+const MIN_SCALE = 0.02;
+
+function clampScale(obj: fabric.Object | undefined) {
+  if (!obj) return;
+  const sx = obj.scaleX ?? 1;
+  const sy = obj.scaleY ?? 1;
+  if (sx < MIN_SCALE) obj.set({ scaleX: MIN_SCALE, scaleY: MIN_SCALE });
+  else if (sy < MIN_SCALE) obj.set({ scaleX: MIN_SCALE, scaleY: MIN_SCALE });
+}
 
 const SECTION_DISPLAY: Record<SectionId, string> = {
   front: 'Frente',
@@ -101,11 +113,18 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
         const updated = prev.map((layer) => {
           const obj = fc.getObjects().find((o: any) => o.data?.layerId === layer.id);
           if (!obj) return layer;
+          // Convert Fabric's absolute scaleX back to the shared
+          // "fraction of print area width" unit used by Babylon.
+          //  scaleX = scaleX_frac * naturalWidth / PRINT_W
+          const fabScale = obj.scaleX ?? 1;
+          const sharedScale = layer.naturalWidth
+            ? (fabScale * layer.naturalWidth) / PRINT_W
+            : fabScale;
           return {
             ...layer,
             x: (obj.left ?? CANVAS_SIZE / 2) / CANVAS_SIZE,
             y: (obj.top ?? CANVAS_SIZE / 2) / CANVAS_SIZE,
-            scale: obj.scaleX ?? 1,
+            scale: sharedScale,
             rotation: obj.angle ?? 0,
           };
         });
@@ -152,9 +171,15 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
       });
 
       // Events
-      fc.on('object:modified', syncToAtoms);
+      fc.on('object:modified', (e) => {
+        clampScale(e.target);
+        syncToAtoms();
+      });
       fc.on('object:moved', syncToAtoms);
-      fc.on('object:scaled', syncToAtoms);
+      fc.on('object:scaled', (e) => {
+        clampScale(e.target);
+        syncToAtoms();
+      });
       fc.on('object:rotated', syncToAtoms);
 
       return () => {
@@ -198,16 +223,20 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
         // Load image
         fabric.FabricImage.fromURL(layer.thumbnail, { crossOrigin: 'anonymous' }).then((img) => {
           if (!fcRef.current) return;
-          const maxDim = Math.min(PRINT_W, PRINT_H) * 0.6;
-          const baseScale = maxDim / Math.max(img.width!, img.height!);
-          const scale = baseScale * (layer.scale ?? 1);
+          // Convert shared "fraction of print area width" → Fabric's
+          // absolute scaleX (fraction of natural image size).
+          //  scaleX = (PRINT_W * sharedScale) / naturalWidth
+          const sharedScale = layer.scale ?? 0.5;
+          const naturalW = layer.naturalWidth ?? img.width ?? 1;
+          const targetWidth = PRINT_W * sharedScale;
+          const fabScale = targetWidth / naturalW;
           img.set({
             left: (layer.x ?? 0.5) * CANVAS_SIZE,
             top: (layer.y ?? 0.4) * CANVAS_SIZE,
             originX: 'center',
             originY: 'center',
-            scaleX: scale,
-            scaleY: scale,
+            scaleX: fabScale,
+            scaleY: fabScale,
             angle: layer.rotation ?? 0,
             visible: (layer.side || 'front') === activeSection,
             selectable: (layer.side || 'front') === activeSection,

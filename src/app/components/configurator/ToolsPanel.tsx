@@ -73,28 +73,37 @@ export function ToolsPanel({
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const newLayer: Layer = {
-        id: Date.now().toString(),
-        name: file.name,
-        thumbnail: e.target?.result as string,
-        rotation: 0,
-        scale: 1,
-        x: 0.5,
-        y: 0.4,
-        side: activeSectionDef?.id ?? 'front',
+      const dataURL = e.target?.result as string;
+      // Capture native dimensions so FabricEditor + BabylonCanvas can
+      // round-trip the user's scale edits in the same units.
+      const probe = new Image();
+      probe.onload = () => {
+        const newLayer: Layer = {
+          id: Date.now().toString(),
+          name: file.name,
+          thumbnail: dataURL,
+          rotation: 0,
+          scale: 0.5,                     // 50% of print area width — sane default
+          x: 0.5,
+          y: 0.4,
+          side: activeSectionDef?.id ?? 'front',
+          naturalWidth: probe.naturalWidth,
+          naturalHeight: probe.naturalHeight,
+        };
+        setLayers([...layers, newLayer]);
+        setLoadingState({ isLoading: false, message: '' });
+        toast.success(t('upload.success', { defaultValue: 'Imagen cargada' }), {
+          duration: 2000,
+          style: {
+            background: '#0F172A',
+            color: 'white',
+            fontWeight: 600,
+            borderRadius: '24px',
+            padding: '16px 24px',
+          },
+        });
       };
-      setLayers([...layers, newLayer]);
-      setLoadingState({ isLoading: false, message: '' });
-      toast.success(t('upload.success', { defaultValue: 'Imagen cargada' }), {
-        duration: 2000,
-        style: {
-          background: '#0F172A',
-          color: 'white',
-          fontWeight: 600,
-          borderRadius: '24px',
-          padding: '16px 24px',
-        },
-      });
+      probe.src = dataURL;
     };
     reader.readAsDataURL(file);
   };

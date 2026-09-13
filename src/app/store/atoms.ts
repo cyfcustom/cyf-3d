@@ -35,10 +35,21 @@ export interface Layer {
   name: string;
   thumbnail: string;
   rotation?: number;
+  /**
+   * Image size as a fraction of the print area width (0-1).
+   *  - 1.0 = image fills the print area width (PRINT_W = 400px on Fabric canvas,
+   *         IMG_BASE_SIZE = 400px on Babylon texture)
+   *  - 0.5 = image at half the print area width
+   * Same unit used by FabricEditor and BabylonCanvas so a drag in 2D keeps
+   * the 3D projection in lockstep with what the user sees.
+   */
   scale?: number;
   x?: number;       // 0-1 horizontal position, default 0.5
   y?: number;       // 0-1 vertical position, default 0.4
   side?: SectionId; // which section this image belongs to, default 'front'
+  /** Native pixel dimensions of the source image, captured on upload. */
+  naturalWidth?: number;
+  naturalHeight?: number;
 }
 
 // Product configuration
