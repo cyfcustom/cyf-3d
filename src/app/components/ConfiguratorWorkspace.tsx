@@ -100,7 +100,7 @@ export function ConfiguratorWorkspace() {
             </div>
 
             <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-              <div className="h-1/2 lg:h-auto lg:flex-[7] min-w-0">
+              <div className="h-1/2 lg:h-auto lg:flex-[11] min-w-0">
                 <BabylonCanvas
                   ref={canvasRef}
                   modelUrl={selectedModel.model_url}
@@ -108,7 +108,7 @@ export function ConfiguratorWorkspace() {
                   activeSection={activeSection}
                 />
               </div>
-              <div className="h-1/2 lg:h-auto lg:flex-[3] min-w-0 overflow-y-auto">
+              <div className="h-1/2 lg:h-auto lg:flex-[9] min-w-0 overflow-y-auto">
                 <ToolsPanel
                   onColorChange={handleColorChange}
                   selectedColor={activeColor}

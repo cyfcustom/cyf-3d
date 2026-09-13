@@ -1,5 +1,5 @@
 import { Palette, Upload, Trash2 } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAtom } from 'jotai';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -107,6 +107,35 @@ export function ToolsPanel({
     };
     reader.readAsDataURL(file);
   };
+
+  // Cmd/Ctrl+V — paste an image from the clipboard as a new layer.
+  useEffect(() => {
+    const handler = (e: ClipboardEvent) => {
+      // Only handle if we're not focused inside a text input / textarea
+      // (so Cmd+V inside a layer name field still pastes text normally).
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const blob = item.getAsFile();
+          if (blob) {
+            e.preventDefault();
+            const dt = new DataTransfer();
+            dt.items.add(blob);
+            handleFileUpload(dt.files);
+            toast.success('Imagen pegada del portapapeles', { duration: 1500 });
+            return;
+          }
+        }
+      }
+    };
+    window.addEventListener('paste', handler);
+    return () => window.removeEventListener('paste', handler);
+  }, [layers, activeSectionDef]);
 
   const removeLayer = (id: string) => {
     setLayers(layers.filter(layer => layer.id !== id));
@@ -296,6 +325,61 @@ export function ToolsPanel({
             activeSection={activeSection}
             onCanvasUpdate={() => {/* no-op; layer system is source of truth */}}
           />
+
+          {/* X/Y numeric sliders for the first visible layer in the active section.
+              Pairs with the Fabric canvas drag — gives precise control. */}
+          {(() => {
+            const targetLayer = layers.find(l => (l.side || 'front') === activeSection);
+            if (!targetLayer) return null;
+            return (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                      Pos. X
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground">
+                      {Math.round((targetLayer.x ?? 0.5) * 100)}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={Math.round((targetLayer.x ?? 0.5) * 100)}
+                    onChange={(e) => {
+                      const newX = parseInt(e.target.value, 10) / 100;
+                      setLayers(layers.map(l => l.id === targetLayer.id ? { ...l, x: newX } : l));
+                    }}
+                    className="w-full h-1.5 accent-primary rounded-full cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                      Pos. Y
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground">
+                      {Math.round((targetLayer.y ?? 0.4) * 100)}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={Math.round((targetLayer.y ?? 0.4) * 100)}
+                    onChange={(e) => {
+                      const newY = parseInt(e.target.value, 10) / 100;
+                      setLayers(layers.map(l => l.id === targetLayer.id ? { ...l, y: newY } : l));
+                    }}
+                    className="w-full h-1.5 accent-primary rounded-full cursor-pointer"
+                  />
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Compact layer list (no section picker, no sliders) */}
           {layers.length > 0 && (

@@ -255,15 +255,19 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
     }, [layers, activeSection, emitUpdate]);
 
     return (
-      <div className="flex items-center justify-center bg-muted/20 rounded-xl p-2 overflow-hidden">
-        <div className="relative" style={{ width, height, maxWidth: '100%', aspectRatio: '1/1' }}>
-          <canvas ref={canvasElRef} />
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-card/80 backdrop-blur-sm border border-border">
-            <span className="text-[10px] text-muted-foreground font-medium">
-              {SECTION_DISPLAY[activeSection] ?? activeSection} · Arrastra para posicionar
-            </span>
-          </div>
+      <div className="flex flex-col items-center gap-2">
+        <div
+          className="relative bg-muted/20 rounded-xl p-2 overflow-hidden"
+          style={{ width: '100%', maxWidth: width, aspectRatio: '1/1' }}
+        >
+          <canvas
+            ref={canvasElRef}
+            className="w-full h-full"
+          />
         </div>
+        <p className="text-xs text-muted-foreground font-medium">
+          {SECTION_DISPLAY[activeSection] ?? activeSection} · Arrastra para posicionar la imagen o usa las esquinas para redimensionar
+        </p>
       </div>
     );
   }
