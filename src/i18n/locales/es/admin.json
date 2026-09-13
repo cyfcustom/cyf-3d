@@ -166,7 +166,7 @@
   "login": {
     "panelTitle": "Panel de Administración",
     "email": "Correo Electrónico",
-    "emailPlaceholder": "admin@cyfcustoms.com",
+    "emailPlaceholder": "admin@cyfcustom.com",
     "password": "Contraseña",
     "submit": "INICIAR SESIÓN",
     "mfa": {

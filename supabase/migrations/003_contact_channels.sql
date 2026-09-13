@@ -84,13 +84,16 @@ CREATE TRIGGER contact_channels_updated_at
 DO $$
 DECLARE
   v_phone     text := '584124553107';
-  v_email     text := 'contacto@cyfcustoms.com';
-  v_instagram text := 'https://instagram.com/cyfcustoms';
-  v_facebook  text := 'https://facebook.com/cyfcustoms';
+  v_email     text := 'contacto@cyfcustom.com';
+  v_instagram text := 'https://instagram.com/cyfcustom';
+  v_facebook  text := 'https://facebook.com/cyfcustom';
 BEGIN
   -- Try to pull existing values from company_info
   BEGIN
-    SELECT phone, email, instagram_url, facebook_url
+    SELECT COALESCE(phone, v_phone),
+           COALESCE(email, v_email),
+           COALESCE(instagram_url, v_instagram),
+           COALESCE(facebook_url, v_facebook)
       INTO v_phone, v_email, v_instagram, v_facebook
       FROM company_info LIMIT 1;
   EXCEPTION WHEN OTHERS THEN

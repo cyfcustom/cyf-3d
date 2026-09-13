@@ -19,12 +19,12 @@ const DEFAULTS: CompanyInfo = {
   name: 'CYF Custom',
   slogan: 'Amor para ayudar',
   phone: '584124553107',
-  email: 'contacto@cyfcustoms.com',
-  instagram_url: 'https://instagram.com/cyfcustoms',
-  facebook_url: 'https://facebook.com/cyfcustoms',
+  email: 'contacto@cyfcustom.com',
+  instagram_url: 'https://instagram.com/cyfcustom',
+  facebook_url: 'https://facebook.com/cyfcustom',
   whatsapp_message_template: '¡Hola CYF Custom! 👋',
   address: 'Mérida, Venezuela',
-  zelle_email: 'pagos@cyfcustoms.com',
+  zelle_email: 'pagos@cyfcustom.com',
   bank_rif: 'J-000000000',
 };
 

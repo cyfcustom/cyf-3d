@@ -60,7 +60,7 @@ Se ha implementado un sistema completo de autenticación con las siguientes cara
 ### Usuario Público (Sin autenticación)
 
 ```
-1. Visita cyfcustoms.com
+1. Visita cyfcustom.com
 2. Ve el landing page limpio
 3. Solo puede navegar contenido público
 4. No ve links a admin ni calculadoras
@@ -69,7 +69,7 @@ Se ha implementado un sistema completo de autenticación con las siguientes cara
 ### Usuario Admin (Con autenticación)
 
 ```
-1. Va a cyfcustoms.com/cyf-admin-access
+1. Va a cyfcustom.com/cyf-admin-access
 2. Ingresa email y contraseña
 3. Ingresa código 2FA de Google Authenticator
 4. Accede al dashboard admin
