@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useAtom } from 'jotai';
 import { supabase } from '@/app/lib/supabase';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -8,6 +9,18 @@ import {
   ArrowLeft, Package, FolderOpen, Image as ImageIcon,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import {
+  activeTabAtom,
+  categoryDraftAtom,
+  modelDraftAtom,
+  modelFileAtom,
+  modelFileNameAtom,
+  modelFormOpenAtom,
+  thumbnailFileAtom,
+  thumbnailFileNameAtom,
+  EMPTY_CATEGORY_DRAFT,
+  EMPTY_MODEL_DRAFT,
+} from '@/app/store/adminModelsAtoms';
 
 const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/models`;
 
@@ -45,22 +58,19 @@ export function AdminModelsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'models' | 'categories'>('models');
 
-  // New category form
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatIcon, setNewCatIcon] = useState('');
+  // New category form (persistido en sessionStorage via jotai)
+  const [catDraft, setCatDraft] = useAtom(categoryDraftAtom);
   const [addingCat, setAddingCat] = useState(false);
 
-  // New model form
-  const [showModelForm, setShowModelForm] = useState(false);
-  const [modelForm, setModelForm] = useState({
-    name: '',
-    category_id: '',
-    description: '',
-  });
-  const [modelFile, setModelFile] = useState<File | null>(null);
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  // New model form (persistido en sessionStorage via jotai)
+  const [modelFormOpen, setModelFormOpen] = useAtom(modelFormOpenAtom);
+  const [modelDraft, setModelDraft] = useAtom(modelDraftAtom);
+  const [modelFile, setModelFile] = useAtom(modelFileAtom);
+  const [thumbnailFile, setThumbnailFile] = useAtom(thumbnailFileAtom);
+  const [modelFileName, setModelFileName] = useAtom(modelFileNameAtom);
+  const [thumbnailFileName, setThumbnailFileName] = useAtom(thumbnailFileNameAtom);
+  const [activeTab, setActiveTab] = useAtom(activeTabAtom);
   const [uploading, setUploading] = useState(false);
   const modelInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
@@ -82,21 +92,20 @@ export function AdminModelsPage() {
 
   // --- Category CRUD ---
   const addCategory = async () => {
-    if (!newCatName.trim()) return;
+    if (!catDraft.name.trim()) return;
     setAddingCat(true);
-    const slug = slugify(newCatName);
+    const slug = slugify(catDraft.name);
     const { error } = await supabase.from('product_categories').insert({
-      name: newCatName.trim(),
+      name: catDraft.name.trim(),
       slug,
-      icon: newCatIcon || '',
+      icon: catDraft.icon || '',
       sort_order: categories.length + 1,
     });
     if (error) {
       toast.error('Error: ' + error.message);
     } else {
       toast.success('Categoria creada');
-      setNewCatName('');
-      setNewCatIcon('');
+      setCatDraft(EMPTY_CATEGORY_DRAFT);
       loadData();
     }
     setAddingCat(false);
@@ -136,13 +145,13 @@ export function AdminModelsPage() {
   };
 
   const addModel = async () => {
-    if (!modelForm.name.trim() || !modelForm.category_id || !modelFile) {
+    if (!modelDraft.name.trim() || !modelDraft.category_id || !modelFile) {
       toast.error('Nombre, categoria y modelo 3D son requeridos');
       return;
     }
 
     setUploading(true);
-    const slug = slugify(modelForm.name);
+    const slug = slugify(modelDraft.name);
 
     // Upload .glb
     const modelPath = `${slug}.glb`;
@@ -157,10 +166,10 @@ export function AdminModelsPage() {
     }
 
     const { error } = await supabase.from('product_models').insert({
-      name: modelForm.name.trim(),
+      name: modelDraft.name.trim(),
       slug,
-      category_id: modelForm.category_id,
-      description: modelForm.description.trim(),
+      category_id: modelDraft.category_id,
+      description: modelDraft.description.trim(),
       model_url: modelUrl,
       thumbnail_url: thumbnailUrl,
       sort_order: models.length + 1,
@@ -170,10 +179,12 @@ export function AdminModelsPage() {
       toast.error('Error: ' + error.message);
     } else {
       toast.success('Modelo creado');
-      setModelForm({ name: '', category_id: '', description: '' });
+      setModelDraft(EMPTY_MODEL_DRAFT);
       setModelFile(null);
       setThumbnailFile(null);
-      setShowModelForm(false);
+      setModelFileName(null);
+      setThumbnailFileName(null);
+      setModelFormOpen(false);
       loadData();
     }
     setUploading(false);
@@ -283,21 +294,21 @@ export function AdminModelsPage() {
             <div className="flex-1">
               <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Nombre</label>
               <Input
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
+                value={catDraft.name}
+                onChange={(e) => setCatDraft({ ...catDraft, name: e.target.value })}
                 placeholder="Ej: Gorras"
               />
             </div>
             <div className="w-20">
               <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Icono</label>
               <Input
-                value={newCatIcon}
-                onChange={(e) => setNewCatIcon(e.target.value)}
+                value={catDraft.icon}
+                onChange={(e) => setCatDraft({ ...catDraft, icon: e.target.value })}
                 placeholder="🧢"
                 className="text-center"
               />
             </div>
-            <Button onClick={addCategory} disabled={addingCat || !newCatName.trim()}>
+            <Button onClick={addCategory} disabled={addingCat || !catDraft.name.trim()}>
               {addingCat ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
               <span className="ml-1">Agregar</span>
             </Button>
@@ -337,8 +348,8 @@ export function AdminModelsPage() {
         /* --- Models Tab --- */
         <div className="space-y-4">
           {/* Add model button / form */}
-          {!showModelForm ? (
-            <Button onClick={() => setShowModelForm(true)} className="w-full py-6 rounded-2xl">
+          {!modelFormOpen ? (
+            <Button onClick={() => setModelFormOpen(true)} className="w-full py-6 rounded-2xl">
               <Plus size={18} className="mr-2" />
               Agregar modelo 3D
             </Button>
@@ -350,16 +361,16 @@ export function AdminModelsPage() {
                 <div>
                   <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Nombre *</label>
                   <Input
-                    value={modelForm.name}
-                    onChange={(e) => setModelForm({ ...modelForm, name: e.target.value })}
+                    value={modelDraft.name}
+                    onChange={(e) => setModelDraft({ ...modelDraft, name: e.target.value })}
                     placeholder="Franela Oversize"
                   />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Categoria *</label>
                   <select
-                    value={modelForm.category_id}
-                    onChange={(e) => setModelForm({ ...modelForm, category_id: e.target.value })}
+                    value={modelDraft.category_id}
+                    onChange={(e) => setModelDraft({ ...modelDraft, category_id: e.target.value })}
                     className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                   >
                     <option value="">Seleccionar...</option>
@@ -373,8 +384,8 @@ export function AdminModelsPage() {
               <div>
                 <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Descripcion</label>
                 <Input
-                  value={modelForm.description}
-                  onChange={(e) => setModelForm({ ...modelForm, description: e.target.value })}
+                  value={modelDraft.description}
+                  onChange={(e) => setModelDraft({ ...modelDraft, description: e.target.value })}
                   placeholder="Corte holgado, ideal para sublimacion..."
                 />
               </div>
@@ -387,7 +398,11 @@ export function AdminModelsPage() {
                     ref={modelInputRef}
                     type="file"
                     accept=".glb,.gltf"
-                    onChange={(e) => setModelFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setModelFile(file);
+                      setModelFileName(file?.name ?? null);
+                    }}
                     className="hidden"
                   />
                   <button
@@ -397,7 +412,7 @@ export function AdminModelsPage() {
                     }`}
                   >
                     <Upload size={20} className="mx-auto mb-1" />
-                    {modelFile ? modelFile.name : 'Subir archivo .glb'}
+                    {modelFile ? modelFile.name : (modelFileName ? `${modelFileName} · re-selecciona el archivo` : 'Subir archivo .glb')}
                   </button>
                 </div>
 
@@ -408,7 +423,11 @@ export function AdminModelsPage() {
                     ref={thumbInputRef}
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setThumbnailFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setThumbnailFile(file);
+                      setThumbnailFileName(file?.name ?? null);
+                    }}
                     className="hidden"
                   />
                   <button
@@ -418,7 +437,7 @@ export function AdminModelsPage() {
                     }`}
                   >
                     <ImageIcon size={20} className="mx-auto mb-1" />
-                    {thumbnailFile ? thumbnailFile.name : 'Subir imagen (opcional)'}
+                    {thumbnailFile ? thumbnailFile.name : (thumbnailFileName ? `${thumbnailFileName} · re-selecciona la imagen` : 'Subir imagen (opcional)')}
                   </button>
                 </div>
               </div>
@@ -428,7 +447,14 @@ export function AdminModelsPage() {
                   {uploading ? <Loader2 className="animate-spin mr-2" size={16} /> : <Plus size={16} className="mr-2" />}
                   {uploading ? 'Subiendo...' : 'Crear modelo'}
                 </Button>
-                <Button variant="outline" onClick={() => { setShowModelForm(false); setModelFile(null); setThumbnailFile(null); }}>
+                <Button variant="outline" onClick={() => {
+                  setModelFormOpen(false);
+                  setModelDraft(EMPTY_MODEL_DRAFT);
+                  setModelFile(null);
+                  setThumbnailFile(null);
+                  setModelFileName(null);
+                  setThumbnailFileName(null);
+                }}>
                   Cancelar
                 </Button>
               </div>
