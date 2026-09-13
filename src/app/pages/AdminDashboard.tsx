@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { LogOut, Calculator, Palette, Shield, Settings, ExternalLink, ChevronRight, Users, History, FileText, Sliders, Package } from 'lucide-react';
 import { useState } from 'react';
 import { MFASetupDialog } from '@/app/components/admin/MFASetupDialog';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useTranslation, Trans } from 'react-i18next';
 
 export function AdminDashboard() {
