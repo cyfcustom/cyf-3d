@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 
 import { useAtom } from 'jotai';
 import * as fabric from 'fabric';
 import { layersAtom, Layer } from '../../store/atoms';
+import type { SectionId } from '../../types/sections';
 
 export interface FabricEditorHandle {
   getCanvasDataURL: () => string;
@@ -11,7 +12,7 @@ export interface FabricEditorHandle {
 interface FabricEditorProps {
   width?: number;
   height?: number;
-  activeSide: 'front' | 'back';
+  activeSection: SectionId;
   onCanvasUpdate: (dataURL: string) => void;
 }
 
@@ -21,8 +22,17 @@ const PRINT_H = 500;
 const PRINT_X = (CANVAS_SIZE - PRINT_W) / 2;
 const PRINT_Y = (CANVAS_SIZE - PRINT_H) / 2;
 
+const SECTION_DISPLAY: Record<SectionId, string> = {
+  front: 'Frente',
+  back: 'Espalda',
+  inside: 'Interior',
+  neck: 'Cuello',
+  left_sleeve: 'Manga I',
+  right_sleeve: 'Manga D',
+};
+
 export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
-  function FabricEditor({ width = CANVAS_SIZE, height = CANVAS_SIZE, activeSide, onCanvasUpdate }, ref) {
+  function FabricEditor({ width = CANVAS_SIZE, height = CANVAS_SIZE, activeSection, onCanvasUpdate }, ref) {
     const canvasElRef = useRef<HTMLCanvasElement>(null);
     const fcRef = useRef<fabric.Canvas | null>(null);
     const [layers, setLayers] = useAtom(layersAtom);
@@ -57,7 +67,7 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
             scaleX: scale,
             scaleY: scale,
           });
-          (img as any).data = { layerId, side: activeSide };
+          (img as any).data = { layerId, side: activeSection };
           fc.add(img);
           fc.setActiveObject(img);
           fc.requestRenderAll();
@@ -153,18 +163,18 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
       };
     }, [width, height]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Filter objects by activeSide
+    // Filter objects by active section
     useEffect(() => {
       const fc = fcRef.current;
       if (!fc) return;
       fc.getObjects().forEach((obj: any) => {
         if (!obj.data?.layerId) return; // skip border rect
         const objSide = obj.data?.side || 'front';
-        obj.set({ visible: objSide === activeSide, selectable: objSide === activeSide });
+        obj.set({ visible: objSide === activeSection, selectable: objSide === activeSection });
       });
       fc.requestRenderAll();
       emitUpdate();
-    }, [activeSide, emitUpdate]);
+    }, [activeSection, emitUpdate]);
 
     // Sync layers from Jotai → fabric (when layers added/removed externally)
     useEffect(() => {
@@ -199,8 +209,8 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
             scaleX: scale,
             scaleY: scale,
             angle: layer.rotation ?? 0,
-            visible: (layer.side || 'front') === activeSide,
-            selectable: (layer.side || 'front') === activeSide,
+            visible: (layer.side || 'front') === activeSection,
+            selectable: (layer.side || 'front') === activeSection,
           });
           (img as any).data = { layerId: layer.id, side: layer.side || 'front' };
           fcRef.current!.add(img);
@@ -213,7 +223,7 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
         fc.requestRenderAll();
         emitUpdate();
       }
-    }, [layers, activeSide, emitUpdate]);
+    }, [layers, activeSection, emitUpdate]);
 
     return (
       <div className="flex items-center justify-center bg-muted/20 rounded-xl p-2 overflow-hidden">
@@ -221,7 +231,7 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
           <canvas ref={canvasElRef} />
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-card/80 backdrop-blur-sm border border-border">
             <span className="text-[10px] text-muted-foreground font-medium">
-              {activeSide === 'front' ? 'Frente' : 'Atrás'} · Arrastra para posicionar
+              {SECTION_DISPLAY[activeSection] ?? activeSection} · Arrastra para posicionar
             </span>
           </div>
         </div>

@@ -1,11 +1,10 @@
-import { X, Cloud, Palette } from 'lucide-react';
+import { Palette, Upload, Trash2 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { useAtom } from 'jotai';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import {
   layersAtom,
-  selectedColorAtom,
   selectedColorNameAtom,
   productConfigAtom,
   loadingStateAtom,
@@ -13,13 +12,21 @@ import {
   designPreviewAtom,
   Layer,
 } from '../../store/atoms';
+import type { Section, SectionId } from '../../types/sections';
+import { SectionsPanel } from './SectionsPanel';
+import { ToolSidebar, ConfiguratorTool } from './ToolSidebar';
+import { FabricEditor } from './FabricEditor';
 
 interface ToolsPanelProps {
   onColorChange: (color: string) => void;
   selectedColor: string;
   modelName?: string;
-  activeSide: 'front' | 'back';
-  onActiveSideChange: (side: 'front' | 'back') => void;
+  activeSection: SectionId;
+  onActiveSectionChange: (section: SectionId) => void;
+  sections: Section[];
+  setSections: (next: Section[] | ((prev: Section[]) => Section[])) => void;
+  activeTool: ConfiguratorTool;
+  onActiveToolChange: (tool: ConfiguratorTool) => void;
   onTakeScreenshot?: () => Promise<string | null>;
 }
 
@@ -33,10 +40,15 @@ const PRESET_COLORS = [
   { key: 'yellow', value: '#FFD600' },
 ];
 
-export function ToolsPanel({ onColorChange, selectedColor, modelName, activeSide, onActiveSideChange, onTakeScreenshot }: ToolsPanelProps) {
+export function ToolsPanel({
+  onColorChange, selectedColor, modelName,
+  activeSection, onActiveSectionChange,
+  sections, setSections,
+  activeTool, onActiveToolChange,
+  onTakeScreenshot,
+}: ToolsPanelProps) {
   const { t } = useTranslation('configurator');
   const [layers, setLayers] = useAtom(layersAtom);
-  const [isDragging, setIsDragging] = useState(false);
   const [customColor, setCustomColor] = useState('#EC4899');
   const [, setLoadingState] = useAtom(loadingStateAtom);
   const [, setShowSuccessModal] = useAtom(showSuccessModalAtom);
@@ -44,6 +56,9 @@ export function ToolsPanel({ onColorChange, selectedColor, modelName, activeSide
   const [, setSelectedColorName] = useAtom(selectedColorNameAtom);
   const [productConfig, setProductConfig] = useAtom(productConfigAtom);
   const colorInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const activeSectionDef = sections.find(s => s.id === activeSection);
 
   const updateLayer = (id: string, updates: Partial<Layer>) => {
     setLayers(layers.map(l => l.id === id ? { ...l, ...updates } : l));
@@ -66,7 +81,7 @@ export function ToolsPanel({ onColorChange, selectedColor, modelName, activeSide
         scale: 1,
         x: 0.5,
         y: 0.4,
-        side: activeSide,
+        side: activeSectionDef?.id ?? 'front',
       };
       setLayers([...layers, newLayer]);
       setLoadingState({ isLoading: false, message: '' });
@@ -82,12 +97,6 @@ export function ToolsPanel({ onColorChange, selectedColor, modelName, activeSide
       });
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    handleFileUpload(e.dataTransfer.files);
   };
 
   const removeLayer = (id: string) => {
@@ -107,6 +116,8 @@ export function ToolsPanel({ onColorChange, selectedColor, modelName, activeSide
   const handleColorChange = (color: string, colorName: string) => {
     onColorChange(color);
     setSelectedColorName(colorName);
+    // Update the active section's color in the sections array.
+    setSections(sections.map(s => s.id === activeSection ? { ...s, color } : s));
     setProductConfig({
       ...productConfig,
       baseColor: color,
@@ -140,12 +151,13 @@ export function ToolsPanel({ onColorChange, selectedColor, modelName, activeSide
 
   return (
     <div
-      className="h-full bg-card flex flex-col border-l border-border"
+      className="h-full bg-card flex flex-row border-l border-border"
       style={{
         boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.06)',
-        padding: '24px 20px',
       }}
     >
+      {/* ── Main content ── */}
+      <div className="flex-1 flex flex-col min-w-0" style={{ padding: '24px 20px' }}>
       {/* Header */}
       <div className="mb-4 lg:mb-6">
         <h2 className="text-xl lg:text-2xl mb-2 font-bold text-foreground">
@@ -159,32 +171,36 @@ export function ToolsPanel({ onColorChange, selectedColor, modelName, activeSide
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto space-y-4 lg:space-y-6 pr-2">
 
-        {/* Side Selector (Front / Back) */}
+        {activeTool === 'colores' ? (
+          /* Colores tool — full section color picker */
+          <SectionsPanel
+            onSectionColorChange={(id, color) => {
+              if (id === activeSection) onColorChange(color);
+            }}
+          />
+        ) : (
+          <>
+        {/* Section Selector (Estampado) */}
         <div>
           <h3 className="text-xs lg:text-sm mb-2 font-semibold text-muted-foreground uppercase">
-            Lado del dise&ntilde;o
+            Editar secci&oacute;n
           </h3>
-          <div className="flex gap-2">
-            <button
-              onClick={() => onActiveSideChange('front')}
-              className={`flex-1 py-2 lg:py-3 px-3 lg:px-4 rounded-xl transition-all text-sm lg:text-base font-semibold ${
-                activeSide === 'front'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-foreground hover:bg-accent'
-              }`}
-            >
-              Frente
-            </button>
-            <button
-              onClick={() => onActiveSideChange('back')}
-              className={`flex-1 py-2 lg:py-3 px-3 lg:px-4 rounded-xl transition-all text-sm lg:text-base font-semibold ${
-                activeSide === 'back'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-foreground hover:bg-accent'
-              }`}
-            >
-              Atr&aacute;s
-            </button>
+          <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
+            {sections.map((sec) => (
+              <button
+                key={sec.id}
+                onClick={() => onActiveSectionChange(sec.id)}
+                disabled={!sec.mesh_name}
+                title={sec.mesh_name ? undefined : 'Sección sin mesh asignado'}
+                className={`shrink-0 py-2 lg:py-3 px-3 lg:px-4 rounded-xl transition-all text-xs lg:text-sm font-semibold ${
+                  activeSection === sec.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-foreground hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed'
+                }`}
+              >
+                {sec.display_name}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -242,183 +258,69 @@ export function ToolsPanel({ onColorChange, selectedColor, modelName, activeSide
           </div>
         </div>
 
-        {/* Size Selector */}
-        <div>
-          <h3 className="text-xs lg:text-sm mb-2 font-semibold text-muted-foreground uppercase">
-            Talla
-          </h3>
-          <div className="flex gap-2">
-            {(['S', 'M', 'L', 'XL'] as const).map((size) => (
-              <button
-                key={size}
-                onClick={() => setProductConfig(prev => ({ ...prev, size }))}
-                className={`flex-1 py-2 lg:py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  productConfig.size === size
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'bg-muted text-foreground hover:bg-accent'
-                }`}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Upload Area */}
+        {/* Upload + 2D Canvas editor */}
         <div>
           <h3 className="text-xs lg:text-sm mb-2 font-semibold text-muted-foreground uppercase">
             {t('toolsPanel.designLogo')}
           </h3>
 
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            className={`relative rounded-2xl p-5 lg:p-6 text-center cursor-pointer transition-all border-2 border-dashed ${
-              isDragging ? 'border-primary bg-accent' : 'border-border bg-card'
-            }`}
-          >
+          {/* Upload + drag-drop */}
+          <div className="flex gap-2 items-center mb-3">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 active:scale-95 transition-all"
+            >
+              <Upload size={14} />
+              Subir imagen
+            </button>
             <input
+              ref={fileInputRef}
               type="file"
               accept="image/*"
               onChange={(e) => handleFileUpload(e.target.files)}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="hidden"
             />
-            <div className="pointer-events-none">
-              <Cloud size={32} className="mx-auto mb-2 text-muted-foreground" />
-              <p className="mb-1 text-sm font-semibold text-foreground">
-                {t('upload.title', { defaultValue: 'Sube tu imagen' })}
-              </p>
-              <p className="text-xs text-muted-foreground font-medium">
-                Se aplicar&aacute; al lado: <strong>{activeSide === 'front' ? 'Frente' : 'Atr\u00e1s'}</strong>
-              </p>
-            </div>
           </div>
 
-          {/* Layers List with Controls */}
+          {/* 2D canvas editor (drag, resize, rotate) */}
+          <FabricEditor
+            activeSection={activeSection}
+            onCanvasUpdate={() => {/* no-op; layer system is source of truth */}}
+          />
+
+          {/* Compact layer list (no section picker, no sliders) */}
           {layers.length > 0 && (
-            <div className="mt-3 space-y-3">
-              <h4 className="text-xs lg:text-sm font-semibold text-muted-foreground uppercase">
-                {t('toolsPanel.layers', { defaultValue: 'Capas' })} ({layers.length})
-              </h4>
-
+            <div className="mt-3 space-y-1">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase">
+                  Capas ({layers.length})
+                </h4>
+              </div>
               {layers.map((layer) => (
-                <div key={layer.id} className="p-3 bg-muted rounded-xl space-y-3">
-                  {/* Header: thumbnail + name + side badge + delete */}
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={layer.thumbnail}
-                      alt={layer.name}
-                      className="w-10 h-10 object-cover rounded-lg flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs truncate font-semibold text-foreground">
-                        {layer.name}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                      {(layer.side || 'front') === 'front' ? 'Frente' : 'Atr\u00e1s'}
-                    </span>
-                    <button
-                      onClick={() => removeLayer(layer.id)}
-                      className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors flex-shrink-0"
-                      title="Eliminar"
-                    >
-                      <X size={14} style={{ color: '#DC2626' }} />
-                    </button>
-                  </div>
-
-                  {/* Side toggle */}
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => updateLayer(layer.id, { side: 'front' })}
-                      className={`flex-1 py-1 text-xs font-semibold rounded-lg transition-all ${
-                        (layer.side || 'front') === 'front'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-card text-muted-foreground hover:bg-accent'
-                      }`}
-                    >
-                      Frente
-                    </button>
-                    <button
-                      onClick={() => updateLayer(layer.id, { side: 'back' })}
-                      className={`flex-1 py-1 text-xs font-semibold rounded-lg transition-all ${
-                        layer.side === 'back'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-card text-muted-foreground hover:bg-accent'
-                      }`}
-                    >
-                      Atr&aacute;s
-                    </button>
-                  </div>
-
-                  {/* Scale slider */}
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase">
-                        Tama&ntilde;o
-                      </span>
-                      <span className="text-[10px] font-mono text-muted-foreground">
-                        {Math.round((layer.scale ?? 1) * 100)}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.1"
-                      max="2.5"
-                      step="0.05"
-                      value={layer.scale ?? 1}
-                      onChange={(e) => updateLayer(layer.id, { scale: parseFloat(e.target.value) })}
-                      className="w-full h-1.5 accent-primary rounded-full cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Position sliders */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase">
-                          Pos. X
-                        </span>
-                        <span className="text-[10px] font-mono text-muted-foreground">
-                          {Math.round((layer.x ?? 0.5) * 100)}
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0.1"
-                        max="0.9"
-                        step="0.01"
-                        value={layer.x ?? 0.5}
-                        onChange={(e) => updateLayer(layer.id, { x: parseFloat(e.target.value) })}
-                        className="w-full h-1.5 accent-primary rounded-full cursor-pointer"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase">
-                          Pos. Y
-                        </span>
-                        <span className="text-[10px] font-mono text-muted-foreground">
-                          {Math.round((layer.y ?? 0.4) * 100)}
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0.05"
-                        max="0.95"
-                        step="0.01"
-                        value={layer.y ?? 0.4}
-                        onChange={(e) => updateLayer(layer.id, { y: parseFloat(e.target.value) })}
-                        className="w-full h-1.5 accent-primary rounded-full cursor-pointer"
-                      />
-                    </div>
-                  </div>
+                <div key={layer.id} className="flex items-center gap-2 p-2 bg-muted rounded-xl">
+                  <img
+                    src={layer.thumbnail}
+                    alt={layer.name}
+                    className="w-8 h-8 object-cover rounded-lg flex-shrink-0"
+                  />
+                  <p className="flex-1 text-xs truncate font-semibold text-foreground">
+                    {layer.name}
+                  </p>
+                  <button
+                    onClick={() => removeLayer(layer.id)}
+                    className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors flex-shrink-0"
+                    title="Eliminar"
+                  >
+                    <Trash2 size={12} className="text-red-500" />
+                  </button>
                 </div>
               ))}
             </div>
           )}
         </div>
+          </>
+        )}
+
       </div>
 
       {/* Footer CTA */}
@@ -435,6 +337,9 @@ export function ToolsPanel({ onColorChange, selectedColor, modelName, activeSide
           {t('toolsPanel.whatsAppNote')}
         </p>
       </div>
+      </div>
+      {/* ── Right-side vertical icon toolbar ── */}
+      <ToolSidebar activeTool={activeTool} onToolChange={onActiveToolChange} />
     </div>
   );
 }
