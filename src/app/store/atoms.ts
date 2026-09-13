@@ -50,6 +50,10 @@ export interface Layer {
   /** Native pixel dimensions of the source image, captured on upload. */
   naturalWidth?: number;
   naturalHeight?: number;
+  /** Horizontal flip (mirror) — persists across re-renders. */
+  flipX?: boolean;
+  /** Vertical flip — persists across re-renders. */
+  flipY?: boolean;
 }
 
 // Product configuration

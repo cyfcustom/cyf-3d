@@ -1,6 +1,7 @@
-import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { useAtom } from 'jotai';
 import * as fabric from 'fabric';
+import { ChevronsUp, FlipHorizontal2, Maximize, Copy, Trash2 } from 'lucide-react';
 import { layersAtom, Layer } from '../../store/atoms';
 import type { SectionId } from '../../types/sections';
 
@@ -49,6 +50,11 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
     const fcRef = useRef<fabric.Canvas | null>(null);
     const [layers, setLayers] = useAtom(layersAtom);
     const suppressSyncRef = useRef(false);
+    const [toolbar, setToolbar] = useState<{
+      visible: boolean;
+      left: number;
+      top: number;
+    } | null>(null);
 
     // Export handle
     useImperativeHandle(ref, () => ({
@@ -126,6 +132,8 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
             y: (obj.top ?? CANVAS_SIZE / 2) / CANVAS_SIZE,
             scale: sharedScale,
             rotation: obj.angle ?? 0,
+            flipX: !!obj.flipX,
+            flipY: !!obj.flipY,
           };
         });
         return updated;
@@ -174,13 +182,42 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
       fc.on('object:modified', (e) => {
         clampScale(e.target);
         syncToAtoms();
+        updateToolbar();
       });
-      fc.on('object:moved', syncToAtoms);
+      fc.on('object:moved', (e) => {
+        syncToAtoms();
+        updateToolbar();
+      });
       fc.on('object:scaled', (e) => {
         clampScale(e.target);
         syncToAtoms();
+        updateToolbar();
       });
-      fc.on('object:rotated', syncToAtoms);
+      fc.on('object:rotated', (e) => {
+        syncToAtoms();
+        updateToolbar();
+      });
+
+      // Selection tracking — drives the floating action toolbar position
+      const updateToolbar = () => {
+        const obj = fc.getActiveObject();
+        if (!obj || !(obj as any).data?.layerId) {
+          setToolbar(null);
+          return;
+        }
+        const canvas = canvasElRef.current;
+        if (!canvas) return;
+        const bounds = obj.getBoundingRect(true, true);
+        const canvasRect = canvas.getBoundingClientRect();
+        const zoom = canvasRect.width / CANVAS_SIZE;
+        const left = canvasRect.left + (bounds.left + bounds.width / 2) * zoom;
+        const top  = canvasRect.top  + (bounds.top + bounds.height) * zoom + 12;
+        setToolbar({ visible: true, left, top });
+      };
+
+      fc.on('selection:created', updateToolbar);
+      fc.on('selection:updated', updateToolbar);
+      fc.on('selection:cleared', () => setToolbar(null));
 
       return () => {
         fc.dispose();
@@ -238,6 +275,8 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
             scaleX: fabScale,
             scaleY: fabScale,
             angle: layer.rotation ?? 0,
+            flipX: !!layer.flipX,
+            flipY: !!layer.flipY,
             visible: (layer.side || 'front') === activeSection,
             selectable: (layer.side || 'front') === activeSection,
           });
@@ -268,6 +307,156 @@ export const FabricEditor = forwardRef<FabricEditorHandle, FabricEditorProps>(
         <p className="text-xs text-muted-foreground font-medium">
           {SECTION_DISPLAY[activeSection] ?? activeSection} · Arrastra para posicionar la imagen o usa las esquinas para redimensionar
         </p>
+
+        {/* Floating action toolbar — anchored to the selected object's
+            bottom-center. 5 actions: layer order, flip H, fit width,
+            duplicate, delete. Rendered outside the canvas wrapper so it
+            isn't clipped by overflow-hidden. */}
+        {toolbar?.visible && (() => {
+          const obj = fcRef.current?.getActiveObject() as any;
+          if (!obj) return null;
+
+          const bringToFront = () => {
+            if (!fcRef.current) return;
+            fcRef.current.bringObjectToFront(obj);
+            fcRef.current.requestRenderAll();
+          };
+          const sendToBack = () => {
+            if (!fcRef.current) return;
+            fcRef.current.sendObjectToBack(obj);
+            fcRef.current.requestRenderAll();
+          };
+          const flipH = () => {
+            obj.set('flipX', !obj.flipX);
+            fcRef.current?.requestRenderAll();
+            syncToAtoms();
+          };
+          const fitToWidth = () => {
+            const currentW = (obj.width ?? 1) * (obj.scaleX ?? 1);
+            if (currentW <= 0) return;
+            const ratio = PRINT_W / currentW;
+            obj.set({
+              scaleX: (obj.scaleX ?? 1) * ratio,
+              scaleY: (obj.scaleY ?? 1) * ratio,
+            });
+            fcRef.current?.requestRenderAll();
+            syncToAtoms();
+          };
+          const duplicate = () => {
+            const fc = fcRef.current;
+            if (!fc) return;
+            const layerId = obj.data?.layerId;
+            const srcLayer = layers.find(l => l.id === layerId);
+            if (!srcLayer) return;
+
+            // Clone via Fabric, offset 20px so the copy is visible next to original.
+            const cloned = fabric.util.object.clone(obj) as fabric.Object;
+            cloned.set({
+              left: (obj.left ?? 0) + 20,
+              top:  (obj.top  ?? 0) + 20,
+            });
+            const newId = `${Date.now()}-copy`;
+            (cloned as any).data = {
+              layerId: newId,
+              side: srcLayer.side,
+            };
+            fc.add(cloned);
+            fc.setActiveObject(cloned);
+            fc.requestRenderAll();
+
+            // Mirror layer in jotai so 3D + sidebar reflect the new layer.
+            const newLayer: Layer = {
+              ...srcLayer,
+              id: newId,
+              x: ((cloned.left ?? 0) / CANVAS_SIZE),
+              y: ((cloned.top  ?? 0) / CANVAS_SIZE),
+            };
+            setLayers(prev => [...prev, newLayer]);
+          };
+          const removeSelected = () => {
+            const fc = fcRef.current;
+            if (!fc) return;
+            const layerId = (obj as any).data?.layerId;
+            fc.remove(obj);
+            fc.requestRenderAll();
+            if (layerId) {
+              setLayers(prev => prev.filter(l => l.id !== layerId));
+            }
+            setToolbar(null);
+          };
+
+          // Mirror buttons. Width is fixed so left/top math is predictable.
+          const toolbarWidth = 240;
+          const halfW = toolbarWidth / 2;
+          return (
+            <div
+              data-testid="fabric-toolbar"
+              style={{
+                position: 'fixed',
+                left: toolbar.left - halfW,
+                top: toolbar.top,
+                width: toolbarWidth,
+                zIndex: 50,
+              }}
+              className="flex items-center justify-around bg-card/95 backdrop-blur-sm border border-border rounded-full shadow-xl px-2 py-1.5"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {/* 1. Layer ordering — up + down in one icon group */}
+              <div className="flex items-center bg-muted rounded-full overflow-hidden">
+                <button
+                  onClick={bringToFront}
+                  title="Traer al frente"
+                  className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+                >
+                  <ChevronsUp size={14} className="rotate-180" />
+                </button>
+                <button
+                  onClick={sendToBack}
+                  title="Enviar al fondo"
+                  className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+                >
+                  <ChevronsUp size={14} />
+                </button>
+              </div>
+
+              {/* 2. Flip horizontal */}
+              <button
+                onClick={flipH}
+                title="Voltear horizontal (espejo)"
+                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+              >
+                <FlipHorizontal2 size={16} />
+              </button>
+
+              {/* 3. Fit to print area width */}
+              <button
+                onClick={fitToWidth}
+                title="Ajustar al ancho del área de impresión"
+                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+              >
+                <Maximize size={16} />
+              </button>
+
+              {/* 4. Duplicate */}
+              <button
+                onClick={duplicate}
+                title="Duplicar capa"
+                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+              >
+                <Copy size={16} />
+              </button>
+
+              {/* 5. Delete — red, on the right end */}
+              <button
+                onClick={removeSelected}
+                title="Eliminar capa"
+                className="w-8 h-8 flex items-center justify-center text-red-500 hover:text-white hover:bg-red-500 rounded-full transition-colors"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          );
+        })()}
       </div>
     );
   }
