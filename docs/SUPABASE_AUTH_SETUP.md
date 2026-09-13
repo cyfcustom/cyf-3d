@@ -189,13 +189,13 @@ Considera mover las credenciales de Supabase a variables de entorno:
 ```bash
 # .env.local
 VITE_SUPABASE_URL=https://jushzjpeetegcjyikclb.supabase.co
-VITE_SUPABASE_ANON_KEY=sb_publishable_7_NNj-RmsdvNH-K7QnX5Lg_-mMbrh3R
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_7_NNj-RmsdvNH-K7QnX5Lg_-mMbrh3R
 ```
 
 ```typescript
 // src/app/lib/supabase.ts
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 ```
 
 ## 📞 Soporte
