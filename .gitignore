@@ -11,3 +11,7 @@ dist
 GEMINI.md
 firebase-debug.log
 pnpm-lock.yaml
+
+# Estado local del CLI de Supabase y scrapes locales de modelos
+supabase/.temp/
+modelos/

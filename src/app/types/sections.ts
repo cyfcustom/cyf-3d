@@ -25,6 +25,13 @@ export interface Section {
   color: string;             // hex color, e.g. "#FFFFFF"
   visible: boolean;
   sort_order: number;
+  /**
+   * Print area dimensions in Fabric canvas pixels (600×600).
+   * Defines the dashed rectangle in the 2D editor and the fit-to-width
+   * target. If omitted, defaults per SectionId are used (see
+   * SECTION_PRINT_AREAS in FabricEditor.tsx).
+   */
+  print_area?: { width: number; height: number };
 }
 
 export type SectionMap = Record<SectionId, Section | undefined>;
