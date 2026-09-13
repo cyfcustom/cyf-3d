@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { Navigate } from 'react-router-dom';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from 'next-themes';
 import { Loader2 } from 'lucide-react';
@@ -28,6 +29,7 @@ const ProductDetailPage   = lazyPage(() => import('./pages/ProductDetailPage'), 
 const CheckoutPage        = lazyPage(() => import('./pages/CheckoutPage'),       'CheckoutPage');
 const MyOrdersPage        = lazyPage(() => import('./pages/MyOrdersPage'),       'MyOrdersPage');
 const CalculatorSuitePage = lazyPage(() => import('./pages/CalculatorSuitePage'), 'CalculatorSuitePage');
+const JuntosASeulPage     = lazyPage(() => import('./pages/JuntosASeulPage'),     'JuntosASeulPage');
 
 // ── Admin pages (lazy) — never downloaded by non-admin visitors ───────────
 const AdminLogin            = lazyPage(() => import('./pages/AdminLogin'),                    'AdminLogin');
@@ -41,6 +43,7 @@ const AdminModelsPage       = lazyPage(() => import('./pages/admin/AdminModelsPa
 const AdminUsersPage        = lazyPage(() => import('./pages/admin/AdminUsersPage'),         'AdminUsersPage');
 const AdminAuditPage        = lazyPage(() => import('./pages/admin/AdminAuditPage'),         'AdminAuditPage');
 const AdminHistoryPage      = lazyPage(() => import('./pages/admin/AdminHistoryPage'),       'AdminHistoryPage');
+const ModelPreviewPage      = lazyPage(() => import('./pages/admin/ModelPreviewPage'),       'ModelPreviewPage');
 
 // ── Babylon.js 3D configurator (~5 MB) — own Suspense with custom message ─
 const ConfiguratorWorkspace = lazyPage(
@@ -132,6 +135,9 @@ export default function App() {
                   <ConsumerLayout><MyOrdersPage /></ConsumerLayout>
                 </ProtectedRoute>
               } />
+              <Route path="/juntos-a-seul" element={
+                <ConsumerLayout><JuntosASeulPage /></ConsumerLayout>
+              } />
 
               {/* ── Admin login ─────────────────────────────────────────── */}
               <Route path="/cyf-admin-access" element={<AdminLogin />} />
@@ -151,12 +157,13 @@ export default function App() {
               <Route path="/admin/config/contact"      element={<AdminRoute><AdminContactPage /></AdminRoute>} />
               <Route path="/admin/config/:module"      element={<AdminRoute><AdminConfigEditor /></AdminRoute>} />
               <Route path="/admin/models"              element={<AdminRoute><AdminModelsPage /></AdminRoute>} />
+              <Route path="/admin/model-preview"      element={<AdminRoute><ModelPreviewPage /></AdminRoute>} />
               <Route path="/admin/users"               element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
               <Route path="/admin/audit"               element={<AdminRoute><AdminAuditPage /></AdminRoute>} />
               <Route path="/admin/calculations"        element={<AdminRoute><AdminHistoryPage /></AdminRoute>} />
 
               {/* ── Protected tools ─────────────────────────────────────── */}
-              <Route path="/configurator" element={
+              <Route path="/configurator/:slug" element={
                 <ProtectedRoute>
                   {/* Nested Suspense: overrides PageLoader with the 3D-specific message */}
                   <Suspense fallback={<ConfiguratorLoader />}>
@@ -164,6 +171,8 @@ export default function App() {
                   </Suspense>
                 </ProtectedRoute>
               } />
+              {/* Backward-compat: redirect legacy /configurator to the gallery (no model preselected) */}
+              <Route path="/configurator" element={<Navigate to="/configurator/_" replace />} />
               <Route path="/calculators" element={
                 <ProtectedRoute><CalculatorSuitePage /></ProtectedRoute>
               } />
