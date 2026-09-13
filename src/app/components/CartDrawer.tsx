@@ -12,17 +12,22 @@ import {
 
 // ─── Cart line item ────────────────────────────────────────────────────────
 
+/** Una línea de carrito se identifica por producto + talla + color. */
+function cartLineKey(item: CartItem): string {
+  return `${item.productId}:${item.size ?? ''}:${item.color ?? ''}`;
+}
+
 function CartLineItem({ item }: { item: CartItem }) {
   const [cart, setCart] = useAtom(cartAtom);
 
   function updateQty(delta: number) {
     const next = item.quantity + delta;
     if (next < item.minOrderQty) return remove();
-    setCart(cart.map((i) => i.productId === item.productId ? { ...i, quantity: next } : i));
+    setCart(cart.map((i) => cartLineKey(i) === cartLineKey(item) ? { ...i, quantity: next } : i));
   }
 
   function remove() {
-    setCart(cart.filter((i) => i.productId !== item.productId));
+    setCart(cart.filter((i) => cartLineKey(i) !== cartLineKey(item)));
   }
 
   return (
@@ -160,7 +165,7 @@ export function CartDrawer() {
           ) : (
             <div>
               {cart.map((item) => (
-                <CartLineItem key={item.productId} item={item} />
+                <CartLineItem key={cartLineKey(item)} item={item} />
               ))}
             </div>
           )}

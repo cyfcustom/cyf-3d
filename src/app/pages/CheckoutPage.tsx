@@ -67,7 +67,7 @@ function OrderSummary({ collapsed }: { collapsed?: boolean }) {
   return (
     <div className="flex flex-col gap-3">
       {cart.map((item) => (
-        <div key={item.productId} className="flex gap-3">
+        <div key={`${item.productId}:${item.size ?? ''}:${item.color ?? ''}`} className="flex gap-3">
           <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0">
             {item.productImageUrl && (
               <img src={item.productImageUrl} alt={item.productName} className="w-full h-full object-cover" />
@@ -75,7 +75,10 @@ function OrderSummary({ collapsed }: { collapsed?: boolean }) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground truncate">{item.productName}</p>
-            <p className="text-xs text-muted-foreground">x{item.quantity}</p>
+            <p className="text-xs text-muted-foreground">
+              {[item.size, item.color].filter(Boolean).join(' · ')}
+              {item.size || item.color ? ' · ' : ''}x{item.quantity}
+            </p>
           </div>
           <span className="text-sm font-bold shrink-0">
             ${(item.unitPriceUsd * item.quantity).toFixed(2)}
