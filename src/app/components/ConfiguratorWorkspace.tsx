@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAtom } from 'jotai';
+import { useParams, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 import { ConfiguratorHeader } from './configurator/ConfiguratorHeader';
@@ -8,22 +9,57 @@ import { ToolsPanel } from './configurator/ToolsPanel';
 import { ProductGallery } from './configurator/ProductGallery';
 import { SuccessModal } from './SuccessModal';
 import { LoadingOverlay } from './LoadingOverlay';
-import { selectedColorAtom, loadingStateAtom } from '../store/atoms';
-import { ProductModel } from '../hooks/useProductCatalog';
+import { loadingStateAtom, modelSectionsMapAtom, activeSectionAtom, activeToolAtom } from '../store/atoms';
+import { useProductCatalog, ProductModel } from '../hooks/useProductCatalog';
+import type { Section, SectionId } from '../types/sections';
 
 export function ConfiguratorWorkspace() {
-  const [selectedColor, setSelectedColor] = useAtom(selectedColorAtom);
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [loadingState] = useAtom(loadingStateAtom);
-  const [selectedModel, setSelectedModel] = useState<ProductModel | null>(null);
-  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
+  const [sectionsMap, setSectionsMap] = useAtom(modelSectionsMapAtom);
+  const [activeSection, setActiveSection] = useAtom(activeSectionAtom);
+  const [activeTool, setActiveTool] = useAtom(activeToolAtom);
   const canvasRef = useRef<BabylonCanvasHandle>(null);
+  const { models } = useProductCatalog();
+
+  // Resolve model from slug. `_` (or unknown slug) shows the gallery.
+  const selectedModel: ProductModel | null = useMemo(() => {
+    if (!slug || slug === '_') return null;
+    return models.find(m => m.slug === slug) ?? null;
+  }, [slug, models]);
+
+  // Initialize / hydrate sections for this model from the persisted map,
+  // falling back to the model's default sections on first load.
+  const modelKey = selectedModel?.slug ?? '';
+  const sections: Section[] = useMemo(() => {
+    if (!selectedModel) return [];
+    return sectionsMap[modelKey] ?? selectedModel.sections;
+  }, [selectedModel, sectionsMap, modelKey]);
+
+  const setSections = useCallback((updater: Section[] | ((prev: Section[]) => Section[])) => {
+    if (!modelKey) return;
+    setSectionsMap(prev => {
+      const current = prev[modelKey] ?? selectedModel?.sections ?? [];
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      return { ...prev, [modelKey]: next };
+    });
+  }, [modelKey, selectedModel, setSectionsMap]);
+
+  // Active section's color (derived) — fed into ToolsPanel for the picker UI.
+  const activeColor = sections.find(s => s.id === activeSection)?.color ?? '#FFFFFF';
+
+  const handleColorChange = (color: string) => {
+    setSections(sections.map(s => s.id === activeSection ? { ...s, color } : s));
+  };
 
   const handleSelectModel = (model: ProductModel) => {
-    setSelectedModel(model);
+    setActiveSection('front');
+    navigate(`/configurator/${model.slug}`);
   };
 
   const handleBackToGallery = () => {
-    setSelectedModel(null);
+    navigate('/configurator/_');
   };
 
   return (
@@ -67,17 +103,22 @@ export function ConfiguratorWorkspace() {
               <div className="h-1/2 lg:h-auto lg:flex-[7] min-w-0">
                 <BabylonCanvas
                   ref={canvasRef}
-                  selectedColor={selectedColor}
                   modelUrl={selectedModel.model_url}
+                  sections={sections}
+                  activeSection={activeSection}
                 />
               </div>
               <div className="h-1/2 lg:h-auto lg:flex-[3] min-w-0 overflow-y-auto">
                 <ToolsPanel
-                  onColorChange={setSelectedColor}
-                  selectedColor={selectedColor}
+                  onColorChange={handleColorChange}
+                  selectedColor={activeColor}
                   modelName={selectedModel.name}
-                  activeSide={activeSide}
-                  onActiveSideChange={setActiveSide}
+                  activeSection={activeSection}
+                  onActiveSectionChange={setActiveSection}
+                  sections={sections}
+                  setSections={setSections}
+                  activeTool={activeTool}
+                  onActiveToolChange={setActiveTool}
                   onTakeScreenshot={() => canvasRef.current?.takeScreenshot() ?? Promise.resolve(null)}
                 />
               </div>
