@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import type { Section } from '../types/sections';
 
 export interface ProductCategory {
   id: string;
@@ -18,6 +19,7 @@ export interface ProductModel {
   model_url: string;
   description: string;
   sort_order: number;
+  sections: Section[];
 }
 
 export function useProductCatalog() {
@@ -37,7 +39,7 @@ export function useProductCatalog() {
           .order('sort_order'),
         supabase
           .from('product_models')
-          .select('id, category_id, name, slug, thumbnail_url, model_url, description, sort_order')
+          .select('id, category_id, name, slug, thumbnail_url, model_url, description, sort_order, sections')
           .eq('is_active', true)
           .order('sort_order'),
       ]);

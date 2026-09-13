@@ -1,5 +1,6 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils'; // still used by cartAtom
+import type { SectionId, Section } from '../types/sections';
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────
 
@@ -37,7 +38,7 @@ export interface Layer {
   scale?: number;
   x?: number;       // 0-1 horizontal position, default 0.5
   y?: number;       // 0-1 vertical position, default 0.4
-  side?: 'front' | 'back'; // which side of the product, default 'front'
+  side?: SectionId; // which section this image belongs to, default 'front'
 }
 
 // Product configuration
@@ -90,4 +91,18 @@ export const mfaRequiredAtom = atom<boolean>(false);
 // 3D Configurator — print areas & design textures
 export const activePrintAreaAtom = atom<string | null>(null);
 export const designTexturesAtom = atom<Record<string, string>>({});
-export const activeSideAtom = atom<'front' | 'back'>('front');
+
+// Per-model sections map, keyed by model slug.
+// Persisted to localStorage so color/visibility edits survive reloads and
+// direct deep-link navigation to /configurator/:slug restores the state.
+export const modelSectionsMapAtom = atomWithStorage<Record<string, Section[]>>(
+  'cyf-model-sections-map',
+  {}
+);
+
+// Active section the user is editing (in-memory only).
+export const activeSectionAtom = atom<SectionId>('front');
+
+// Active tool in the right-side icon bar.
+export type ConfiguratorTool = 'estampado' | 'colores';
+export const activeToolAtom = atom<ConfiguratorTool>('estampado');
