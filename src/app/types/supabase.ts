@@ -532,6 +532,7 @@ export type Database = {
           created_at: string | null
           id: string
           layers: Json
+          model_slug: string | null
           name: string | null
           preview_url: string | null
           product_id: string | null
@@ -542,6 +543,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           layers: Json
+          model_slug?: string | null
           name?: string | null
           preview_url?: string | null
           product_id?: string | null
