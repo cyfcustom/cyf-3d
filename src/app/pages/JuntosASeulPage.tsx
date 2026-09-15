@@ -26,6 +26,7 @@ import {
   type Product,
 } from '../components/campaign/CampaignFranelas';
 import { CampaignViewer } from '../components/campaign/CampaignViewer';
+import { VerticalModelPicker } from '../components/campaign/VerticalModelPicker';
 import { cn } from '../components/ui/utils';
 import { useCompanyInfo } from '../hooks/useCompanyInfo';
 
@@ -183,83 +184,63 @@ export function JuntosASeulPage() {
         </div>
       </section>
 
-      {/* ── Cómo funciona ───────────────────────────────────────────── */}
-      <section id="como-funciona" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <SectionTag>Pre-orden por tanda</SectionTag>
-        <SectionTitle>¿Cómo funciona?</SectionTitle>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((step, i) => (
-            <div key={step.title} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <div
-                  className="flex h-11 w-11 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: `${SEOUL_BLUE}14` }}
-                >
-                  <step.icon size={22} style={{ color: SEOUL_BLUE }} />
-                </div>
-                <span className="text-sm font-bold" style={{ color: SEOUL_RED }}>
-                  0{i + 1}
-                </span>
-              </div>
-              <h3 className="mb-1 text-base font-bold" style={{ color: SEOUL_BLUE }}>
-                {step.title}
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-600">{step.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Visor 3D ───────────────────────────────────────────────── */}
-      <section id="visor-3d" className="bg-white py-16">
+      {/* ── Visor 3D + pasos + selector vertical ────────────────────── */}
+      <section id="visor-3d" className="bg-white py-10 sm:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionTag>Visor 3D interactivo</SectionTag>
-          <SectionTitle>Tu franela en 3D</SectionTitle>
-          <p className="mb-10 max-w-2xl text-gray-600">
-            Explora la franela blanca de la campaña. Elige un diseño y míralo en el pecho; el logo{' '}
-            <strong>Juntos a Seúl</strong> siempre va en la espalda como mercancía oficial.
-          </p>
-
-          <CampaignViewer
-            designUrl={activeDesign.url}
-            designName={activeDesign.name}
-            className="mx-auto aspect-square w-full max-w-[640px]"
-          />
-
-          <div className="mx-auto mt-8 flex max-w-[780px] flex-col gap-4">
-            <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Elige el diseño del pecho
-            </p>
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {designOptions.map((d) => (
-                <button
-                  key={d.id}
-                  type="button"
-                  onClick={() => setActiveDesignId(d.id)}
-                  className={cn(
-                    'group w-40 shrink-0 overflow-hidden rounded-2xl border-2 bg-white text-left transition-all hover:-translate-y-0.5 hover:shadow-md',
-                    activeDesign.id === d.id ? 'shadow-md' : 'border-gray-200'
-                  )}
-                  style={
-                    activeDesign.id === d.id ? { borderColor: SEOUL_BLUE } : undefined
-                  }
-                  aria-pressed={activeDesign.id === d.id}
-                >
-                  <img
-                    src={d.url}
-                    alt={d.name}
-                    className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <span className="block truncate px-3 py-2 text-xs font-bold text-gray-700">
-                    {d.name}
-                  </span>
-                </button>
-              ))}
+          <div className="flex flex-col items-start gap-8 lg:flex-row lg:items-start lg:gap-8">
+            {/* Left — title + steps */}
+            <div className="min-w-0 flex-1 lg:max-w-md">
+              <SectionTag>Visor 3D interactivo</SectionTag>
+              <SectionTitle>Previsualiza tu Franela</SectionTitle>
+              <p className="mb-6 text-sm leading-relaxed text-gray-600">
+                Explora la franela blanca de la campaña. Elige un diseño y míralo en el pecho;
+                el logo <strong>Juntos a Seúl</strong> siempre va en la espalda como mercancía
+                oficial.
+              </p>
+              <div className="space-y-3">
+                {steps.map((step, i) => (
+                  <div key={step.title} className="flex items-start gap-3">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                      style={{ backgroundColor: `${SEOUL_BLUE}14` }}
+                    >
+                      <step.icon size={16} style={{ color: SEOUL_BLUE }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold" style={{ color: SEOUL_BLUE }}>
+                        <span className="mr-1.5 text-xs" style={{ color: SEOUL_RED }}>
+                          0{i + 1}
+                        </span>
+                        {step.title}
+                      </p>
+                      <p className="text-xs leading-relaxed text-gray-600">{step.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <p className="text-sm text-gray-500">
-              Girando la franela verás el logo <strong>Juntos a Seúl</strong> en la espalda, bajo
-              el cuello.
-            </p>
+
+            {/* Middle — 3D viewer */}
+            <CampaignViewer
+              designUrl={activeDesign.url}
+              designName={activeDesign.name}
+              className="aspect-square w-[min(100%,400px)] shrink-0"
+            />
+
+            {/* Right — vertical model picker */}
+            <div className="flex w-28 shrink-0 flex-col self-stretch lg:w-32">
+              <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-wider text-gray-500 sm:text-xs">
+                Diseños
+              </p>
+              <div className="min-h-0 flex-1">
+                <VerticalModelPicker
+                  models={designOptions}
+                  activeId={activeDesign.id}
+                  onSelect={setActiveDesignId}
+                  activeBorderColor={SEOUL_BLUE}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>

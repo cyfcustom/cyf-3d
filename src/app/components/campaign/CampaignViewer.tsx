@@ -108,7 +108,7 @@ export function CampaignViewer({ designUrl, designName, className }: CampaignVie
     <BabylonCanvas
       modelUrl={CAMPAIGN_MODEL_URL}
       sections={CAMPAIGN_SECTIONS}
-      cameraRadiusMultiplier={1.8}
+      cameraRadiusMultiplier={2.5}
       containerClassName={containerClass}
     />
   );
