@@ -110,16 +110,30 @@ export function toSavedDesign(row: SavedDesignRow): SavedDesign {
 }
 
 /** Fetch the current user's saved designs, newest first. */
-export async function listDesigns(modelSlug?: string): Promise<SavedDesign[]> {
+export async function listDesigns(modelSlug?: string, limit = 100): Promise<SavedDesign[]> {
   let q = supabase
     .from('saved_designs')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(100);
+    .limit(limit);
   if (modelSlug) q = q.eq('model_slug', modelSlug);
   const { data, error } = await q;
   if (error) throw new Error(`listDesigns failed: ${error.message}`);
   return (data ?? []).map(toSavedDesign);
+}
+
+/** Fetch a specific set of designs by ID (for manual / "pinned" folders). */
+export async function listDesignsByIds(ids: string[]): Promise<SavedDesign[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from('saved_designs')
+    .select('*')
+    .in('id', ids)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(`listDesignsByIds failed: ${error.message}`);
+  // Preserve the caller-provided ordering for a predictable UX.
+  const byId = new Map((data ?? []).map(d => [d.id, toSavedDesign(d)]));
+  return ids.map(id => byId.get(id)).filter((d): d is SavedDesign => !!d);
 }
 
 export async function getDesign(id: string): Promise<SavedDesign | null> {

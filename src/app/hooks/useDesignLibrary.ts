@@ -8,23 +8,42 @@ import {
   activeSectionAtom,
   sceneBackgroundAtom,
 } from '../store/atoms';
+import type { DesignFolder } from '../store/atoms';
 import { useAuth } from './useAuth';
 import {
   SavedDesign,
   saveDesign as saveDesignRemote,
   deleteDesign as deleteDesignRemote,
   listDesigns,
+  listDesignsByIds,
 } from '../lib/designs';
 import type { Layer, SceneBackground } from '../store/atoms';
 import type { Section } from '../types/sections';
 
 /**
+ * Resolves a DesignFolder to the Supabase listDesigns args expected by
+ * lib/designs.ts. Kept tiny so the hook stays the single source of
+ * truth for "what does this folder mean in SQL".
+ */
+function folderToListArgs(folder: DesignFolder): {
+  modelSlug?: string;
+  ids?: string[];
+  limit?: number;
+} {
+  switch (folder.type) {
+    case 'all':     return { limit: 100 };
+    case 'model':   return { modelSlug: folder.modelSlug, limit: 100 };
+    case 'recent':  return { limit: folder.limit ?? 20 };
+    case 'ids':     return { ids: folder.ids };
+  }
+}
+
+/**
  * Supabase-backed hook for the configurator's design library.
  *
- *  - Fetch: loads the signed-in user's designs (optionally filtered by
- *    model_slug) from saved_designs. RLS scopes to own rows, so this is
- *    safe for any authenticated user. Unauthenticated callers get an
- *    empty list (RLS returns nothing) and save is blocked.
+ *  - Fetch: loads designs from saved_designs according to the
+ *    `DesignFolder` object (atom or prop). RLS scopes to own rows, so
+ *    this is safe for any authenticated user.
  *  - saveDesign: uploads each layer thumbnail + the 3D preview to the
  *    design-images bucket, then INSERTs the saved_designs row.
  *  - applyDesign: loads a design's sections + layers into the live
@@ -32,11 +51,14 @@ import type { Section } from '../types/sections';
  *    user edits).
  *  - removeDesign: deletes the row + best-effort cleans its storage.
  *
- * The same hook powers the inline "Mis diseños" UI in the configurator
- * today and any future standalone "Cargar diseño" component.
+ * The right-side "Mis diseños" panel passes the current folder (read
+ * from `activeFolderAtom`). Switching the folder anywhere — a folder
+ * selector inside the panel, a future folder-manager page, etc. —
+ * triggers a re-fetch automatically because the hook subscribes to the
+ * folder reference.
  */
-export function useDesignLibrary(opts: { modelSlug?: string } = {}) {
-  const { modelSlug } = opts;
+export function useDesignLibrary(opts: { folder?: DesignFolder } = {}) {
+  const { folder } = opts;
   const { t } = useTranslation('configurator');
   const { authUser } = useAuth();
 
@@ -58,7 +80,10 @@ export function useDesignLibrary(opts: { modelSlug?: string } = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      const rows = await listDesigns(modelSlug);
+      const args = folder ? folderToListArgs(folder) : { limit: 100 };
+      const rows = args.ids
+        ? await listDesignsByIds(args.ids)
+        : await listDesigns(args.modelSlug, args.limit);
       setDesigns(rows);
     } catch (e: any) {
       setError(e?.message ?? String(e));
@@ -66,9 +91,9 @@ export function useDesignLibrary(opts: { modelSlug?: string } = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [authUser, modelSlug]);
+  }, [authUser, folder]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Refetch when the user or the model filter changes.
+  // Refetch when the user or the folder changes.
   useEffect(() => {
     refresh();
   }, [refresh]);
@@ -109,7 +134,7 @@ export function useDesignLibrary(opts: { modelSlug?: string } = {}) {
 
   const applyDesign = useCallback(
     (design: SavedDesign) => {
-      const targetSlug = design.modelSlug ?? modelSlug;
+      const targetSlug = design.modelSlug;
       if (!targetSlug) return;
       setSectionsMap(prev => ({ ...prev, [targetSlug]: design.sections }));
       setLayers(design.layers);
@@ -120,7 +145,7 @@ export function useDesignLibrary(opts: { modelSlug?: string } = {}) {
       setBackground(design.background ?? null);
       toast.success(t('designLibrary.loaded', { name: design.name ?? '' }), { duration: 2000 });
     },
-    [modelSlug, setSectionsMap, setLayers, setActiveSection, setBackground, t]
+    [setSectionsMap, setLayers, setActiveSection, setBackground, t]
   );
 
   const removeDesign = useCallback(

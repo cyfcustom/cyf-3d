@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
@@ -10,7 +10,7 @@ import { ProductGallery } from './configurator/ProductGallery';
 import { DesignLibrary } from './configurator/DesignLibrary';
 import { SuccessModal } from './SuccessModal';
 import { LoadingOverlay } from './LoadingOverlay';
-import { loadingStateAtom, modelSectionsMapAtom, activeSectionAtom, activeToolAtom } from '../store/atoms';
+import { loadingStateAtom, modelSectionsMapAtom, activeSectionAtom, activeToolAtom, activeFolderAtom } from '../store/atoms';
 import { useProductCatalog, ProductModel } from '../hooks/useProductCatalog';
 import type { Section, SectionId } from '../types/sections';
 
@@ -21,6 +21,7 @@ export function ConfiguratorWorkspace() {
   const [sectionsMap, setSectionsMap] = useAtom(modelSectionsMapAtom);
   const [activeSection, setActiveSection] = useAtom(activeSectionAtom);
   const [activeTool, setActiveTool] = useAtom(activeToolAtom);
+  const setActiveFolder = useSetAtom(activeFolderAtom);
   const canvasRef = useRef<BabylonCanvasHandle>(null);
   const { models } = useProductCatalog();
 
@@ -29,6 +30,17 @@ export function ConfiguratorWorkspace() {
     if (!slug || slug === '_') return null;
     return models.find(m => m.slug === slug) ?? null;
   }, [slug, models]);
+
+  // Reset the design library folder to the current model each time
+  // the user switches products. The folder is also the default the
+  // DesignLibrary panel reads from `activeFolderAtom` — switching
+  // models always returns to "this product's designs" unless the
+  // visitor manually picked "Todos" while staying on the same model.
+  useEffect(() => {
+    if (selectedModel) {
+      setActiveFolder({ type: 'model', modelSlug: selectedModel.slug });
+    }
+  }, [selectedModel?.slug, setActiveFolder]);
 
   // Initialize / hydrate sections for this model from the persisted map,
   // falling back to the model's default sections on first load.

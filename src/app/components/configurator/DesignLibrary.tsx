@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import { Bookmark, BookmarkCheck, Save, Trash2, Shirt, X, LogIn, Loader2 } from 'lucide-react';
-import { layersAtom } from '../../store/atoms';
+import { layersAtom, activeFolderAtom, type DesignFolder } from '../../store/atoms';
 import { useDesignLibrary } from '../../hooks/useDesignLibrary';
+import { cn } from '../ui/utils';
 import type { Section } from '../../types/sections';
 
 interface DesignLibraryProps {
@@ -14,15 +15,27 @@ interface DesignLibraryProps {
   takeScreenshot: () => Promise<string | null>;
 }
 
+interface FolderChipDef {
+  folder: DesignFolder;
+  /** Translated label key (under designLibrary namespace). */
+  labelKey: string;
+}
+
 /**
- * Save + quick-load designs backed by Supabase (`saved_designs` table +
- * `design-images` storage bucket). The same hook is used by any future
- * "Cargar diseño" component — designs saved here are visible from any
- * browser once the user signs in.
+ * Save + quick-load designs backed by Supabase.
+ *
+ * The dropdown is driven by `activeFolderAtom` (read here) — changing
+ * the folder anywhere (this selector, a future folder manager, etc.)
+ * automatically refetches and re-renders the list because the hook
+ * subscribes to the folder reference. No changes to this component are
+ * needed to add new folder types — just extend the DesignFolder union
+ * and the folderToListArgs resolver.
  */
 export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }: DesignLibraryProps) {
   const { t } = useTranslation('configurator');
   const layers = useAtomValue(layersAtom);
+  const folder = useAtomValue(activeFolderAtom);
+  const setFolder = useSetAtom(activeFolderAtom);
   const {
     designs,
     isLoading,
@@ -30,7 +43,7 @@ export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }
     saveDesign,
     applyDesign,
     removeDesign,
-  } = useDesignLibrary({ modelSlug });
+  } = useDesignLibrary({ folder });
 
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -72,6 +85,24 @@ export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }
     if (!design) return;
     if (!window.confirm(t('designLibrary.deleteConfirm'))) return;
     removeDesign(design);
+  };
+
+  // Predefined folder chips shown at the top of the dropdown. Add more
+  // here (or in a future folder manager) without touching the list
+  // rendering below — the folder object drives everything.
+  const folderChips: FolderChipDef[] = [
+    { folder: { type: 'model', modelSlug }, labelKey: 'designLibrary.folderThisProduct' },
+    { folder: { type: 'all' },                 labelKey: 'designLibrary.folderAll' },
+  ];
+
+  const isFolderActive = (chip: DesignFolder) => {
+    if (chip.type === folder.type) {
+      if (chip.type === 'model' && folder.type === 'model') {
+        return chip.modelSlug === folder.modelSlug;
+      }
+      return true;
+    }
+    return false;
   };
 
   // ── Unauthenticated: prompt to sign in. Loading from Supabase still
@@ -136,6 +167,32 @@ export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }
               >
                 <X size={16} />
               </button>
+            </div>
+
+            {/* ── Folder chips ───────────────────────────────────────── */}
+            <div className="flex items-center gap-1.5 border-b border-border bg-muted/30 px-4 py-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">
+                {t('designLibrary.folderLabel')}
+              </span>
+              {folderChips.map(chip => {
+                const active = isFolderActive(chip.folder);
+                return (
+                  <button
+                    key={chip.labelKey}
+                    type="button"
+                    onClick={() => setFolder(chip.folder)}
+                    className={cn(
+                      'rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors',
+                      active
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-card text-muted-foreground hover:bg-background hover:text-foreground'
+                    )}
+                    aria-pressed={active}
+                  >
+                    {t(chip.labelKey)}
+                  </button>
+                );
+              })}
             </div>
 
             {isLoading ? (

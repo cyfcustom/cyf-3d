@@ -128,3 +128,23 @@ export type SceneBackground =
   | { type: 'color'; value: string }
   | { type: 'image'; value: string }; // data URL or remote URL
 export const sceneBackgroundAtom = atom<SceneBackground | null>(null);
+
+// ─── Design folders (UI groupings of saved designs) ────────────────────────
+// A folder is a plain object describing which saved_designs rows belong
+// together. The right-side "Mis diseños" panel reads the active folder
+// from this atom and reactively re-fetches when it changes, so any UI
+// that sets `activeFolderAtom` automatically drives the panel — no
+// changes to the panel component are needed.
+//
+// Folder types:
+//   - 'all'             every design the signed-in user owns
+//   - 'model'           designs for a specific product model (by slug)
+//   - 'recent'          the N most recent designs
+//   - 'ids'             a hand-picked list of design IDs (manual folder)
+export type DesignFolder =
+  | { type: 'all' }
+  | { type: 'model'; modelSlug: string }
+  | { type: 'recent'; limit?: number }
+  | { type: 'ids'; ids: string[] };
+
+export const activeFolderAtom = atom<DesignFolder>({ type: 'all' });
