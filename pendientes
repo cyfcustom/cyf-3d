@@ -1,0 +1,6 @@
+- Fix botón duplicar
+- Section-based print area (ya integrado en este refactor)
+- Sincronizar orden de capas 2D↔3D
+- Multi-layer active selector
+- Undo/redo
+- Rotate 90°
