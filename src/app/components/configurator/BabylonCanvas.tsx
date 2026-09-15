@@ -71,6 +71,21 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
       return () => document.removeEventListener('fullscreenchange', handler);
     }, []);
 
+    // Lock page scroll while the wheel is over the canvas so the
+    // camera zoom doesn't fight with the document's vertical scroll.
+    // Babylon's own wheel listener (attached via attachControl) still
+    // fires for camera zoom — preventDefault only stops the browser's
+    // default page-scroll action, not other listeners. Listener is on
+    // the container, not the canvas, so scrolling over the surrounding
+    // page (title, picker, etc.) still works normally.
+    useEffect(() => {
+      const el = containerRef.current;
+      if (!el) return;
+      const onWheel = (e: WheelEvent) => e.preventDefault();
+      el.addEventListener('wheel', onWheel, { passive: false });
+      return () => el.removeEventListener('wheel', onWheel);
+    }, []);
+
     const toggleFullscreen = () => {
       if (!containerRef.current) return;
       if (document.fullscreenElement) {
