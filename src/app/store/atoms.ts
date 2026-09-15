@@ -119,5 +119,12 @@ export const modelSectionsMapAtom = atomWithStorage<Record<string, Section[]>>(
 export const activeSectionAtom = atom<SectionId>('front');
 
 // Active tool in the right-side icon bar.
-export type ConfiguratorTool = 'estampado' | 'colores';
+export type ConfiguratorTool = 'estampado' | 'colores' | 'fondo';
 export const activeToolAtom = atom<ConfiguratorTool>('estampado');
+
+// Scene background — applied via CSS on the BabylonCanvas container.
+// null = default (transparent canvas over the page's muted background).
+export type SceneBackground =
+  | { type: 'color'; value: string }
+  | { type: 'image'; value: string }; // data URL or remote URL
+export const sceneBackgroundAtom = atom<SceneBackground | null>(null);

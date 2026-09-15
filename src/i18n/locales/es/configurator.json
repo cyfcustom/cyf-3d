@@ -47,6 +47,13 @@
     "finishOrder": "Finalizar y Pedir",
     "whatsAppNote": "Se abrirá WhatsApp con tu diseño"
   },
+  "backgroundTool": {
+    "colorTitle": "Color de fondo",
+    "imageTitle": "Imagen de fondo",
+    "uploadImage": "Subir imagen",
+    "removeImage": "Quitar imagen",
+    "reset": "Restablecer fondo"
+  },
   "canvas": {
     "preview": "T-Shirt Preview",
     "viewFront": "Frontal",

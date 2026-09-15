@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
-import { layersAtom } from '../../store/atoms';
-import { useAtom } from 'jotai';
+import { layersAtom, sceneBackgroundAtom } from '../../store/atoms';
+import { useAtom, useAtomValue } from 'jotai';
 import type { Section, SectionId } from '../../types/sections';
 import { useBabylonScene } from './useBabylonScene';
 
@@ -28,6 +28,7 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [showHint, setShowHint] = useState(true);
     const containerRef = useRef<HTMLDivElement>(null);
+    const background = useAtomValue(sceneBackgroundAtom);
 
     const { canvasRef, takeScreenshot, loading } = useBabylonScene({
       modelUrl,
@@ -71,7 +72,21 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
     return (
       <div
         ref={containerRef}
-        className="relative w-full h-full flex items-center justify-center bg-muted/30"
+        className={`relative w-full h-full flex items-center justify-center ${
+          background === null ? 'bg-muted/30' : ''
+        }`}
+        style={
+          background === null
+            ? undefined
+            : background.type === 'color'
+              ? { backgroundColor: background.value }
+              : {
+                  backgroundImage: `url(${background.value})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                }
+        }
       >
         <canvas
           ref={canvasRef}

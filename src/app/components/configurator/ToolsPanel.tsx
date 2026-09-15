@@ -10,6 +10,7 @@ import type { Section, SectionId } from '../../types/sections';
 import { SectionsPanel } from './SectionsPanel';
 import { ToolSidebar, ConfiguratorTool } from './ToolSidebar';
 import { EstampadoTool } from './EstampadoTool';
+import { BackgroundTool } from './BackgroundTool';
 
 interface ToolsPanelProps {
   onColorChange: (color: string) => void;
@@ -87,6 +88,8 @@ export function ToolsPanel({
                 if (id === activeSection) onColorChange(color);
               }}
             />
+          ) : activeTool === 'fondo' ? (
+            <BackgroundTool />
           ) : (
             <EstampadoTool
               activeSection={activeSection}

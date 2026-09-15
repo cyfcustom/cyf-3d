@@ -1,6 +1,6 @@
-import { ImagePlus, Palette } from 'lucide-react';
+import { ImagePlus, Palette, PaintBucket } from 'lucide-react';
 
-export type ToolId = 'estampado' | 'colores';
+export type ToolId = 'estampado' | 'colores' | 'fondo';
 
 interface ToolDef {
   id: ToolId;
@@ -11,6 +11,7 @@ interface ToolDef {
 const TOOLS: ToolDef[] = [
   { id: 'estampado', label: 'Estampado', icon: <ImagePlus size={20} /> },
   { id: 'colores',   label: 'Colores',    icon: <Palette   size={20} /> },
+  { id: 'fondo',     label: 'Fondo',      icon: <PaintBucket size={20} /> },
 ];
 
 interface ToolSidebarProps {
