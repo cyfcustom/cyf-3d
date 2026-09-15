@@ -21,6 +21,12 @@ interface UseBabylonSceneOpts {
   layers: Layer[];
   /** Map<layerId, HTMLImageElement> cache for canvas drawImage. */
   imagesCache: Map<string, HTMLImageElement>;
+  /**
+   * Camera distance multiplier (camera.radius = targetSize × N). Default 3
+   * for the configurator's split-pane layout. The campaign viewer passes
+   * 1.8 to bring the model closer.
+   */
+  cameraRadiusMultiplier?: number;
 }
 
 interface SectionResources {
@@ -42,7 +48,7 @@ interface SectionResources {
  * screenshots.
  */
 export function useBabylonScene(opts: UseBabylonSceneOpts) {
-  const { textureReady, modelUrl, sections, layers, imagesCache } = opts;
+  const { textureReady, modelUrl, sections, layers, imagesCache, cameraRadiusMultiplier = 3 } = opts;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
@@ -190,8 +196,10 @@ export function useBabylonScene(opts: UseBabylonSceneOpts) {
       rootNode.scaling = new Vector3(scaleFactor, scaleFactor, scaleFactor);
 
       // Assign materials based on mesh name + section visibility.
+      // mesh.name is lowercased to tolerate GLBs authored with mixed-case
+      // mesh names (e.g. campaign/model.glb uses "Front"/"Back").
       for (const mesh of loadedMeshes) {
-        const section = sections.find(s => s.mesh_name === mesh.name);
+        const section = sections.find(s => s.mesh_name === mesh.name.toLowerCase());
         if (section && section.visible && sectionResources.has(section.id)) {
           mesh.material = sectionResources.get(section.id)!.material;
           mesh.isVisible = true;
@@ -209,7 +217,7 @@ export function useBabylonScene(opts: UseBabylonSceneOpts) {
       ground.position.y = min.y * scaleFactor - center.y * scaleFactor - 0.05;
 
       camera.target = Vector3.Zero();
-      camera.radius = targetSize * 3.0;
+      camera.radius = targetSize * cameraRadiusMultiplier;
 
       setLoading(false);
     }).catch(err => {
@@ -240,7 +248,7 @@ export function useBabylonScene(opts: UseBabylonSceneOpts) {
 
     for (const sec of sections) {
       // Apply visibility + material assignment.
-      const mesh = meshesRef.current.find(m => m.name === sec.mesh_name);
+      const mesh = meshesRef.current.find(m => m.name.toLowerCase() === sec.mesh_name);
       if (mesh) {
         mesh.isVisible = sec.visible;
         if (sec.visible && sectionResources.has(sec.id)) {

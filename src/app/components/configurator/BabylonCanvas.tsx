@@ -13,6 +13,16 @@ interface BabylonCanvasProps {
   modelUrl: string;
   sections: Section[];
   activeSection?: SectionId;
+  /**
+   * Optional override for the container's background-related classes.
+   * When provided, it replaces the default `bg-muted/30` (and the
+   * transparent background when sceneBackgroundAtom is set). Used by
+   * the campaign viewer to apply a gradient + border + rounded corners
+   * directly on the container so fullscreen mode preserves them.
+   */
+  containerClassName?: string;
+  /** Camera distance multiplier passed through to useBabylonScene. */
+  cameraRadiusMultiplier?: number;
 }
 
 /**
@@ -22,7 +32,7 @@ interface BabylonCanvasProps {
  * just the React shell + fullscreen toggle.
  */
 export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>(
-  function BabylonCanvas({ modelUrl, sections, activeSection: _activeSection }, ref) {
+  function BabylonCanvas({ modelUrl, sections, activeSection: _activeSection, containerClassName, cameraRadiusMultiplier }, ref) {
     const [layers] = useAtom(layersAtom);
     const [textureReady, setTextureReady] = useState(0);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -36,6 +46,7 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
       layers,
       imagesCache: useImagesCache(),
       textureReady,
+      cameraRadiusMultiplier,
     });
 
     // Expose screenshot handle to parent.
@@ -69,12 +80,15 @@ export const BabylonCanvas = forwardRef<BabylonCanvasHandle, BabylonCanvasProps>
       }
     };
 
+    // Default background: muted/30 when no override and no scene background.
+    // When containerClassName is provided, it replaces the bg part entirely.
+    const defaultBg = background === null ? 'bg-muted/30' : '';
+    const bgClass = containerClassName !== undefined ? containerClassName : defaultBg;
+
     return (
       <div
         ref={containerRef}
-        className={`relative w-full h-full flex items-center justify-center ${
-          background === null ? 'bg-muted/30' : ''
-        }`}
+        className={`relative w-full h-full flex items-center justify-center ${bgClass}`}
         style={
           background === null
             ? undefined

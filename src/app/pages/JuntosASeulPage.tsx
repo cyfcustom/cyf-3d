@@ -25,7 +25,7 @@ import {
   PLACEHOLDER_IMAGE,
   type Product,
 } from '../components/campaign/CampaignFranelas';
-import { Franela3DViewer } from '../components/campaign/Franela3DViewer';
+import { CampaignViewer } from '../components/campaign/CampaignViewer';
 import { cn } from '../components/ui/utils';
 import { useCompanyInfo } from '../hooks/useCompanyInfo';
 
@@ -220,9 +220,10 @@ export function JuntosASeulPage() {
             <strong>Juntos a Seúl</strong> siempre va en la espalda como mercancía oficial.
           </p>
 
-          <Franela3DViewer
-            frontDesignUrl={activeDesign.url}
-            className="mx-auto aspect-square w-full max-w-[780px]"
+          <CampaignViewer
+            designUrl={activeDesign.url}
+            designName={activeDesign.name}
+            className="mx-auto aspect-square w-full max-w-[640px]"
           />
 
           <div className="mx-auto mt-8 flex max-w-[780px] flex-col gap-4">
