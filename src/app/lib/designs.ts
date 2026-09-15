@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import type { Section } from '../types/sections';
-import type { Layer } from '../store/atoms';
+import type { Layer, SceneBackground } from '../store/atoms';
 import type { Database } from '../types/supabase';
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -34,6 +34,12 @@ export interface SavedDesign {
   sections: Section[];
   layers: Layer[];
   previewUrl: string | null;
+  /**
+   * Scene background at save time (color or image). Null = default
+   * transparent. Stored inside the `configuration` JSONB column for
+   * backward compatibility (no schema change required).
+   */
+  background: SceneBackground | null;
 }
 
 type SavedDesignRow = Database['public']['Tables']['saved_designs']['Row'];
@@ -84,7 +90,10 @@ export async function uploadDesignBlob(
 
 /** Map a DB row to the frontend SavedDesign shape. */
 export function toSavedDesign(row: SavedDesignRow): SavedDesign {
-  const configuration = (row.configuration ?? {}) as { sections?: Section[] };
+  const configuration = (row.configuration ?? {}) as {
+    sections?: Section[];
+    background?: SceneBackground | null;
+  };
   const layers = (Array.isArray(row.layers) ? row.layers : []) as Layer[];
   return {
     id: row.id,
@@ -95,6 +104,8 @@ export function toSavedDesign(row: SavedDesignRow): SavedDesign {
     sections: Array.isArray(configuration.sections) ? configuration.sections : [],
     layers,
     previewUrl: row.preview_url ?? null,
+    // Fallback to null for designs saved before the background field existed.
+    background: configuration.background ?? null,
   };
 }
 
@@ -129,6 +140,8 @@ export interface SaveDesignInput {
   layers: Layer[];
   /** Optional data URL of the 3D preview screenshot. */
   previewDataUrl: string | null;
+  /** Scene background (color or image) at save time. */
+  background?: SceneBackground | null;
 }
 
 /**
@@ -172,7 +185,10 @@ export async function saveDesign(input: SaveDesignInput): Promise<SavedDesign> {
       name: input.name.trim(),
       model_slug: input.modelSlug,
       product_id: null,
-      configuration: { sections: input.sections },
+      configuration: {
+        sections: input.sections,
+        background: input.background ?? null,
+      },
       layers: uploadedLayers,
       preview_url: previewUrl,
     })

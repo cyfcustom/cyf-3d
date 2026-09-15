@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import {
   layersAtom,
   modelSectionsMapAtom,
   activeSectionAtom,
+  sceneBackgroundAtom,
 } from '../store/atoms';
 import { useAuth } from './useAuth';
 import {
@@ -14,7 +15,7 @@ import {
   deleteDesign as deleteDesignRemote,
   listDesigns,
 } from '../lib/designs';
-import type { Layer } from '../store/atoms';
+import type { Layer, SceneBackground } from '../store/atoms';
 import type { Section } from '../types/sections';
 
 /**
@@ -46,6 +47,8 @@ export function useDesignLibrary(opts: { modelSlug?: string } = {}) {
   const setLayers = useSetAtom(layersAtom);
   const setSectionsMap = useSetAtom(modelSectionsMapAtom);
   const setActiveSection = useSetAtom(activeSectionAtom);
+  const setBackground = useSetAtom(sceneBackgroundAtom);
+  const background = useAtomValue(sceneBackgroundAtom);
 
   const refresh = useCallback(async () => {
     if (!authUser) {
@@ -90,6 +93,7 @@ export function useDesignLibrary(opts: { modelSlug?: string } = {}) {
           sections: input.sections,
           layers: input.layers,
           previewDataUrl: input.previewDataUrl,
+          background,
         });
         toast.success(t('designLibrary.saved', { name: saved.name }), { duration: 2000 });
         await refresh();
@@ -100,7 +104,7 @@ export function useDesignLibrary(opts: { modelSlug?: string } = {}) {
         return null;
       }
     },
-    [authUser, refresh, t]
+    [authUser, refresh, t, background]
   );
 
   const applyDesign = useCallback(
@@ -110,9 +114,13 @@ export function useDesignLibrary(opts: { modelSlug?: string } = {}) {
       setSectionsMap(prev => ({ ...prev, [targetSlug]: design.sections }));
       setLayers(design.layers);
       setActiveSection('front');
+      // Restore the background that was active at save time. Older
+      // designs (saved before the background field existed) carry
+      // background === null and reset to the default transparent canvas.
+      setBackground(design.background ?? null);
       toast.success(t('designLibrary.loaded', { name: design.name ?? '' }), { duration: 2000 });
     },
-    [modelSlug, setSectionsMap, setLayers, setActiveSection, t]
+    [modelSlug, setSectionsMap, setLayers, setActiveSection, setBackground, t]
   );
 
   const removeDesign = useCallback(
