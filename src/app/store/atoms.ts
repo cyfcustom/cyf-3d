@@ -140,11 +140,14 @@ export const sceneBackgroundAtom = atom<SceneBackground | null>(null);
 //   - 'all'             every design the signed-in user owns
 //   - 'model'           designs for a specific product model (by slug)
 //   - 'recent'          the N most recent designs
-//   - 'ids'             a hand-picked list of design IDs (manual folder)
+//   - 'custom'          a user-created folder (resolved via the user's
+//                       folder list; folderId is the only payload —
+//                       the designIds live in the folders table to
+//                       avoid dual sources of truth).
 export type DesignFolder =
   | { type: 'all' }
   | { type: 'model'; modelSlug: string }
   | { type: 'recent'; limit?: number }
-  | { type: 'ids'; ids: string[] };
+  | { type: 'custom'; folderId: string };
 
 export const activeFolderAtom = atom<DesignFolder>({ type: 'all' });

@@ -136,6 +136,64 @@ export async function listDesignsByIds(ids: string[]): Promise<SavedDesign[]> {
   return ids.map(id => byId.get(id)).filter((d): d is SavedDesign => !!d);
 }
 
+// ─── Design folders ───────────────────────────────────────────────────────
+// User-created folders are stored in the design_folders table. The
+// folder's `designIds` is the single source of truth for membership —
+// the activeFolderAtom just references the folder by id.
+
+export interface UserFolder {
+  id: string;
+  name: string;
+  designIds: string[];
+  createdAt: string | null;
+}
+
+export async function listFolders(): Promise<UserFolder[]> {
+  const { data, error } = await supabase
+    .from('design_folders')
+    .select('id, name, design_ids, created_at')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(`listFolders failed: ${error.message}`);
+  return (data ?? []).map(d => ({
+    id: d.id,
+    name: d.name ?? '',
+    designIds: Array.isArray(d.design_ids) ? d.design_ids : [],
+    createdAt: d.created_at ?? null,
+  }));
+}
+
+export async function createFolder(name: string): Promise<UserFolder> {
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error('El nombre de la carpeta no puede estar vacío');
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  const { data, error } = await supabase
+    .from('design_folders')
+    .insert({ name: trimmed, user_id: user.id, design_ids: [] })
+    .select('id, name, design_ids, created_at')
+    .single();
+  if (error) throw new Error(`createFolder failed: ${error.message}`);
+  return {
+    id: data.id,
+    name: data.name ?? '',
+    designIds: Array.isArray(data.design_ids) ? data.design_ids : [],
+    createdAt: data.created_at ?? null,
+  };
+}
+
+export async function deleteFolder(folderId: string): Promise<void> {
+  const { error } = await supabase.from('design_folders').delete().eq('id', folderId);
+  if (error) throw new Error(`deleteFolder failed: ${error.message}`);
+}
+
+export async function updateFolderDesigns(folderId: string, designIds: string[]): Promise<void> {
+  const { error } = await supabase
+    .from('design_folders')
+    .update({ design_ids: designIds })
+    .eq('id', folderId);
+  if (error) throw new Error(`updateFolderDesigns failed: ${error.message}`);
+}
+
 export async function getDesign(id: string): Promise<SavedDesign | null> {
   const { data, error } = await supabase
     .from('saved_designs')

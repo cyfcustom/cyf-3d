@@ -1,10 +1,17 @@
 import { useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
-import { Bookmark, BookmarkCheck, Save, Trash2, Shirt, X, LogIn, Loader2 } from 'lucide-react';
-import { layersAtom, activeFolderAtom, type DesignFolder } from '../../store/atoms';
+import {
+  Bookmark, BookmarkCheck, Save, Trash2, X, LogIn, Loader2,
+  Check, FolderPlus, Folder as FolderIcon,
+} from 'lucide-react';
+import {
+  layersAtom, activeFolderAtom, type DesignFolder,
+} from '../../store/atoms';
 import { useDesignLibrary } from '../../hooks/useDesignLibrary';
 import { cn } from '../ui/utils';
+import type { UserFolder } from '../../lib/designs';
+import { FolderChip, DesignRow, formatRelative } from './DesignLibraryParts';
 import type { Section } from '../../types/sections';
 
 interface DesignLibraryProps {
@@ -16,20 +23,30 @@ interface DesignLibraryProps {
 }
 
 interface FolderChipDef {
+  key: string;
   folder: DesignFolder;
-  /** Translated label key (under designLibrary namespace). */
-  labelKey: string;
+  label: string;
+  customFolder?: UserFolder;
 }
 
 /**
  * Save + quick-load designs backed by Supabase.
  *
- * The dropdown is driven by `activeFolderAtom` (read here) — changing
- * the folder anywhere (this selector, a future folder manager, etc.)
- * automatically refetches and re-renders the list because the hook
- * subscribes to the folder reference. No changes to this component are
- * needed to add new folder types — just extend the DesignFolder union
- * and the folderToListArgs resolver.
+ * Reads `activeFolderAtom` to decide which designs to list, and
+ * exposes folder CRUD (create/delete + toggle design membership).
+ * Switching folders anywhere automatically drives this panel — no
+ * changes to this component are needed to add new folder types.
+ *
+ * The folder selector at the top of the dropdown lists:
+ *   - the predefined "Este producto" / "Todos" chips
+ *   - the user's custom folders (persisted in design_folders) with a
+ *     tiny delete X on hover
+ *   - an inline "+ Nueva carpeta" input that creates and selects the
+ *     new folder on submit
+ *
+ * Each design row has a bookmark button that opens a small popover to
+ * add/remove the design from any custom folder (works from any active
+ * view, so adding to a folder works even while browsing "Todos").
  */
 export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }: DesignLibraryProps) {
   const { t } = useTranslation('configurator');
@@ -38,17 +55,28 @@ export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }
   const setFolder = useSetAtom(activeFolderAtom);
   const {
     designs,
+    folders,
     isLoading,
     isAuthenticated,
     saveDesign,
     applyDesign,
     removeDesign,
+    createFolder,
+    deleteFolder,
+    toggleDesignInFolder,
   } = useDesignLibrary({ folder });
 
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // Inline "+ Nueva carpeta" input state
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+
+  // Popover state (per design ID) for "+" add-to-folder
+  const [openPopoverFor, setOpenPopoverFor] = useState<string | null>(null);
 
   const handleSave = async () => {
     const trimmed = name.trim();
@@ -87,26 +115,38 @@ export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }
     removeDesign(design);
   };
 
-  // Predefined folder chips shown at the top of the dropdown. Add more
-  // here (or in a future folder manager) without touching the list
-  // rendering below — the folder object drives everything.
-  const folderChips: FolderChipDef[] = [
-    { folder: { type: 'model', modelSlug }, labelKey: 'designLibrary.folderThisProduct' },
-    { folder: { type: 'all' },                 labelKey: 'designLibrary.folderAll' },
+  const handleCreateFolder = async () => {
+    const trimmed = newFolderName.trim();
+    if (!trimmed) return;
+    const created = await createFolder(trimmed);
+    if (created) {
+      setNewFolderName('');
+      setCreatingFolder(false);
+      // Select the new folder so the user sees it immediately.
+      setFolder({ type: 'custom', folderId: created.id });
+    }
+  };
+
+  // Build the chip list. Predefined first, then user folders, then "+".
+  const chips: FolderChipDef[] = [
+    { key: 'predefined:model', folder: { type: 'model', modelSlug }, label: t('designLibrary.folderThisProduct') },
+    { key: 'predefined:all',   folder: { type: 'all' },                 label: t('designLibrary.folderAll') },
+    ...folders.map(f => ({
+      key: `custom:${f.id}`,
+      folder: { type: 'custom', folderId: f.id } as DesignFolder,
+      label: f.name,
+      customFolder: f,
+    })),
   ];
 
   const isFolderActive = (chip: DesignFolder) => {
-    if (chip.type === folder.type) {
-      if (chip.type === 'model' && folder.type === 'model') {
-        return chip.modelSlug === folder.modelSlug;
-      }
-      return true;
-    }
-    return false;
+    if (chip.type !== folder.type) return false;
+    if (chip.type === 'model' && folder.type === 'model') return chip.modelSlug === folder.modelSlug;
+    if (chip.type === 'custom' && folder.type === 'custom') return chip.folderId === folder.folderId;
+    return true;
   };
 
-  // ── Unauthenticated: prompt to sign in. Loading from Supabase still
-  //    works for reading (RLS returns nothing), but there's nothing to show.
+  // ── Unauthenticated: prompt to sign in.
   if (!isAuthenticated) {
     return (
       <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
@@ -123,9 +163,7 @@ export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }
         <input
           value={name}
           onChange={e => setName(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') handleSave();
-          }}
+          onKeyDown={e => { if (e.key === 'Enter') handleSave(); }}
           placeholder={t('designLibrary.savePlaceholder')}
           className="w-48 px-3 py-1.5 text-sm rounded-lg bg-background border border-border focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
@@ -158,7 +196,7 @@ export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-11 z-50 w-80 max-h-96 overflow-y-auto rounded-xl bg-card border border-border shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border sticky top-0 bg-card">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border sticky top-0 bg-card z-10">
               <h3 className="text-sm font-bold text-foreground">{t('designLibrary.myDesigns')}</h3>
               <button
                 onClick={() => setOpen(false)}
@@ -170,29 +208,67 @@ export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }
             </div>
 
             {/* ── Folder chips ───────────────────────────────────────── */}
-            <div className="flex items-center gap-1.5 border-b border-border bg-muted/30 px-4 py-2">
+            <div className="flex flex-wrap items-center gap-1.5 border-b border-border bg-muted/30 px-3 py-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">
                 {t('designLibrary.folderLabel')}
               </span>
-              {folderChips.map(chip => {
+              {chips.map(chip => {
                 const active = isFolderActive(chip.folder);
                 return (
-                  <button
-                    key={chip.labelKey}
-                    type="button"
+                  <FolderChip
+                    key={chip.key}
+                    label={chip.label}
+                    active={active}
+                    custom={chip.customFolder}
                     onClick={() => setFolder(chip.folder)}
-                    className={cn(
-                      'rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors',
-                      active
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-card text-muted-foreground hover:bg-background hover:text-foreground'
-                    )}
-                    aria-pressed={active}
-                  >
-                    {t(chip.labelKey)}
-                  </button>
+                    onDelete={chip.customFolder
+                      ? () => {
+                          if (!window.confirm(t('designLibrary.deleteFolderConfirm', { name: chip.customFolder!.name }))) return;
+                          deleteFolder(chip.customFolder.id);
+                          if (folder.type === 'custom' && folder.folderId === chip.customFolder.id) {
+                            setFolder({ type: 'all' });
+                          }
+                        }
+                      : undefined}
+                  />
                 );
               })}
+              {/* "+ Nueva carpeta" inline */}
+              {creatingFolder ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    autoFocus
+                    value={newFolderName}
+                    onChange={e => setNewFolderName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleCreateFolder();
+                      if (e.key === 'Escape') { setCreatingFolder(false); setNewFolderName(''); }
+                    }}
+                    onBlur={() => { if (!newFolderName.trim()) setCreatingFolder(false); }}
+                    placeholder={t('designLibrary.newFolderPlaceholder')}
+                    className="w-32 px-2 py-1 text-xs rounded-full bg-card border border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                  <button
+                    type="button"
+                    onMouseDown={e => e.preventDefault()} // keep input focused
+                    onClick={handleCreateFolder}
+                    disabled={!newFolderName.trim()}
+                    className="rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-foreground disabled:opacity-50"
+                  >
+                    <Check size={12} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setCreatingFolder(true)}
+                  className="inline-flex items-center gap-1 rounded-full border border-dashed border-muted-foreground/40 px-2.5 py-1 text-[11px] font-bold text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                  title={t('designLibrary.newFolder')}
+                >
+                  <FolderPlus size={12} />
+                  {t('designLibrary.newFolder')}
+                </button>
+              )}
             </div>
 
             {isLoading ? (
@@ -207,42 +283,17 @@ export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }
             ) : (
               <div className="divide-y divide-border">
                 {designs.map(d => (
-                  <div key={d.id} className="flex items-center gap-3 px-4 py-3">
-                    <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                      {d.previewUrl ? (
-                        <img
-                          src={d.previewUrl}
-                          alt={d.name ?? ''}
-                          className="w-full h-full object-cover"
-                          crossOrigin="anonymous"
-                        />
-                      ) : (
-                        <Shirt size={20} className="text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        {d.name || t('designLibrary.untitled')}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {d.createdAt ? formatRelative(Date.parse(d.createdAt), t) : ''}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleLoad(d.id)}
-                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                    >
-                      {t('designLibrary.load')}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(d.id)}
-                      className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
-                      aria-label={t('designLibrary.delete')}
-                      title={t('designLibrary.delete')}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                  <DesignRow
+                    key={d.id}
+                    design={d}
+                    folders={folders}
+                    openPopoverFor={openPopoverFor}
+                    setOpenPopoverFor={setOpenPopoverFor}
+                    onLoad={() => handleLoad(d.id)}
+                    onDelete={() => handleDelete(d.id)}
+                    onToggleFolder={(folderId) => toggleDesignInFolder(folderId, d.id)}
+                    t={t}
+                  />
                 ))}
               </div>
             )}
@@ -253,14 +304,4 @@ export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }
   );
 }
 
-function formatRelative(ms: number, t: (k: string, opts?: object) => string): string {
-  if (!Number.isFinite(ms)) return '';
-  const diff = Date.now() - ms;
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return t('designLibrary.justNow');
-  if (min < 60) return t('designLibrary.minutesAgo', { n: min });
-  const hours = Math.floor(min / 60);
-  if (hours < 24) return t('designLibrary.hoursAgo', { n: hours });
-  const days = Math.floor(hours / 24);
-  return t('designLibrary.daysAgo', { n: days });
-}
+// ─── Sub-components live in DesignLibraryParts.tsx ───────────────────────

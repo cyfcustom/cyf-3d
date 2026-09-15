@@ -598,7 +598,31 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
-      }
+      },
+      design_folders: {
+        Row: {
+          created_at: string | null
+          design_ids: string[]
+          id: string
+          name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          design_ids?: string[]
+          id?: string
+          name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          design_ids?: string[]
+          id?: string
+          name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      },
       supervisor_permissions: {
         Row: {
           id: string
