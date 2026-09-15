@@ -8,7 +8,7 @@ import '@babylonjs/loaders/glTF';
 import { ShadowOnlyMaterial } from '@babylonjs/materials';
 import { Layer } from '../../../store/atoms';
 import type { Section, SectionId } from '../../../types/sections';
-import { redrawSectionTexture, IMG_BASE_SIZE } from './redrawSectionTexture';
+import { redrawSectionTexture, TEX_SIZE } from './redrawSectionTexture';
 
 interface UseBabylonSceneOpts {
   /** Trigger re-render of the section textures. */
@@ -23,11 +23,16 @@ interface UseBabylonSceneOpts {
   imagesCache: Map<string, HTMLImageElement>;
 }
 
+interface SectionResources {
+  texture: DynamicTexture;
+  material: PBRMaterial;
+}
+
 /**
  * Owns the entire Babylon scene lifecycle for the configurator:
  *  - Engine + Scene + camera + lights + shadow generator + ground
  *  - GLB mesh loading and mesh-name → material assignment per section
- *  - N DynamicTextures (one per section) with their PBRMaterials
+ *  - One DynamicTexture + PBRMaterial per section that has a mesh_name
  *  - The render loop, resize handling, and disposal on unmount
  *
  * Re-initialises only when modelUrl changes. Color/visibility/layer
@@ -43,10 +48,7 @@ export function useBabylonScene(opts: UseBabylonSceneOpts) {
   const engineRef = useRef<Engine | null>(null);
   const sceneRef = useRef<Scene | null>(null);
   const meshesRef = useRef<AbstractMesh[]>([]);
-  const frontTextureRef = useRef<DynamicTexture | null>(null);
-  const backTextureRef  = useRef<DynamicTexture | null>(null);
-  const frontMatRef = useRef<PBRMaterial | null>(null);
-  const backMatRef  = useRef<PBRMaterial | null>(null);
+  const sectionResourcesRef = useRef<Map<SectionId, SectionResources>>(new Map());
   const solidMatRef = useRef<PBRMaterial | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -66,10 +68,7 @@ export function useBabylonScene(opts: UseBabylonSceneOpts) {
     if (engineRef.current) {
       engineRef.current.dispose();
     }
-    frontTextureRef.current = null;
-    backTextureRef.current = null;
-    frontMatRef.current = null;
-    backMatRef.current = null;
+    sectionResourcesRef.current = new Map();
     solidMatRef.current = null;
     meshesRef.current = [];
 
@@ -114,42 +113,46 @@ export function useBabylonScene(opts: UseBabylonSceneOpts) {
     ground.receiveShadows = true;
     ground.position.y = -2;
 
-    // ── Materials: 2 design textures (front/back) + 1 solid ────────
-    const frontTexture = new DynamicTexture('front-tex', { width: IMG_BASE_SIZE * 2.56, height: IMG_BASE_SIZE * 2.56 }, scene, false);
-    frontTexture.uScale = -1; frontTexture.uOffset = 1;
-    frontTexture.vScale = -1; frontTexture.vOffset = 1;
-    frontTextureRef.current = frontTexture;
+    // ── Per-section textures + materials ──────────────────────────
+    // One DynamicTexture + PBRMaterial per section. Sections without a
+    // mesh_name (not present in this GLB) skip material creation so the
+    // corresponding mesh falls back to solidMat.
+    const sectionResources = new Map<SectionId, SectionResources>();
+    for (const sec of sections) {
+      if (!sec.mesh_name) continue;
 
-    const backTexture = new DynamicTexture('back-tex', { width: IMG_BASE_SIZE * 2.56, height: IMG_BASE_SIZE * 2.56 }, scene, false);
-    backTexture.uScale = -1; backTexture.uOffset = 1;
-    backTexture.vScale = -1; backTexture.vOffset = 1;
-    backTextureRef.current = backTexture;
+      const texture = new DynamicTexture(
+        `${sec.id}-tex`,
+        { width: TEX_SIZE, height: TEX_SIZE },
+        scene,
+        false
+      );
+      // UV flip: this GLB has UV axes pointing opposite to Babylon's
+      // default. Compensates so the canvas drawing maps right-side-up.
+      texture.uScale = -1; texture.uOffset = 1;
+      texture.vScale = -1; texture.vOffset = 1;
 
-    const frontMat = new PBRMaterial('front-mat', scene);
-    frontMat.albedoTexture = frontTexture;
-    frontMat.metallic = 0;
-    frontMat.roughness = 0.85;
-    frontMatRef.current = frontMat;
+      const material = new PBRMaterial(`${sec.id}-mat`, scene);
+      material.albedoTexture = texture;
+      material.metallic = 0;
+      material.roughness = 0.85;
 
-    const backMat = new PBRMaterial('back-mat', scene);
-    backMat.albedoTexture = backTexture;
-    backMat.metallic = 0;
-    backMat.roughness = 0.85;
-    backMatRef.current = backMat;
+      sectionResources.set(sec.id, { texture, material });
 
+      // Initial fill with the section's color
+      const ctx = texture.getContext();
+      ctx.fillStyle = sec.color;
+      ctx.fillRect(0, 0, TEX_SIZE, TEX_SIZE);
+      texture.update();
+    }
+    sectionResourcesRef.current = sectionResources;
+
+    // Solid material (used for invisible / unassigned meshes)
     const solidMat = new PBRMaterial('solid-mat', scene);
     solidMat.albedoColor = hexToColor3('#FFFFFF');
     solidMat.metallic = 0;
     solidMat.roughness = 0.85;
     solidMatRef.current = solidMat;
-
-    // Initial texture fill (white until first redraw).
-    for (const t of [frontTexture, backTexture]) {
-      const ctx = t.getContext();
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, t.getSize().width, t.getSize().height);
-      t.update();
-    }
 
     // ── Load GLB ─────────────────────────────────────────────────
     const lastSlash = modelUrl.lastIndexOf('/');
@@ -186,14 +189,11 @@ export function useBabylonScene(opts: UseBabylonSceneOpts) {
       rootNode.position = center.negate().scale(scaleFactor);
       rootNode.scaling = new Vector3(scaleFactor, scaleFactor, scaleFactor);
 
-      // Assign materials by mesh-name → section.
-      const frontMeshRef = loadedMeshes.find(m => m.name === sections.find(s => s.id === 'front')?.mesh_name);
-      const backMeshRef  = loadedMeshes.find(m => m.name === sections.find(s => s.id === 'back')?.mesh_name);
-
+      // Assign materials based on mesh name + section visibility.
       for (const mesh of loadedMeshes) {
         const section = sections.find(s => s.mesh_name === mesh.name);
-        if (section && section.visible && (mesh === frontMeshRef || mesh === backMeshRef)) {
-          mesh.material = mesh === frontMeshRef ? frontMat : backMat;
+        if (section && section.visible && sectionResources.has(section.id)) {
+          mesh.material = sectionResources.get(section.id)!.material;
           mesh.isVisible = true;
         } else if (section && !section.visible) {
           mesh.material = solidMat;
@@ -212,8 +212,6 @@ export function useBabylonScene(opts: UseBabylonSceneOpts) {
       camera.radius = targetSize * 3.0;
 
       setLoading(false);
-      // textureReady increment is owned by the component (so it can trigger
-      // an immediate redraw after the first GLB load completes).
     }).catch(err => {
       console.error('Failed to load model:', err);
       setLoading(false);
@@ -227,20 +225,16 @@ export function useBabylonScene(opts: UseBabylonSceneOpts) {
     return () => {
       window.removeEventListener('resize', handleResize);
       engine.dispose();
-      frontTextureRef.current = null;
-      backTextureRef.current = null;
-      frontMatRef.current = null;
-      backMatRef.current = null;
+      sectionResourcesRef.current = new Map();
       solidMatRef.current = null;
       sceneRef.current = null;
       meshesRef.current = [];
     };
-  }, [modelUrl, sections]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [modelUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update per-section colors + visibility without rebuilding the scene.
   useEffect(() => {
-    const frontTexture = frontTextureRef.current;
-    const backTexture  = backTextureRef.current;
+    const sectionResources = sectionResourcesRef.current;
     const solidMat = solidMatRef.current;
     if (!solidMat) return;
 
@@ -249,30 +243,27 @@ export function useBabylonScene(opts: UseBabylonSceneOpts) {
       const mesh = meshesRef.current.find(m => m.name === sec.mesh_name);
       if (mesh) {
         mesh.isVisible = sec.visible;
-        if (sec.visible && sec.id === 'front' && frontTexture) {
-          mesh.material = frontMatRef.current;
-        } else if (sec.visible && sec.id === 'back' && backTexture) {
-          mesh.material = backMatRef.current;
+        if (sec.visible && sectionResources.has(sec.id)) {
+          mesh.material = sectionResources.get(sec.id)!.material;
         } else {
           mesh.material = solidMat;
         }
       }
-      // Repaint the texture's base color (next redraw will fill correctly).
-      const tex = sec.id === 'front' ? frontTexture : sec.id === 'back' ? backTexture : null;
-      if (tex) {
-        const ctx = tex.getContext();
+      // Repaint the texture's clear color (next redraw will fill correctly).
+      const res = sectionResources.get(sec.id);
+      if (res) {
+        const ctx = res.texture.getContext();
         ctx.fillStyle = sec.color;
-        ctx.fillRect(0, 0, tex.getSize().width, tex.getSize().height);
-        tex.update();
+        ctx.fillRect(0, 0, TEX_SIZE, TEX_SIZE);
+        res.texture.update();
       }
     }
   }, [sections, textureReady]);
 
   // Load images + redraw every section texture whenever layers change.
   useEffect(() => {
-    const frontTexture = frontTextureRef.current;
-    const backTexture  = backTextureRef.current;
-    if (!frontTexture || !backTexture) return;
+    const sectionResources = sectionResourcesRef.current;
+    if (sectionResources.size === 0) return;
 
     let cancelled = false;
 
@@ -296,8 +287,10 @@ export function useBabylonScene(opts: UseBabylonSceneOpts) {
       }
 
       if (cancelled) return;
-      redrawSectionTexture(frontTexture, sections.find(s => s.id === 'front')?.color ?? '#FFFFFF', layers, 'front', imagesCache);
-      redrawSectionTexture(backTexture,  sections.find(s => s.id === 'back')?.color  ?? '#FFFFFF', layers, 'back',  imagesCache);
+      for (const sec of sections) {
+        const res = sectionResources.get(sec.id);
+        if (res) redrawSectionTexture(res.texture, sec.color, layers, sec.id, imagesCache);
+      }
     };
 
     loadAndRedraw();
