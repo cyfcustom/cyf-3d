@@ -94,22 +94,25 @@ export function CampaignViewer({ designUrl, designName, className }: CampaignVie
     return () => setLayers([]);
   }, [setLayers]);
 
-  // The campaign appearance (gradient + border + radius) lives directly
-  // on the BabylonCanvas container so fullscreen mode preserves it.
-  // Size is controlled by the className prop (defaults to a square
-  // max-w-[780px] centred on the page).
-  const containerClass = [
-    'overflow-hidden rounded-3xl border border-gray-200',
-    'bg-gradient-to-b from-[#E8EEF7] via-[#DCE5F1] to-[#C9D6EA]',
-    className ?? 'mx-auto aspect-square w-full max-w-[780px]',
-  ].join(' ');
+  // The size (width/height) is on the OUTER wrapper so the BabylonCanvas
+  // container can safely use `w-full h-full` to fill it — no circular
+  // sizing with the aspect-ratio. The BabylonCanvas container only carries
+  // appearance (gradient + border + radius) so fullscreen mode preserves
+  // it.
+  const sizeClass =
+    className ?? 'aspect-square w-[min(100%,400px)] mx-auto';
+  const appearanceClass =
+    'h-full w-full overflow-hidden rounded-3xl border border-gray-200 ' +
+    'bg-gradient-to-b from-[#E8EEF7] via-[#DCE5F1] to-[#C9D6EA]';
 
   return (
-    <BabylonCanvas
-      modelUrl={CAMPAIGN_MODEL_URL}
-      sections={CAMPAIGN_SECTIONS}
-      cameraRadiusMultiplier={2.5}
-      containerClassName={containerClass}
-    />
+    <div className={sizeClass}>
+      <BabylonCanvas
+        modelUrl={CAMPAIGN_MODEL_URL}
+        sections={CAMPAIGN_SECTIONS}
+        cameraRadiusMultiplier={2.5}
+        containerClassName={appearanceClass}
+      />
+    </div>
   );
 }
