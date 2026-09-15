@@ -272,6 +272,14 @@ export function useBabylonScene(opts: UseBabylonSceneOpts) {
       if (newLayers.length > 0) {
         await Promise.all(newLayers.map(l => new Promise<void>(resolve => {
           const img = new Image();
+          // crossOrigin='anonymous' is required when layer.thumbnail is a
+          // cross-origin URL (e.g. a Supabase Storage public URL loaded
+          // after restoring a saved design). Without it the image loads
+          // but taints the canvas, and ctx.drawImage() silently throws
+          // SecurityError so the texture stays blank. FabricEditor already
+          // uses this flag in its fabric.FabricImage.fromURL call.
+          // Safe no-op for data URLs (local uploads).
+          img.crossOrigin = 'anonymous';
           img.onload = () => {
             if (!cancelled) imagesCache.set(l.id, img);
             resolve();
