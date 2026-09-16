@@ -10,7 +10,7 @@
   },
   "scripts": {
     "prebuild": "node scripts/ensure-modelos.mjs",
-    "build": "vite build",
+    "build": "node scripts/ensure-modelos.mjs && vite build",
     "dev": "vite"
   },
   "dependencies": {
