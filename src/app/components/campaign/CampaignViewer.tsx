@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useSetAtom } from 'jotai';
 import { layersAtom } from '../../store/atoms';
 import type { Layer, Section } from '../../types/sections';
+import { SavedDesign } from '../../lib/designs';
 import { BabylonCanvas } from '../configurator/BabylonCanvas';
 import { campaignAsset } from '../../lib/campaignAssets';
 
@@ -42,10 +43,18 @@ const CAMPAIGN_LAYER_DEFAULTS: Pick<Layer, 'flipX' | 'flipY'> = {
 };
 
 interface CampaignViewerProps {
-  /** URL of the design image to display on the front mesh. */
-  designUrl: string;
+  /** URL of the design image to display on the front mesh (default mode). */
+  designUrl?: string;
   /** Display name of the design (used as the layer's name). */
-  designName: string;
+  designName?: string;
+  /**
+   * When set, renders the actual layers of this saved_design on the
+   * campaign GLB (front + back layers). Used by the campaign page
+   * when loading designs from the public 'seul' folder so each saved
+   * design renders with its own layers, not the campaign defaults.
+   * Overrides designUrl/designName when provided.
+   */
+  savedDesign?: SavedDesign | null;
   /** Wrapper sizing passed through to the BabylonCanvas container. */
   className?: string;
 }
@@ -61,14 +70,35 @@ interface CampaignViewerProps {
  * interactive 3D view with drag-to-rotate, scroll-to-zoom, and
  * fullscreen.
  */
-export function CampaignViewer({ designUrl, designName, className }: CampaignViewerProps) {
+export function CampaignViewer({ designUrl, designName, savedDesign, className }: CampaignViewerProps) {
   const setLayers = useSetAtom(layersAtom);
 
-  // Update layers whenever the selected design changes.
+  // Update layers whenever the active design changes. If a savedDesign is
+  // passed, render its real front + back layers on the campaign GLB so
+  // the visitor sees the actual saved configuration. Otherwise fall back
+  // to the campaign defaults (front = designUrl, back = Juntos a Seúl logo).
   useEffect(() => {
+    if (savedDesign) {
+      // Only the front + back meshes exist on the campaign GLB; filter to
+      // those. Re-id to avoid colliding with other views that might have
+      // injected layers with the same ids.
+      const layers: Layer[] = savedDesign.layers
+        .filter(l => l.side === 'front' || l.side === 'back' || !l.side)
+        .map(l => ({
+          ...l,
+          id: `campaign-loaded-${savedDesign.id}-${l.id}`,
+        }));
+      setLayers(layers);
+      return;
+    }
+
+    if (!designUrl) {
+      setLayers([]);
+      return;
+    }
     const front: Layer = {
       id: 'campaign-front',
-      name: designName,
+      name: designName ?? 'Diseño',
       thumbnail: designUrl,
       side: 'front',
       ...CAMPAIGN_LAYER_DEFAULTS,
@@ -86,7 +116,7 @@ export function CampaignViewer({ designUrl, designName, className }: CampaignVie
     // setLayers is intentionally NOT in deps — the setter is stable
     // and including it would re-run on every render of the parent.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [designUrl, designName]);
+  }, [designUrl, designName, savedDesign]);
 
   // Clear layers only on unmount so navigating away (e.g. into the
   // configurator) doesn't leave stale campaign layers behind.

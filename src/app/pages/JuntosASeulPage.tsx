@@ -26,9 +26,12 @@ import {
   type Product,
 } from '../components/campaign/CampaignFranelas';
 import { CampaignViewer } from '../components/campaign/CampaignViewer';
+import { CampaignPlaceholder } from '../components/campaign/CampaignPlaceholder';
 import { VerticalModelPicker } from '../components/campaign/VerticalModelPicker';
+import { CAMPAIGN_FOLDER_SLUG } from '../lib/campaignAssets';
 import { cn } from '../components/ui/utils';
 import { useCompanyInfo } from '../hooks/useCompanyInfo';
+import { usePublicCampaignFolder } from '../hooks/usePublicCampaignFolder';
 
 // ─── Campaign identity ────────────────────────────────────────────────────
 // Fuente: juntos-a-seul/seul-fuzzy-adventure (SponsorshipCards + constants)
@@ -43,6 +46,15 @@ export function JuntosASeulPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeDesignId, setActiveDesignId] = useState<string | null>(null);
+
+  // Reads the public 'seul' folder + its saved_designs from Supabase
+  // (anon-safe via the public_select_* RLS policies). Drives the
+  // picker's contents and the 3D viewer.
+  const {
+    folder: campaignFolder,
+    designs: publicDesigns,
+    loading: folderLoading,
+  } = usePublicCampaignFolder(CAMPAIGN_FOLDER_SLUG);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,18 +91,28 @@ export function JuntosASeulPage() {
     return `https://wa.me/${info.phone}?text=${message}`;
   }, [info.phone]);
 
+  // Picker is driven by the public 'seul' folder's saved_designs.
+  // The folder name shown in the header is just for display; the actual
+  // curation lives in Supabase and is editable from the configurator.
   const designOptions = useMemo(() => {
-    const opts = products.map((p) => ({
-      id: p.id,
-      name: p.name,
-      url: p.image_url || PLACEHOLDER_IMAGE,
+    const opts = publicDesigns.map((d) => ({
+      id: d.id,
+      name: d.name ?? 'Diseño',
+      url: d.previewUrl || PLACEHOLDER_IMAGE,
     }));
     return opts.length > 0
       ? opts
       : [{ id: '__proximamente__', name: 'Diseño Juntos a Seúl', url: PLACEHOLDER_IMAGE }];
-  }, [products]);
+  }, [publicDesigns]);
 
   const activeDesign = designOptions.find((d) => d.id === activeDesignId) ?? designOptions[0];
+  // The saved_design object for the active picker entry, if any. The
+  // viewer uses its real layers (front + back) when present so each
+  // curated design renders its own configuration.
+  const activeSavedDesign = useMemo(
+    () => publicDesigns.find(d => d.id === activeDesign.id) ?? null,
+    [publicDesigns, activeDesign.id]
+  );
 
   const steps = [
     {
@@ -220,26 +242,38 @@ export function JuntosASeulPage() {
               </div>
             </div>
 
-            {/* Middle — 3D viewer */}
-            <CampaignViewer
-              designUrl={activeDesign.url}
-              designName={activeDesign.name}
-              className="aspect-square w-[min(100%,400px)] shrink-0"
-            />
+            {/* Middle — 3D viewer (or CYF placeholder while the public
+                folder is loading / empty, so we never expose a fake
+                test model). */}
+            {activeSavedDesign ? (
+              <CampaignViewer
+                savedDesign={activeSavedDesign}
+                className="aspect-square w-[min(100%,400px)] shrink-0"
+              />
+            ) : (
+              <CampaignPlaceholder
+                message={
+                  folderLoading
+                    ? 'Cargando diseños…'
+                    : 'Próximamente más diseños'
+                }
+                hint={
+                  folderLoading
+                    ? 'Buscando los diseños curados para ti.'
+                    : 'Vuelve pronto para ver los diseños disponibles.'
+                }
+              />
+            )}
 
-            {/* Right — vertical model picker */}
-            <div className="flex w-28 shrink-0 flex-col self-stretch lg:w-32">
-              <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-wider text-gray-500 sm:text-xs">
-                Diseños
-              </p>
-              <div className="min-h-0 flex-1">
-                <VerticalModelPicker
-                  models={designOptions}
-                  activeId={activeDesign.id}
-                  onSelect={setActiveDesignId}
-                  activeBorderColor={SEOUL_BLUE}
-                />
-              </div>
+            {/* Right — vertical carousel picker (just the list, no folder
+                label). Driven by the public folder contents. */}
+            <div className="flex w-28 shrink-0 items-center justify-center self-stretch lg:w-32">
+              <VerticalModelPicker
+                models={designOptions}
+                activeId={activeDesign.id}
+                onSelect={setActiveDesignId}
+                activeBorderColor={SEOUL_BLUE}
+              />
             </div>
           </div>
         </div>

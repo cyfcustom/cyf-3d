@@ -11,24 +11,38 @@ interface VerticalModelPickerProps {
   models: VerticalModelOption[];
   activeId: string;
   onSelect: (id: string) => void;
-  /** Border colour applied to the active item. */
+  /** Border colour applied to the active (centre) item. */
   activeBorderColor?: string;
 }
 
+// Five fixed vertical slots. The middle one is the active/selected item
+// and is rendered larger; the slots above and below taper down. Gaps are
+// uniform so the layout reads as a single stacked carousel column.
+const SLOT_HEIGHTS = [44, 56, 76, 56, 44] as const;
+const SLOT_GAP = 4;
+const CENTER_SLOT = 2;
+const TOTAL_HEIGHT =
+  SLOT_HEIGHTS.reduce((a, b) => a + b, 0) + SLOT_GAP * (SLOT_HEIGHTS.length - 1);
+
+function slotTop(slot: number): number {
+  let t = 0;
+  for (let i = 0; i < slot; i++) t += SLOT_HEIGHTS[i] + SLOT_GAP;
+  return t;
+}
+
 /**
- * Vertical scrolling model picker with seamless infinite scroll.
+ * Vertical carousel picker with 5 visible slots and seamless infinite scroll.
  *
- * The list is rendered triplicated so when the user scrolls past the
- * "real" middle copy into a duplicated zone, the scroll position is
- * silently reset to the equivalent position in the real copy — giving
- * the illusion of an infinite loop (after the last model, the first
- * appears again).
+ * The middle slot is always the selected item (larger + coloured border).
+ * Scrolling (wheel / touch) advances the carousel by one step; clicking a
+ * non-centre slot brings that item to the centre. Wrap-around is invisible
+ * because we map `activeId` onto an internal centre index that walks through
+ * a tripled copy of the list — visible items always come from the middle
+ * copy, so scrolling past the last item wraps cleanly to the first one.
  *
- * The active item is rendered larger (w-20 h-20) with a coloured
- * border; inactive items are smaller (w-14 h-14) and dimmed. On click
- * or external activeId change, the middle copy's instance of the
- * active item is smoothly scrolled into the centre so the user always
- * re-enters the "real" zone.
+ * Fully controlled: `activeId` drives everything via derivation; clicks /
+ * wheel / swipe invoke `onSelect(model.id)` which bubbles back up so the
+ * parent's selection stays in sync with the visual centre.
  */
 export function VerticalModelPicker({
   models,
@@ -37,103 +51,164 @@ export function VerticalModelPicker({
   activeBorderColor = '#0F4C81',
 }: VerticalModelPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  // Need at least 2 items for the wrap-around to feel natural with 3
-  // copies. With 1 item the triplication would show the same item
-  // three times in a row.
-  const supportsLoop = models.length >= 2;
-  const display = supportsLoop ? [...models, ...models, ...models] : models;
-  const initialMountRef = useRef(true);
+  const wheelLockRef = useRef(false);
+  const touchStartY = useRef<number | null>(null);
+  const n = models.length;
 
-  // Loop reset: silently jump to the equivalent position in the middle
-  // copy when entering the first/third duplicated zones.
+  // Derive the centre index from props. If `activeId` doesn't match any
+  // model (e.g. right after mount), fall back to the first item.
+  const activeIdx = models.findIndex((m) => m.id === activeId);
+  const safeActiveIdx = activeIdx >= 0 ? activeIdx : 0;
+  // Map to the middle-copy index in the tripled list so the slots above
+  // and below the centre land on neighbours of the same logical item.
+  const centerIdx = n + safeActiveIdx;
+
+  // Mutable ref so wheel/touch handlers always read the latest props
+  // (the listeners are attached once per `n` change, not per render).
+  const stateRef = useRef({ n, models, onSelect, safeActiveIdx });
+  stateRef.current = { n, models, onSelect, safeActiveIdx };
+
+  function selectByDelta(delta: number) {
+    const { n: nn, models: ms, onSelect: sel, safeActiveIdx: ai } = stateRef.current;
+    if (nn < 2) return;
+    const nextIdx = ((ai + delta) % nn + nn) % nn;
+    const m = ms[nextIdx];
+    if (m) sel(m.id);
+  }
+
+  // Wheel: lock to one step per animation frame so trackpad inertia
+  // doesn't blow past several items in a single tick.
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || !supportsLoop) return;
-    const onScroll = () => {
-      const total = el.scrollHeight;
-      const third = total / 3;
-      if (total === 0) return;
-      if (el.scrollTop < third * 0.5) {
-        el.scrollTop += third;
-      } else if (el.scrollTop > third * 2.5) {
-        el.scrollTop -= third;
-      }
+    if (!el || n < 2) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (wheelLockRef.current) return;
+      wheelLockRef.current = true;
+      selectByDelta(e.deltaY > 0 ? 1 : -1);
+      requestAnimationFrame(() => {
+        wheelLockRef.current = false;
+      });
     };
-    el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
-  }, [supportsLoop]);
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [n]);
 
-  // Centre the active item (in the middle copy) when activeId changes
-  // or on first mount. Smooth on subsequent changes, instant on mount.
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el || models.length === 0) return;
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartY.current = e.touches[0].clientY;
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartY.current == null || n < 2) return;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartY.current = null;
+    if (Math.abs(dy) < 24) return;
+    selectByDelta(dy < 0 ? 1 : -1);
+  }
 
-    const third = supportsLoop ? el.scrollHeight / 3 : 0;
-    const buttons = el.querySelectorAll<HTMLButtonElement>('[data-model-id]');
-    let target: HTMLButtonElement | undefined;
-    for (const btn of Array.from(buttons)) {
-      if (btn.dataset.modelId !== activeId) continue;
-      if (!supportsLoop) {
-        target = btn;
-        break;
-      }
-      const top = btn.offsetTop;
-      if (top >= third && top < third * 2) {
-        target = btn;
-        break;
-      }
-    }
-    if (!target) return;
+  function onSlotClick(slot: number) {
+    if (slot < 0 || slot > 4 || slot === CENTER_SLOT || n < 2) return;
+    const offset = slot - CENTER_SLOT; // -2..+2 (excluding 0)
+    // The clicked slot's model is at tripledIdx = centerIdx + offset.
+    // Map back to the original list index and notify the parent.
+    const newIdx = ((centerIdx + offset) % n + n) % n;
+    const m = models[newIdx];
+    if (m) onSelect(m.id);
+  }
 
-    const offset =
-      target.offsetTop - el.clientHeight / 2 + target.clientHeight / 2;
+  if (n === 0) {
+    return <div style={{ height: TOTAL_HEIGHT }} aria-hidden />;
+  }
 
-    if (initialMountRef.current) {
-      el.scrollTop = offset;
-      initialMountRef.current = false;
-    } else {
-      el.scrollTo({ top: offset, behavior: 'smooth' });
-    }
-  }, [activeId, supportsLoop, models.length]);
+  if (n === 1) {
+    const model = models[0];
+    return (
+      <div
+        ref={containerRef}
+        className="relative w-full select-none"
+        style={{ height: TOTAL_HEIGHT }}
+      >
+        <button
+          type="button"
+          onClick={() => onSelect(model.id)}
+          aria-label={model.name}
+          aria-pressed
+          className="absolute left-1/2 overflow-hidden rounded-xl border-2 shadow-lg"
+          style={{
+            top: slotTop(CENTER_SLOT),
+            width: SLOT_HEIGHTS[CENTER_SLOT],
+            height: SLOT_HEIGHTS[CENTER_SLOT],
+            transform: 'translateX(-50%)',
+            borderColor: activeBorderColor,
+          }}
+        >
+          <img
+            src={model.url}
+            alt={model.name}
+            className="h-full w-full object-cover"
+            draggable={false}
+          />
+        </button>
+      </div>
+    );
+  }
 
-  if (models.length === 0) return null;
+  // n >= 2 — render the tripled list. Every model gets a stable key tied
+  // to its position in the tripled list, so when `centerIdx` changes
+  // (because `activeId` changed upstream) each item's DOM node animates
+  // between slots via the CSS transition.
+  const tripled = [...models, ...models, ...models];
 
   return (
     <div
       ref={containerRef}
-      className="h-full overflow-y-auto"
-      style={{ scrollbarWidth: 'thin' }}
+      className="relative w-full select-none touch-none"
+      style={{ height: TOTAL_HEIGHT }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
-      <div className="flex flex-col items-center gap-3 py-3">
-        {display.map((m, i) => {
-          const isActive = m.id === activeId;
-          return (
-            <button
-              key={`${m.id}-${i}`}
-              data-model-id={m.id}
-              type="button"
-              onClick={() => onSelect(m.id)}
-              className={cn(
-                'shrink-0 overflow-hidden rounded-2xl border-2 transition-all duration-300',
-                isActive
-                  ? 'h-20 w-20 scale-105 shadow-lg'
-                  : 'h-14 w-14 opacity-60 hover:scale-105 hover:opacity-100'
-              )}
-              style={isActive ? { borderColor: activeBorderColor } : undefined}
-              aria-label={m.name}
-              aria-pressed={isActive}
-            >
-              <img
-                src={m.url}
-                alt={m.name}
-                className="h-full w-full object-cover"
-                draggable={false}
-              />
-            </button>
-          );
-        })}
-      </div>
+      {tripled.map((model, tripledIdx) => {
+        const offset = tripledIdx - centerIdx;
+        const slot = offset + CENTER_SLOT;
+        const visible = slot >= 0 && slot <= 4;
+        const isCenter = offset === 0;
+        const top = visible
+          ? slotTop(slot)
+          : slot < 0
+            ? -SLOT_HEIGHTS[0] - 8
+            : TOTAL_HEIGHT + 8;
+        const size = visible ? SLOT_HEIGHTS[slot] : SLOT_HEIGHTS[0];
+        return (
+          <button
+            key={tripledIdx}
+            type="button"
+            onClick={() => onSlotClick(slot)}
+            aria-hidden={!visible}
+            tabIndex={visible ? 0 : -1}
+            aria-label={model.name}
+            aria-pressed={isCenter}
+            className={cn(
+              'absolute left-1/2 overflow-hidden rounded-xl border-2 transition-all duration-300 ease-out',
+              visible ? '' : 'pointer-events-none opacity-0',
+              isCenter ? 'z-10 shadow-lg' : '',
+              visible && !isCenter ? 'opacity-70 hover:opacity-100' : ''
+            )}
+            style={{
+              top,
+              width: size,
+              height: size,
+              transform: 'translateX(-50%)',
+              borderColor: isCenter ? activeBorderColor : 'transparent',
+            }}
+          >
+            <img
+              src={model.url}
+              alt={model.name}
+              className="h-full w-full object-cover"
+              draggable={false}
+            />
+          </button>
+        );
+      })}
     </div>
   );
 }
