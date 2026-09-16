@@ -14,4 +14,10 @@ pnpm-lock.yaml
 
 # Estado local del CLI de Supabase y scrapes locales de modelos
 supabase/.temp/
-modelos/
+/modelos/
+
+# Directorio público de modelos: el directorio se commitea (vacío con
+# .gitkeep) para que el build de Vercel no falle con ENOENT, pero los .glb
+# que se coloquen dentro son locales y no se versionan.
+public/modelos/*
+!public/modelos/.gitkeep

@@ -9,8 +9,7 @@
     "url": "https://fugust.com"
   },
   "scripts": {
-    "prebuild": "node scripts/ensure-modelos.mjs",
-    "build": "node scripts/ensure-modelos.mjs && vite build",
+    "build": "vite build",
     "dev": "vite"
   },
   "dependencies": {
