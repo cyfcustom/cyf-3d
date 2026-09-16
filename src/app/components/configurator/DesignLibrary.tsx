@@ -64,6 +64,7 @@ export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }
     createFolder,
     deleteFolder,
     toggleDesignInFolder,
+    setFolderPublic,
   } = useDesignLibrary({ folder });
 
   const [open, setOpen] = useState(false);
@@ -221,6 +222,9 @@ export function DesignLibrary({ modelSlug, modelName, sections, takeScreenshot }
                     active={active}
                     custom={chip.customFolder}
                     onClick={() => setFolder(chip.folder)}
+                    onTogglePublic={chip.customFolder
+                      ? () => setFolderPublic(chip.customFolder.id, !chip.customFolder.isPublic)
+                      : undefined}
                     onDelete={chip.customFolder
                       ? () => {
                           if (!window.confirm(t('designLibrary.deleteFolderConfirm', { name: chip.customFolder!.name }))) return;

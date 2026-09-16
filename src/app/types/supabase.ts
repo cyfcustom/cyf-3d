@@ -604,21 +604,27 @@ export type Database = {
           created_at: string | null
           design_ids: string[]
           id: string
+          is_public: boolean
           name: string
+          slug: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
           design_ids?: string[]
           id?: string
+          is_public?: boolean
           name: string
+          slug?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
           design_ids?: string[]
           id?: string
+          is_public?: boolean
           name?: string | null
+          slug?: string | null
           user_id?: string | null
         }
         Relationships: []

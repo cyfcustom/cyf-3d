@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Check, Folder as FolderIcon, Plus, Shirt, Trash2, X } from 'lucide-react';
+import { Check, Eye, EyeOff, Folder as FolderIcon, Plus, Shirt, Trash2, X } from 'lucide-react';
 import { cn } from '../ui/utils';
 import type { SavedDesign, UserFolder } from '../../lib/designs';
 
@@ -9,13 +9,15 @@ import type { SavedDesign, UserFolder } from '../../lib/designs';
  */
 
 export function FolderChip({
-  label, active, custom, onClick, onDelete,
+  label, active, custom, onClick, onDelete, onTogglePublic,
 }: {
   label: string;
   active: boolean;
   custom?: UserFolder;
   onClick: () => void;
   onDelete?: () => void;
+  /** Owner-only: toggle whether the folder is publicly readable. */
+  onTogglePublic?: () => void;
 }) {
   return (
     <span
@@ -34,7 +36,29 @@ export function FolderChip({
       >
         {custom && <FolderIcon size={11} />}
         <span className="max-w-[120px] truncate">{label}</span>
+        {custom?.isPublic && (
+          <Eye size={10} className="opacity-80" aria-label="Pública" />
+        )}
       </button>
+      {onTogglePublic && (
+        <button
+          type="button"
+          onClick={onTogglePublic}
+          title={custom?.isPublic ? 'Hacer privada' : 'Hacer pública'}
+          aria-label={custom?.isPublic ? 'Hacer privada' : 'Hacer pública'}
+          className={cn(
+            'inline-flex items-center justify-center rounded-full p-0.5 transition-opacity',
+            custom?.isPublic
+              ? 'opacity-90 hover:opacity-100'
+              : 'opacity-0 group-hover:opacity-100',
+            active
+              ? 'hover:bg-primary-foreground/20'
+              : 'hover:bg-muted'
+          )}
+        >
+          {custom?.isPublic ? <EyeOff size={11} /> : <Eye size={11} />}
+        </button>
+      )}
       {onDelete && (
         <button
           type="button"

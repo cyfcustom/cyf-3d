@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +21,7 @@ import {
   createFolder as createFolderRemote,
   deleteFolder as deleteFolderRemote,
   updateFolderDesigns,
+  updateFolderPublic,
 } from '../lib/designs';
 import type { Layer, SceneBackground } from '../store/atoms';
 import type { Section } from '../types/sections';
@@ -69,6 +70,11 @@ export function useDesignLibrary(opts: { folder?: DesignFolder } = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Tracks whether we've ever completed a fetch — used to suppress the
+  // loading spinner on subsequent (background) refetches so the existing
+  // list stays visible. stale-while-revalidate pattern.
+  const hasLoadedRef = useRef(false);
+
   const setLayers = useSetAtom(layersAtom);
   const setSectionsMap = useSetAtom(modelSectionsMapAtom);
   const setActiveSection = useSetAtom(activeSectionAtom);
@@ -90,7 +96,11 @@ export function useDesignLibrary(opts: { folder?: DesignFolder } = {}) {
       setDesigns([]);
       return;
     }
-    setIsLoading(true);
+    // Stale-while-revalidate: only flash the loading spinner when there's
+    // nothing on screen yet. Once we've loaded once, background refetches
+    // (folder changes, membership toggles) happen silently so the list
+    // doesn't unmount and remount with an empty loading state.
+    setIsLoading(!hasLoadedRef.current);
     setError(null);
     try {
       const args = folder ? folderToListArgs(folder, folders) : { limit: 100 };
@@ -100,18 +110,27 @@ export function useDesignLibrary(opts: { folder?: DesignFolder } = {}) {
       setDesigns(rows);
     } catch (e: any) {
       setError(e?.message ?? String(e));
-      setDesigns([]);
     } finally {
       setIsLoading(false);
+      hasLoadedRef.current = true;
     }
   }, [authUser, folder, folders]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Refetch folders + designs when the user, the folder, or the folder
-  // list (membership) changes.
+  // Folders are fetched only when auth changes (initial load + login/logout)
+  // and explicitly via createFolder / deleteFolder. Kept intentionally
+  // SEPARATE from the designs effect: previously both were called from a
+  // single useEffect, which caused an infinite loop (refreshFolders returns
+  // a new array → folders ref changes → refresh re-creates → effect re-
+  // runs → repeat).
   useEffect(() => {
     refreshFolders();
+  }, [refreshFolders]);
+
+  // Designs re-fetch when auth/folder/folders change. Re-fetches happen
+  // silently (no spinner) once we've loaded once.
+  useEffect(() => {
     refresh();
-  }, [refreshFolders, refresh]);
+  }, [refresh]);
 
   const saveDesign = useCallback(
     async (input: {
@@ -260,6 +279,33 @@ export function useDesignLibrary(opts: { folder?: DesignFolder } = {}) {
     [folders, t]
   );
 
+  /**
+   * Toggle whether a folder is publicly readable. The RLS allows the
+   * owner to write to design_folders (existing ALL policy); the new
+   * SELECT policy lets anon (e.g. the campaign page) read it back
+   * when is_public = true.
+   */
+  const setFolderPublic = useCallback(
+    async (folderId: string, isPublic: boolean): Promise<boolean> => {
+      try {
+        await updateFolderPublic(folderId, isPublic);
+        setFolders(prev =>
+          prev.map(f => (f.id === folderId ? { ...f, isPublic } : f))
+        );
+        toast.success(
+          isPublic
+            ? t('designLibrary.folderMadePublic')
+            : t('designLibrary.folderMadePrivate')
+        );
+        return true;
+      } catch (e: any) {
+        toast.error(t('designLibrary.folderPublicError', { detail: e?.message ?? '' }));
+        return false;
+      }
+    },
+    [t]
+  );
+
   return {
     designs,
     folders,
@@ -273,5 +319,6 @@ export function useDesignLibrary(opts: { folder?: DesignFolder } = {}) {
     createFolder,
     deleteFolder,
     toggleDesignInFolder,
+    setFolderPublic,
   };
 }

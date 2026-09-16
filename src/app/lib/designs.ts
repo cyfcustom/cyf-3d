@@ -144,6 +144,8 @@ export async function listDesignsByIds(ids: string[]): Promise<SavedDesign[]> {
 export interface UserFolder {
   id: string;
   name: string;
+  slug: string | null;
+  isPublic: boolean;
   designIds: string[];
   createdAt: string | null;
 }
@@ -151,31 +153,41 @@ export interface UserFolder {
 export async function listFolders(): Promise<UserFolder[]> {
   const { data, error } = await supabase
     .from('design_folders')
-    .select('id, name, design_ids, created_at')
+    .select('id, name, slug, is_public, design_ids, created_at')
     .order('created_at', { ascending: false });
   if (error) throw new Error(`listFolders failed: ${error.message}`);
   return (data ?? []).map(d => ({
     id: d.id,
     name: d.name ?? '',
+    slug: d.slug ?? null,
+    isPublic: !!d.is_public,
     designIds: Array.isArray(d.design_ids) ? d.design_ids : [],
     createdAt: d.created_at ?? null,
   }));
 }
 
-export async function createFolder(name: string): Promise<UserFolder> {
+export async function createFolder(name: string, slug?: string | null): Promise<UserFolder> {
   const trimmed = name.trim();
   if (!trimmed) throw new Error('El nombre de la carpeta no puede estar vacío');
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
   const { data, error } = await supabase
     .from('design_folders')
-    .insert({ name: trimmed, user_id: user.id, design_ids: [] })
-    .select('id, name, design_ids, created_at')
+    .insert({
+      name: trimmed,
+      slug: slug?.trim() || null,
+      user_id: user.id,
+      design_ids: [],
+      is_public: false,
+    })
+    .select('id, name, slug, is_public, design_ids, created_at')
     .single();
   if (error) throw new Error(`createFolder failed: ${error.message}`);
   return {
     id: data.id,
     name: data.name ?? '',
+    slug: data.slug ?? null,
+    isPublic: !!data.is_public,
     designIds: Array.isArray(data.design_ids) ? data.design_ids : [],
     createdAt: data.created_at ?? null,
   };
@@ -192,6 +204,78 @@ export async function updateFolderDesigns(folderId: string, designIds: string[])
     .update({ design_ids: designIds })
     .eq('id', folderId);
   if (error) throw new Error(`updateFolderDesigns failed: ${error.message}`);
+}
+
+/** Owner-only: toggle whether a folder (and its designs) are publicly readable. */
+export async function updateFolderPublic(folderId: string, isPublic: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('design_folders')
+    .update({ is_public: isPublic })
+    .eq('id', folderId);
+  if (error) throw new Error(`updateFolderPublic failed: ${error.message}`);
+}
+
+// ─── Public reads (anon-safe, rely on RLS) ──────────────────────────────
+// These are used by the campaign page (/juntos-a-seul) which is visited
+// by anonymous users. They DON'T require auth — RLS gates the rows.
+
+/** Fetch the most recent public folder matching `slug` (or name as fallback). */
+export async function getPublicCampaignFolder(slug: string): Promise<UserFolder | null> {
+  // Try slug first.
+  const { data: bySlug } = await supabase
+    .from('design_folders')
+    .select('id, name, slug, is_public, design_ids, created_at')
+    .eq('is_public', true)
+    .eq('slug', slug)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (bySlug) {
+    return {
+      id: bySlug.id,
+      name: bySlug.name ?? '',
+      slug: bySlug.slug ?? null,
+      isPublic: !!bySlug.is_public,
+      designIds: Array.isArray(bySlug.design_ids) ? bySlug.design_ids : [],
+      createdAt: bySlug.created_at ?? null,
+    };
+  }
+  // Fallback: match by name.
+  const { data: byName } = await supabase
+    .from('design_folders')
+    .select('id, name, slug, is_public, design_ids, created_at')
+    .eq('is_public', true)
+    .eq('name', slug)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!byName) return null;
+  return {
+    id: byName.id,
+    name: byName.name ?? '',
+    slug: byName.slug ?? null,
+    isPublic: !!byName.is_public,
+    designIds: Array.isArray(byName.design_ids) ? byName.design_ids : [],
+    createdAt: byName.created_at ?? null,
+  };
+}
+
+/**
+ * Fetch the saved_designs whose ids are listed in the given folder.
+ * Works for both authenticated owners and anonymous visitors (the RLS
+ * policy `public_select_designs_in_public_folders` lets anon read
+ * designs that belong to a public folder).
+ */
+export async function getDesignsByIdsPublic(ids: string[]): Promise<SavedDesign[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from('saved_designs')
+    .select('*')
+    .in('id', ids);
+  if (error) throw new Error(`getDesignsByIdsPublic failed: ${error.message}`);
+  const byId = new Map((data ?? []).map(d => [d.id, toSavedDesign(d)]));
+  // Preserve the folder's ordering for a stable UX.
+  return ids.map(id => byId.get(id)).filter((d): d is SavedDesign => !!d);
 }
 
 export async function getDesign(id: string): Promise<SavedDesign | null> {
